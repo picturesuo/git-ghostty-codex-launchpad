@@ -1,6 +1,6 @@
-# Ghostty Codex Launchpad
+# Git Ghostty-Codex Launchpad
 
-Ghostty Codex Launchpad is a small macOS helper I use on my personal Mac to spin up a ready-to-go Ghostty workspace for Codex.
+Git Ghostty-Codex Launchpad is a small macOS helper I use on my personal Mac to spin up a ready-to-go Ghostty workspace for Codex and keep the GitHub commit/push workflow built into the handoff.
 
 When I run it, it:
 
@@ -18,7 +18,9 @@ The four roles are:
 - `DEBUGGER` - root-cause analysis for bugs and broken behavior
 - `TESTER` - verification, edge cases, and stability checks
 
-This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex tabs set up the same way every time.
+This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex tabs and GitHub workflow set up the same way every time.
+
+After you give permission to commit, git can stage the approved changes, create the commit, and push it online to GitHub without extra manual steps.
 
 ## Files
 

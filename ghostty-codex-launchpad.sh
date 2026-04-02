@@ -107,7 +107,8 @@ make_shared_context() {
 
 This session is for the named project only.
 Wait for the user to give the next instruction before making changes.
-Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+Before any commit or push to GitHub is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+After permission is given, git can stage the approved files, create the commit, and push it online to GitHub automatically.
 EOF
 
   SHARED_CONTEXT_FILE="$session_file"
@@ -152,7 +153,8 @@ Shared project context:
 You are the $role_name.
 $role_scope
 $role_limits
-Commit workflow: Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+Commit workflow: Before any commit or push to GitHub is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+After permission is given, git can stage the approved files, create the commit, and push it online to GitHub automatically.
 
 Return:
 1. Your role.
