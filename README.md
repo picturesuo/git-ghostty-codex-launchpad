@@ -5,11 +5,11 @@ Ghostty Codex Launchpad is a small macOS helper I use on my personal Mac to spin
 When I run it, it:
 
 - Opens a fresh Ghostty window
-- Splits it into four panes
+- Opens four tabs
 - Asks what project I want to work on
 - Tries to find that project folder on my machine
 - Writes a shared session note in `~/.codex/`
-- Drops four different Codex roles into the panes so the work starts with a clear split of responsibilities
+- Drops four different Codex roles into the tabs so the work starts with a clear split of responsibilities
 
 The four roles are:
 
@@ -18,7 +18,7 @@ The four roles are:
 - `DEBUGGER` - root-cause analysis for bugs and broken behavior
 - `TESTER` - verification, edge cases, and stability checks
 
-This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex panes set up the same way every time.
+This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex tabs set up the same way every time.
 
 ## Files
 

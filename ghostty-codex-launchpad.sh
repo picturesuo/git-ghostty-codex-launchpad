@@ -107,6 +107,7 @@ make_shared_context() {
 
 This session is for the named project only.
 Wait for the user to give the next instruction before making changes.
+Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
 EOF
 
   SHARED_CONTEXT_FILE="$session_file"
@@ -151,6 +152,7 @@ Shared project context:
 You are the $role_name.
 $role_scope
 $role_limits
+Commit workflow: Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
 
 Return:
 1. Your role.
@@ -170,10 +172,15 @@ tell application "Ghostty"
   set cfg to new surface configuration
   set initial working directory of cfg to $(applescript_string "$HOME")
   set win to new window with configuration cfg
-  set pane1 to terminal 1 of selected tab of win
-  set pane2 to split pane1 direction right with configuration cfg
-  set pane3 to split pane1 direction right with configuration cfg
-  set pane4 to split pane2 direction right with configuration cfg
+  set tab1 to tab 1 of win
+  set tab2 to new tab in win with configuration cfg
+  set tab3 to new tab in win with configuration cfg
+  set tab4 to new tab in win with configuration cfg
+
+  set pane1 to focused terminal of tab1
+  set pane2 to focused terminal of tab2
+  set pane3 to focused terminal of tab3
+  set pane4 to focused terminal of tab4
 
   input text "codex" to pane1
   input text "codex" to pane2
@@ -211,10 +218,15 @@ EOF
 tell application "Ghostty"
   activate
 
-  set pane1 to terminal 1 of selected tab of front window
-  set pane2 to terminal 2 of selected tab of front window
-  set pane3 to terminal 3 of selected tab of front window
-  set pane4 to terminal 4 of selected tab of front window
+  set tab1 to tab 1 of front window
+  set tab2 to tab 2 of front window
+  set tab3 to tab 3 of front window
+  set tab4 to tab 4 of front window
+
+  set pane1 to focused terminal of tab1
+  set pane2 to focused terminal of tab2
+  set pane3 to focused terminal of tab3
+  set pane4 to focused terminal of tab4
 
   input text $(applescript_string "$prompt1") to pane1
   input text $(applescript_string "$prompt2") to pane2
