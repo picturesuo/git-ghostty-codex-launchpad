@@ -1,6 +1,6 @@
-# Git Ghostty-Codex Launchpad
+# git-ghostty-codex-launchpad
 
-Git Ghostty-Codex Launchpad is a small macOS helper I use on my personal Mac to spin up a ready-to-go Ghostty workspace for Codex and keep the GitHub commit/push workflow built into the handoff.
+git-ghostty-codex-launchpad is a small macOS helper I use on my personal Mac to spin up a ready-to-go Ghostty workspace for Codex and keep the GitHub commit/push workflow built into the handoff.
 
 When I run it, it:
 
@@ -24,9 +24,9 @@ After you give permission to commit, git can stage the approved changes, create 
 
 ## Files
 
-- `ghostty-codex-launchpad.sh` - the main launcher
-- `start-ghostty-codex-4pane.sh` - thin wrapper for shell or shortcut use
-- `open-ghostty-codex.command` - double-clickable macOS launcher
+- `git-ghostty-codex-launchpad.sh` - the main launcher
+- `start-git-ghostty-codex-launchpad.sh` - thin wrapper for shell or shortcut use
+- `open-git-ghostty-codex-launchpad.command` - double-clickable macOS launcher
 
 ## Notes
 

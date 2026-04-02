@@ -242,7 +242,7 @@ tell application "Ghostty"
 end tell
 EOF
 
-  printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nShared context: %s\n' "$project_name" "$project_dir" "$session_file"
+  printf 'Prepared git-ghostty-codex-launchpad session for %s\nProject directory: %s\nShared context: %s\n' "$project_name" "$project_dir" "$session_file"
 }
 
 main "$@"
