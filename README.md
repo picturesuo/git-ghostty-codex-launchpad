@@ -5,11 +5,11 @@ git-ghostty-codex-launchpad is a small macOS helper I use on my personal Mac to 
 When I run it, it:
 
 - Opens a fresh Ghostty window
-- Opens four tabs
+- Splits it into four panes
 - Asks what project I want to work on
 - Tries to find that project folder on my machine
 - Writes a shared session note in `~/.codex/`
-- Drops four different Codex roles into the tabs so the work starts with a clear split of responsibilities
+- Drops four different Codex roles into the panes so the work starts with a clear split of responsibilities
 
 The four roles are:
 
@@ -18,7 +18,7 @@ The four roles are:
 - `DEBUGGER` - root-cause analysis for bugs and broken behavior
 - `TESTER` - verification, edge cases, and stability checks
 
-This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex tabs and GitHub workflow set up the same way every time.
+This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex panes and GitHub workflow set up the same way every time.
 
 After you give permission to commit, git can stage the approved changes, create the commit, and push it online to GitHub without extra manual steps.
 
@@ -37,3 +37,7 @@ After you give permission to commit, git can stage the approved changes, create 
 ## Use
 
 Run the launcher from Terminal, or double-click the `.command` file if you want Finder to open it.
+
+## Verify
+
+For a quick shell sanity check, run `shellcheck git-ghostty-codex-launchpad.sh` from inside the project directory.
