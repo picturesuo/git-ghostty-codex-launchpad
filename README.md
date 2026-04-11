@@ -1,44 +1,43 @@
 # git-ghostty-codex-launchpad
 
-git-ghostty-codex-launchpad is a small macOS helper I use on my personal Mac to spin up a ready-to-go Ghostty workspace for Codex and keep the GitHub commit/push workflow built into the handoff.
+A macOS Ghostty launcher that opens a ready-to-work Codex setup with multiple panes, role-based prompts, and a built-in Git commit/push handoff.
 
-When I run it, it:
+## Why This Matters
 
-- Opens a fresh Ghostty window
-- Splits it into four panes
-- Asks what project I want to work on
-- Tries to find that project folder on my machine
+Starting a coding session usually involves repetitive setup: opening terminals, finding the project, creating context, and getting each agent into the right role. This project compresses that startup work into one launcher so the workflow is consistent every time.
+
+## What It Does
+
+- Opens a fresh Ghostty window and splits it into four panes
+- Prompts for the project you want to work on and tries to find it locally
 - Writes a shared session note in `~/.codex/`
 - Starts Codex in each pane and sends `/fast` before the role prompt
-- Drops four different Codex roles into the panes so the work starts with a clear split of responsibilities
+- Assigns four roles so the session begins with clear responsibility split
+- Keeps the GitHub commit/push workflow built into the handoff
 
-The four roles are:
+## Roles
 
-- `BUILDER` - main feature work and end-to-end user-facing implementation
-- `BACKEND` - APIs, database, validation, auth, and business logic
-- `DEBUGGER` - root-cause analysis for bugs and broken behavior
+- `BUILDER` - main feature work and end-to-end implementation
+- `BACKEND` - APIs, database, auth, validation, and business logic
+- `DEBUGGER` - bug investigation and root-cause analysis
 - `TESTER` - verification, edge cases, and stability checks
-
-This is intentionally simple and pretty personal. It is built for Ghostty on macOS, and it is meant to make my own local workflow faster when I am bouncing into a project and want the Codex panes and GitHub workflow set up the same way every time.
-
-After you give permission to commit, git can stage the approved changes, create the commit, and push it online to GitHub without extra manual steps.
 
 ## Files
 
-- `git-ghostty-codex-launchpad.sh` - the main launcher
-- `start-git-ghostty-codex-launchpad.sh` - thin wrapper for shell or shortcut use
+- `git-ghostty-codex-launchpad.sh` - main launcher
+- `start-git-ghostty-codex-launchpad.sh` - thin shell wrapper
 - `open-git-ghostty-codex-launchpad.command` - double-clickable macOS launcher
+
+## How To Use It
+
+Run the launcher from Terminal, or double-click the `.command` file from Finder.
 
 ## Notes
 
-- This is macOS-only because it uses `osascript`.
-- This is Ghostty-only because it talks to the Ghostty app directly.
-- It is designed for a single-user personal setup, not a cloud service or shared team tool.
-
-## Use
-
-Run the launcher from Terminal, or double-click the `.command` file if you want Finder to open it.
+- macOS-only because it depends on `osascript`
+- Ghostty-only because it talks directly to the Ghostty app
+- Designed for a personal local workflow rather than a shared service
 
 ## Verify
 
-For a quick shell sanity check, run `shellcheck git-ghostty-codex-launchpad.sh` from inside the project directory.
+Run `shellcheck git-ghostty-codex-launchpad.sh` from the project directory for a quick shell sanity check.
