@@ -9,6 +9,7 @@ When I run it, it:
 - Asks what project I want to work on
 - Tries to find that project folder on my machine
 - Writes a shared session note in `~/.codex/`
+- Starts Codex in each pane and sends `/fast` before the role prompt
 - Drops four different Codex roles into the panes so the work starts with a clear split of responsibilities
 
 The four roles are:

@@ -34,6 +34,48 @@ EOF
   PROJECT_NAME="$dialog_result"
 }
 
+prompt_new_file_name() {
+  local dialog_result
+
+  if ! dialog_result="$(
+    osascript <<'EOF'
+try
+  text returned of (display dialog "No existing project was found. What file should I create first?" default answer "" buttons {"Cancel", "Create"} default button "Create")
+on error number -128
+  return ""
+end try
+EOF
+  )"; then
+    dialog_result=""
+  fi
+
+  NEW_FILE_NAME="$dialog_result"
+}
+
+derive_project_name_from_file() {
+  local requested_file=$1
+  local base_name
+
+  requested_file="$(sanitize_relative_file_path "$requested_file")"
+  if [[ -z "$requested_file" ]]; then
+    printf '%s' "new project"
+    return
+  fi
+
+  base_name="$(basename "$requested_file")"
+  base_name="${base_name%.*}"
+  base_name="${base_name//[-_]/ }"
+  base_name="${base_name#"${base_name%%[![:space:]]*}"}"
+  base_name="${base_name%"${base_name##*[![:space:]]}"}"
+
+  if [[ -z "$base_name" ]]; then
+    printf '%s' "new project"
+    return
+  fi
+
+  printf '%s' "$base_name"
+}
+
 find_glob_escape() {
   local value=$1
   value=${value//\\/\\\\}
@@ -158,9 +200,112 @@ search_project_dir() {
   printf '%s' ""
 }
 
+default_new_project_root() {
+  if [[ -d "$HOME/Projects" ]]; then
+    printf '%s' "$HOME/Projects"
+    return
+  fi
+
+  printf '%s' "$HOME/Desktop"
+}
+
+sanitize_relative_file_path() {
+  local value=$1
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value#./}"
+
+  while [[ "$value" == */* ]]; do
+    value="${value//\/\//\/}"
+    [[ "$value" == *"//"* ]] || break
+  done
+
+  if [[ -z "$value" || "$value" == /* ]]; then
+    printf '%s' ""
+    return
+  fi
+
+  case "$value" in
+    .|..|../*|*/../*|*/..)
+      printf '%s' ""
+      return
+      ;;
+  esac
+
+  printf '%s' "$value"
+}
+
+create_new_project() {
+  local project_name=$1
+  local requested_file=$2
+  local project_root project_dir target_file parent_dir
+  local project_slug
+
+  project_slug="$(slugify "$project_name")"
+  if [[ -z "$project_slug" ]]; then
+    project_slug="new-project"
+  fi
+
+  target_file="$(sanitize_relative_file_path "$requested_file")"
+  if [[ -z "$target_file" ]]; then
+    target_file="README.md"
+  fi
+
+  project_root="$(default_new_project_root)"
+  project_dir="$project_root/$project_slug"
+
+  mkdir -p "$project_dir"
+  parent_dir="$(dirname "$project_dir/$target_file")"
+  mkdir -p "$parent_dir"
+
+  if [[ ! -e "$project_dir/$target_file" ]]; then
+    : > "$project_dir/$target_file"
+  fi
+
+  CREATED_PROJECT_DIR="$project_dir"
+  CREATED_TARGET_FILE="$target_file"
+}
+
+choose_target_file() {
+  local project_dir=$1
+  local file
+  local candidates=(
+    "app/page.tsx"
+    "app/page.jsx"
+    "app/page.ts"
+    "pages/index.tsx"
+    "pages/index.jsx"
+    "src/app/page.tsx"
+    "src/app/page.jsx"
+    "src/pages/index.tsx"
+    "src/pages/index.jsx"
+    "src/index.ts"
+    "src/index.tsx"
+    "src/index.js"
+    "src/index.jsx"
+    "index.ts"
+    "index.tsx"
+    "index.js"
+    "index.jsx"
+    "README.md"
+  )
+
+  for file in "${candidates[@]}"; do
+    if [[ -f "$project_dir/$file" ]]; then
+      printf '%s' "$file"
+      return
+    fi
+  done
+
+  find "$project_dir" -maxdepth 2 -type f \
+    \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.md' \) \
+    -print | head -n 1 | sed "s#^$project_dir/##" || true
+}
+
 make_shared_context() {
   local project_name=$1
   local project_dir=$2
+  local target_file=$3
   local session_dir="$HOME/.codex"
   local session_file="$session_dir/$(slugify "$project_name")-shared-context.md"
   mkdir -p "$session_dir"
@@ -170,20 +315,21 @@ make_shared_context() {
 
 - Project name: $project_name
 - Project directory: $project_dir
+- Target file: $target_file
 - Session source of truth: this file
 
 This session is for the named project only.
 Wait for the user to give the next instruction before making changes.
 At the end of every turn, include a concise summary of what changed and a clear request asking whether to commit.
-Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed and why in a concise human way, propose the exact commit message, and wait for explicit user approval.
+Do not use conventional-commit prefixes like `feat:` or `fix:`. Write the commit message in a practical, plain-English style a strong human engineer would actually use.
 Use this exact end-of-turn format every time:
 1. Summary: one or two sentences describing what changed.
 2. Changed files: list only the files you actually touched.
-3. Commit command: write the exact git commit command you want to use, in a single line.
-4. Push command: write the exact git push command you want to use, in a single line.
-5. Commit plan: explain in one sentence that you are waiting for approval before running either command.
-6. Commit request: explicitly ask whether to commit now.
-7. Status: say you are waiting for approval.
+3. Why: one short sentence explaining why you changed it.
+4. Commit message: write the exact commit message you want to use, in a single line, in practical plain English.
+5. Commit request: explicitly ask whether to commit now.
+6. Status: say you are waiting for approval.
 EOF
 
   SHARED_CONTEXT_FILE="$session_file"
@@ -193,7 +339,8 @@ role_prompt() {
   local role=$1
   local project_name=$2
   local project_dir=$3
-  local session_file=$4
+  local target_file=$4
+  local session_file=$5
   local role_name role_scope role_limits
 
   case "$role" in
@@ -223,21 +370,22 @@ role_prompt() {
 Shared project context:
 - Project name: $project_name
 - Project directory: $project_dir
+- Target file: $target_file
 - Shared context file: $session_file
 
 You are the $role_name.
 $role_scope
 $role_limits
 Turn workflow: At the end of every turn, include a concise summary of what changed and explicitly ask whether to commit.
-Commit workflow: Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed, propose a commit message, and wait for explicit user approval.
+Commit workflow: Before any commit is made, list changed files, identify which are directly related to the current task, exclude unrelated or suspicious changes, summarize what changed and why in a concise human way, propose the exact commit message, and wait for explicit user approval.
+Do not use conventional-commit prefixes like `feat:` or `fix:`. Write the commit message in a practical, plain-English style a strong human engineer would actually use.
 Use this exact end-of-turn format every time:
 1. Summary: one or two sentences describing what changed.
 2. Changed files: list only the files you actually touched.
-3. Commit command: write the exact git commit command you want to use, in a single line.
-4. Push command: write the exact git push command you want to use, in a single line.
-5. Commit plan: explain in one sentence that you are waiting for approval before running either command.
-6. Commit request: explicitly ask whether to commit now.
-7. Status: say you are waiting for approval.
+3. Why: one short sentence explaining why you changed it.
+4. Commit message: write the exact commit message you want to use, in a single line, in practical plain English.
+5. Commit request: explicitly ask whether to commit now.
+6. Status: say you are waiting for approval.
 
 Return:
 1. Your role.
@@ -281,6 +429,18 @@ tell application "Ghostty"
 
   delay 2
 
+  input text "/fast" to pane1
+  input text "/fast" to pane2
+  input text "/fast" to pane3
+  input text "/fast" to pane4
+
+  send key "enter" to pane1
+  send key "enter" to pane2
+  send key "enter" to pane3
+  send key "enter" to pane4
+
+  delay 1.5
+
   input text $(applescript_string "$prompt1") to pane1
   input text $(applescript_string "$prompt2") to pane2
   input text $(applescript_string "$prompt3") to pane3
@@ -299,7 +459,7 @@ EOF
 }
 
 main() {
-  local project_name project_dir session_file project_name_compact
+  local project_name project_dir session_file project_name_compact target_file requested_file
   local -a roles prompts
   local role
 
@@ -307,26 +467,42 @@ main() {
   project_name="$PROJECT_NAME"
   project_name_compact="$(printf '%s' "$project_name" | tr -d '[:space:]')"
 
-  if [[ -z "$project_name_compact" ]]; then
-    return 0
+  if [[ -n "$project_name_compact" ]]; then
+    project_dir="$(search_project_dir "$project_name")"
+  else
+    project_dir=""
   fi
 
-  project_dir="$(search_project_dir "$project_name")"
   if [[ -z "$project_dir" ]]; then
-    project_dir="$HOME"
+    prompt_new_file_name
+    requested_file="$NEW_FILE_NAME"
+    if [[ -z "$project_name_compact" ]]; then
+      project_name="$(derive_project_name_from_file "$requested_file")"
+    fi
+    create_new_project "$project_name" "$requested_file"
+    project_dir="$CREATED_PROJECT_DIR"
+    target_file="$CREATED_TARGET_FILE"
+  else
+    target_file="$(choose_target_file "$project_dir")"
+    if [[ -z "$target_file" ]]; then
+      target_file="README.md"
+      if [[ ! -e "$project_dir/$target_file" ]]; then
+        : > "$project_dir/$target_file"
+      fi
+    fi
   fi
 
-  make_shared_context "$project_name" "$project_dir"
+  make_shared_context "$project_name" "$project_dir" "$target_file"
   session_file="$SHARED_CONTEXT_FILE"
 
   roles=(BUILDER BACKEND DEBUGGER TESTER)
   for role in "${roles[@]}"; do
-    prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$session_file")")
+    prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file")")
   done
 
   launch_ghostty_session "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
-  printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nShared context: %s\n' "$project_name" "$project_dir" "$session_file"
+  printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
 }
 
 main "$@"
