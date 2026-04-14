@@ -121,12 +121,15 @@ push_current_branch() {
 }
 
 generate_message() {
-  local status first base stem action all_workflow_paths rel_path workflow_prefix
+  local status first base stem action rel_path workflow_prefix topic_keys
+  local -a topics=()
+
   status="$(git diff --cached --name-status -- "${rel_paths[@]}" | awk 'NR==1 {print substr($1,1,1)}')"
   first="$(printf '%s\n' "${rel_paths[@]}" | head -n1)"
   base="$(basename "$first")"
   stem="${base%.*}"
   stem="${stem//-/ }"
+  topic_keys=""
 
   case "$status" in
     A) action="add" ;;
@@ -161,23 +164,98 @@ generate_message() {
     workflow_prefix=""
   fi
 
-  all_workflow_paths=1
   for rel_path in "${rel_paths[@]}"; do
     case "$rel_path" in
-      "${workflow_prefix}AGENTS.md"|"${workflow_prefix}docs/queue.md"|"${workflow_prefix}scripts/codex-commit.sh") ;;
+      "${workflow_prefix}AGENTS.md"|AGENTS.md)
+        case "|$topic_keys|" in
+          *"|repo policy|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}repo policy"
+            topics+=("repo policy")
+            ;;
+        esac
+        ;;
+      "${workflow_prefix}README.md"|README.md)
+        case "|$topic_keys|" in
+          *"|README|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}README"
+            topics+=("README")
+            ;;
+        esac
+        ;;
+      "${workflow_prefix}docs/queue.md"|docs/queue.md)
+        case "|$topic_keys|" in
+          *"|queue docs|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}queue docs"
+            topics+=("queue docs")
+            ;;
+        esac
+        ;;
+      "${workflow_prefix}scripts/codex-commit.sh"|scripts/codex-commit.sh)
+        case "|$topic_keys|" in
+          *"|commit helper|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}commit helper"
+            topics+=("commit helper")
+            ;;
+        esac
+        ;;
+      "${workflow_prefix}git-ghostty-codex-launchpad.sh"|git-ghostty-codex-launchpad.sh)
+        case "|$topic_keys|" in
+          *"|launcher workflow|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}launcher workflow"
+            topics+=("launcher workflow")
+            ;;
+        esac
+        ;;
+      "${workflow_prefix}start-git-ghostty-codex-launchpad.sh"|start-git-ghostty-codex-launchpad.sh|"${workflow_prefix}open-git-ghostty-codex-launchpad.command"|open-git-ghostty-codex-launchpad.command)
+        case "|$topic_keys|" in
+          *"|launcher wrappers|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}launcher wrappers"
+            topics+=("launcher wrappers")
+            ;;
+        esac
+        ;;
       *)
-        all_workflow_paths=0
-        break
+        case "|$topic_keys|" in
+          *"|$(basename "$rel_path")|"*) ;;
+          *)
+            topic_keys="${topic_keys}${topic_keys:+|}$(basename "$rel_path")"
+            topics+=("$(basename "$rel_path")")
+            ;;
+        esac
         ;;
     esac
   done
 
-  if [ "$all_workflow_paths" -eq 1 ]; then
-    printf '%s\n' "$action codex workflow files"
-    return
-  fi
+  case "${#topics[@]}" in
+    0)
+      printf '%s\n' "$action changes"
+      ;;
+    1)
+      printf '%s %s\n' "$action" "${topics[0]}"
+      ;;
+    2)
+      printf '%s %s and %s\n' "$action" "${topics[0]}" "${topics[1]}"
+      ;;
+    *)
+      local joined=""
+      local i
 
-  printf '%s\n' "$action ${#rel_paths[@]} files"
+      for ((i=0; i<${#topics[@]}-1; i++)); do
+        if [ -n "$joined" ]; then
+          joined+=", "
+        fi
+        joined+="${topics[i]}"
+      done
+
+      printf '%s %s, and %s\n' "$action" "$joined" "${topics[$((${#topics[@]} - 1))]}"
+      ;;
+  esac
 }
 
 if [ -z "$message" ]; then

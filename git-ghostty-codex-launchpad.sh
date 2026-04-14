@@ -251,18 +251,66 @@ create_new_project() {
 
   target_file="$(sanitize_relative_file_path "$requested_file")"
   if [[ -z "$target_file" ]]; then
-    target_file="README.md"
+    target_file="AGENTS.md"
   fi
 
   project_root="$(default_new_project_root)"
   project_dir="$project_root/$project_slug"
 
   mkdir -p "$project_dir"
+  mkdir -p "$project_dir/docs"
   parent_dir="$(dirname "$project_dir/$target_file")"
   mkdir -p "$parent_dir"
 
   if [[ ! -e "$project_dir/$target_file" ]]; then
     : > "$project_dir/$target_file"
+  fi
+
+  if [[ ! -e "$project_dir/AGENTS.md" ]]; then
+    cat > "$project_dir/AGENTS.md" <<EOF
+# AGENTS.md
+
+## Purpose
+This file is the repo-local operating manual for Codex in "$project_name".
+
+Read it at the start of each session.
+Follow it unless the user explicitly overrides it.
+Keep it current.
+
+## Shared Context
+- If a shared context file exists, use it as the durable task artifact for the current task.
+- Update only the sections or artifact IDs owned by your role.
+- Do not rewrite the whole shared context file.
+
+## Working Rules
+- Keep scope tight.
+- Prefer small, reversible changes.
+- State assumptions explicitly when needed.
+- Do not auto-publish partial, failing, or unverified work.
+EOF
+  fi
+
+  if [[ ! -e "$project_dir/docs/queue.md" ]]; then
+    cat > "$project_dir/docs/queue.md" <<'EOF'
+# Queue
+
+## Now
+- [ ] Initialize the first real task artifact.
+
+## Next
+- [ ] Add the next smallest shippable step.
+- [ ] Capture the main edge case.
+- [ ] Capture one cleanup item.
+
+## Later
+- [ ] Expand only when the project grows.
+
+## Blocked
+- [ ] No blockers recorded yet.
+
+## Discovered While Working
+- [ ] Fill this in as the session learns new details.
+EOF
   fi
 
   CREATED_PROJECT_DIR="$project_dir"
@@ -272,6 +320,12 @@ create_new_project() {
 choose_target_file() {
   local project_dir=$1
   local file
+
+  if [[ ! -f "$project_dir/AGENTS.md" ]]; then
+    printf '%s' "AGENTS.md"
+    return
+  fi
+
   local candidates=(
     "app/page.tsx"
     "app/page.jsx"

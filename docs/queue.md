@@ -1,7 +1,7 @@
 # Queue
 
 ## Now
-- [ ] Exercise one real launcher run to verify the generated Ghostty prompts render as intended after the auto-publish workflow change.
+- [ ] Exercise one launcher run against a project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md` and `docs/queue.md` first.
 
 ## Next
 - [ ] Decide whether to keep the unused `QUEUE-MANAGER` prompt template as future scaffolding or remove it from the launcher source.
@@ -19,6 +19,7 @@
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.
 - [ ] Small improvement: consider a dedicated `codex-publish.sh` wrapper if `codex-commit.sh --push` becomes awkward to explain.
 - [ ] Cleanup: remove the unused `QUEUE-MANAGER` template from the launcher if it never becomes a real non-pane workflow.
+- [ ] Edge case: verify the bootstrap path does not overwrite an existing project `AGENTS.md` or `docs/queue.md`.
 - [ ] Edge case: keep canonical-repo wording durable and avoid machine-specific local paths in user-facing docs.
 - [ ] Edge case: verify commit helper behavior when a tracked file is deleted.
 - [ ] Edge case: verify commit helper behavior when committing from outside the repo directory.

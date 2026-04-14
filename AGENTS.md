@@ -57,6 +57,7 @@ Do not invent build, test, or runtime commands that are not present in the repo.
 ## Task Targeting
 - Work inside the project directory.
 - Treat the selected target file as a starting point, not a hard restriction, unless the artifact says otherwise.
+- If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first.
 - Keep scope tight.
 - Do not invent unrelated requirements.
 - State assumptions as `Q` or `R` items in the artifact when needed.
