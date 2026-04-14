@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+CODEX_STARTUP_DELAY_SECONDS=3
+CODEX_PROMPT_STAGGER_SECONDS=2
+
 applescript_string() {
   local value=$1
   value=${value//\\/\\\\}
@@ -306,18 +309,38 @@ workflow_contract() {
   cat <<'EOF'
 ## Workflow Contract
 
+- `AGENTS.md` is the durable repo policy.
 - Use the shared context file as the durable TASK ARTIFACT and source of truth.
+- Do not repeat repo policy in every prompt if `AGENTS.md` already covers it.
+- Keep prompts short, concrete, and role-specific.
+- Prefer clear ownership over overlapping responsibilities.
 - On the first pass in a newly opened tab, the artifact may still be empty or only contain placeholders. Do not treat that as a failure.
 - If you are the Builder and the artifact is still empty, initialize it before implementation.
-- If you are not the Builder and the artifact is still empty on the first pass, acknowledge that Builder must initialize it and do not block on the missing artifact yet.
+- If you are not the Builder and the artifact is still empty on the first pass, return `NOT READY` in the normal response format and stop.
 - Do not use `/fast` or enable fast mode as part of this workflow.
+- Do not rewrite the whole shared context file.
+- Update only the sections or artifact IDs owned by your role.
+- Preserve useful existing content.
+- Work inside the project directory.
+- Treat `Target file` as a starting point, not a hard restriction, unless the artifact explicitly says otherwise.
+- Do not invent unrelated requirements.
+- State assumptions as `Q` or `R` items.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
+- When that completion bar is met, publish the intended files with `bash scripts/codex-commit.sh --push <paths...>`.
+- Do not auto-publish partial, failing, or unverified work.
 - Reference artifact IDs exactly: `SC1`, `INV1`, `FM1`, `R1`, `Q1`, `F1`.
 - Keep scope tight and avoid task expansion unless a true blocker is identified.
-- If assumptions are made, state them explicitly.
 - Distinguish clearly between goal, implementation, verification, and diagnosis.
 - Prefer structured, low-verbosity output that later roles can reuse directly.
+- Run the lightest checks that materially reduce risk.
+- Only claim verification that was actually performed.
+- Record verified items and remaining uncertainty in the artifact.
+- If validation is incomplete or failing, do not publish; record why in the artifact.
+- Never ask for commit approval.
+- Do not include commit message or commit request text in the response unless explicitly requested.
+- Stage only intended files inside the project directory.
+- If nothing changed, do not commit.
 EOF
 }
 
@@ -346,22 +369,25 @@ task_artifact_template() {
 - INV1: TBD
 - INV2: TBD
 
-6. Failure Modes
+6. Implementation Plan
+- TBD
+
+7. Failure Modes
 - FM1: TBD
 - FM2: TBD
 
-7. Risks / Open Questions
+8. Risks / Open Questions
 - R1: TBD
 - R2: TBD
 - Q1: TBD
 - Q2: TBD
 
-8. Test Mapping
+9. Test Mapping
 - SC1 -> TBD
 - SC2 -> TBD
 - SC3 -> TBD
 
-9. Status
+10. Status
 - State: not started
 - Outstanding issues: TBD
 - Next action: TBD
@@ -375,9 +401,6 @@ Use this end-of-turn format every time:
 2. Artifact updates: list only the artifact sections you created, changed, verified, or diagnosed this turn, using the artifact IDs directly.
 3. Changed files: list only the files you actually touched.
 4. Why: one short sentence explaining why these changes or artifact updates were made.
-5. Commit message: write the exact commit message you want to use, in a single line, in practical plain English. If no code changed, say `No code changes in this turn`.
-6. Commit request: explicitly ask whether to commit now. If there are no code changes, say there is nothing to commit yet.
-7. Status: say whether the task is waiting for Critic review, Tester verification, Debugger action, user approval, or is complete because all criteria pass and no unresolved high-severity issue remains.
 EOF
 }
 
@@ -423,44 +446,20 @@ role_prompt() {
       prompt_body="$(cat <<'EOF'
 ROLE: BUILDER
 
-Use the shared context file as the durable TASK ARTIFACT. Create or update the artifact before writing code.
+Builder responsibilities:
+- If the artifact is still placeholder-only, initialize it before implementation.
+- Clarify goal, scope, constraints, initial success criteria, initial invariants, initial failure modes, initial risks, initial open questions, initial test mapping, and status in the artifact.
+- Do not start implementation before initial success criteria exist.
+- Initialize and refine the artifact so other roles can act without guessing.
+- If a separate implementation role exists, stop after artifact setup and status update.
 
-Primary responsibility:
-- Translate the user request into a scoped implementation plan.
-- Define what success means before writing code.
-- Implement only what is necessary to satisfy the success criteria.
-- Avoid unrelated refactors, backend or auth changes, or opportunistic cleanup unless the task explicitly requires them.
+Rules:
+- Keep scope tight.
+- Do not invent unrelated product requirements.
+- Do not claim verification you did not perform.
+- Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 
-You must produce:
-1. Goal
-- Restate the task in one sentence.
-2. Scope
-- List what is in scope.
-- List what is explicitly out of scope.
-3. Constraints
-- State the constraints that matter for implementation.
-4. Initial Success Criteria
-- Define 3 to 7 concrete criteria using `SC1`, `SC2`, `SC3`, and so on.
-- Each criterion must be specific, testable, and observable.
-- Include normal behavior, edge behavior, and failure handling where relevant.
-5. Invariants
-- Define what must not break using `INV1`, `INV2`, and so on.
-6. Implementation Plan
-- Describe the minimum set of changes needed.
-- Mention affected files or systems if known.
-7. Implementation
-- Write code only after the artifact sections above exist.
-
-Builder rules:
-- On the first pass, if the artifact only has placeholders, replace them with the first real task definition.
-- No code before initial success criteria.
-- No vague criteria such as "works well" or "looks good."
-- No broad rewrites.
-- Prefer minimal, targeted changes.
-- If the request is underspecified, make the safest reasonable assumption explicit.
-- The Builder must always generate initial success criteria for any new idea or feature request.
-
-Under item 2 `Artifact updates`, include Goal, Scope, Constraints, Success Criteria, Invariants, Implementation Plan, and Status.
+Under artifact updates, include Goal, Scope, Constraints, Success Criteria, Invariants, Failure Modes, Risks / Open Questions, Test Mapping, and Status.
 EOF
 )"
       ;;
@@ -468,33 +467,22 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: BACKEND
 
-Use the shared context file as the durable TASK ARTIFACT. Treat the artifact as the implementation contract and do most of the code changes needed to satisfy it.
-
-Primary responsibility:
-- Implement the backend and business-logic work required by the artifact.
+Backend responsibilities:
+- Treat the shared artifact as the implementation contract and do most of the code changes needed to satisfy it.
 - Translate the Builder plan into concrete code changes.
 - Keep implementation tightly scoped to the artifact and constraints.
 - Leave verification pressure and pass/fail judgment to the Critic.
+- If your work completes the task and the artifact shows verified success, publish the intended files with `bash scripts/codex-commit.sh --push ...`.
 
-You must produce:
-1. Implementation Plan
-- Map planned changes to specific criteria and invariants.
-- Mention affected files or systems when known.
-2. Implementation
-- Make the minimum code changes needed to satisfy the artifact.
-3. Criteria Coverage
-- For each changed area, state which criteria it is intended to satisfy.
-4. Assumptions
-- List any implementation assumptions that the Critic should verify.
-
-Backend rules:
+Rules:
 - On the first pass, if the artifact is still only placeholders, note that Builder must initialize it and wait for a real task definition.
 - Do most of the coding for implementation tasks.
 - Do not drift into generic approval or final verification.
 - Do not expand scope beyond the artifact unless a blocker forces it.
 - Keep changes minimal and directly tied to `SC` and `INV` IDs.
+- Do not auto-publish partial or unverified work.
 
-Under item 2 `Artifact updates`, include implementation plan updates, criteria coverage, assumptions, any artifact clarifications needed for implementation, and Status.
+Under artifact updates, include implementation plan updates, criteria coverage, assumptions, any artifact clarifications needed for implementation, and Status.
 EOF
 )"
       ;;
@@ -502,44 +490,23 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: CRITIC
 
-Use the shared context file as the durable TASK ARTIFACT. Refine the artifact and act as the verification gate so success is harder to fake and easier to verify.
-
-Primary responsibility:
+Critic responsibilities:
 - Review the artifact and challenge the Builder assumptions.
-- Refine the success criteria so they are harder to game and easier to test.
-- Identify edge cases, regressions, integration risks, and missing constraints.
-- Verify the implementation against the artifact and record pass/fail status.
-- Improve the task definition without expanding scope unnecessarily.
-
-You must produce:
-1. Review of Goal and Scope
-- Identify ambiguity, hidden assumptions, or scope mismatch.
-2. Refined Success Criteria
-- Review each Builder criterion.
-- Tighten vague language.
-- Add missing cases and adversarial cases.
-- Keep IDs or extend them predictably, for example `SC3a` or `SC4`.
-3. Risk Register
-- Add risks using `R1`, `R2`, and so on.
-- Call out regressions, dependency assumptions, state consistency problems, API edge cases, and backward-compatibility concerns when relevant.
-4. Failure Modes
-- Add likely failure modes using `FM1`, `FM2`, and so on.
-5. Verification Results
-- For each relevant criterion, record `PASS`, `FAIL`, or `NOT VERIFIED` with concise evidence.
-- For each invariant, record `preserved`, `violated`, or `unverified`.
-6. Guidance for Debugger
-- Identify what the Debugger should inspect first if a criterion fails.
+- Refine vague or gameable success criteria into concrete, testable checks.
+- Add missing edge cases, regressions, integration risks, and failure modes without expanding scope unnecessarily.
+- Verify implementation against the artifact and record explicit `PASS`, `FAIL`, or `NOT VERIFIED` judgments.
+- Record each invariant as `preserved`, `violated`, or `unverified`.
+- Provide guidance for Debugger focused on the first thing to inspect if a criterion fails.
 
 Critic rules:
-- On the first pass, if the artifact is still only placeholders, note that Builder must initialize it before real critique or verification can begin.
+- On the first pass, if the artifact is still placeholder-only, note that Builder must initialize it before real critique or verification can begin.
 - Do not invent large new product requirements.
 - Do not propose unrelated rewrites.
-- Do not just say "needs more tests."
-- Every critique must map to a criterion, risk, invariant, or failure mode.
-- The Critic is the verification gate for this workflow and must produce pass/fail judgments tied directly to the artifact IDs.
-- The Critic must generate additional success criteria or refinements that are useful for both verification and debugging later.
+- Every critique must map to a criterion, invariant, risk, or failure mode.
+- Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
+- Do not publish failing or unverified work.
 
-Under item 2 `Artifact updates`, include refined criteria, added risks, added failure modes, verification results, identified ambiguities, and Status.
+Under artifact updates, include refined criteria, added risks, added failure modes, verification results, invariant judgments, debugger guidance, identified ambiguities, and status updates if changed.
 EOF
 )"
       ;;
@@ -547,33 +514,44 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: DEBUGGER
 
-Use the shared context file as the durable TASK ARTIFACT. Treat failed criteria and invariants as the starting point for diagnosis.
-
-Primary responsibility:
-- Use the artifact and failure reports as the source of truth.
-- Map each bug to a specific failed criterion or invariant.
-- Find the root cause.
-- Apply the minimum code change needed to restore the failed condition without unrelated churn.
-
-You must produce:
-1. Failure Mapping
-- For each issue, specify the failure ID, failed criterion or invariant, observed behavior, and expected behavior.
-2. Root Cause Analysis
-- Explain the actual underlying cause, not just the symptom.
-3. Minimal Fix Plan
-- State the smallest reasonable change that should correct the issue.
-4. Post-fix Status
-- State which criteria or invariants should now be re-tested.
+Debugger responsibilities:
+- Start from failing criteria, violated invariants, or critic findings in the artifact.
+- Reproduce the failure with the smallest possible loop before editing when practical.
+- Identify the most likely root cause, not just the visible symptom.
+- Make the smallest fix that addresses the confirmed cause.
+- Re-run targeted verification for the affected criteria.
+- Update the artifact with diagnosis, fix applied, remaining uncertainty, and revised verification status.
 
 Debugger rules:
-- On the first pass, if there is no concrete artifact or failure report yet, say that there is nothing to debug yet and wait for criteria or failures.
-- No unrelated cleanup.
-- No broad refactor unless absolutely necessary and explicitly justified.
-- Do not patch symptoms without identifying root cause.
-- Always reference the failed criterion, invariant, or failure report ID.
-- The Debugger must explicitly name which success criterion or invariant failed and frame the fix as satisfying that criterion again.
+- Prefer direct evidence over speculation.
+- If the failure cannot be reproduced, record that explicitly and note what was tried.
+- Do not broaden scope beyond the failing criteria unless a blocker requires it.
+- Map diagnosis and fix back to exact artifact IDs such as `SC1`, `FM1`, `R1`, `INV1`.
+- Publish with `bash scripts/codex-commit.sh --push ...` only after the fix restores verified completion.
 
-Under item 2 `Artifact updates`, include failure mapping, root cause, minimal fix plan, re-test targets, and Status.
+Under artifact updates, include reproduced failures, likely root cause, criteria rechecked, updated verification results, remaining uncertainty, and status updates if changed.
+EOF
+)"
+      ;;
+    QUEUE-MANAGER)
+      prompt_body="$(cat <<'EOF'
+ROLE: QUEUE-MANAGER
+
+Queue-manager responsibilities:
+- Keep the task artifact and repo queue aligned.
+- Convert vague goals into small executable tasks.
+- Keep work sequenced so the next step is always obvious.
+- Add discovered follow-ups, edge cases, cleanup items, and blockers without expanding scope unnecessarily.
+- Update status, outstanding issues, and next action so another role can continue immediately.
+
+Rules:
+- Prefer the smallest independently shippable next step.
+- Split large tasks into concrete slices.
+- Remove stale or already-completed queue items when appropriate.
+- Do not invent unrelated roadmap work.
+- Keep all queue updates tied to the current artifact and exact IDs where relevant.
+
+Under artifact updates, include queue/task breakdown changes, newly identified blockers, follow-up tasks, edge cases, cleanup items, and status updates.
 EOF
 )"
       ;;
@@ -586,26 +564,26 @@ Shared project context:
 - Target file: $target_file
 - Shared context file: $session_file
 
+Read \`$project_dir/AGENTS.md\` first if it exists.
+Read the shared context file next and use it as the durable TASK ARTIFACT and source of truth for the current task.
+Follow repo policy from \`AGENTS.md\` and task-specific requirements from the shared context file.
+Update the shared context file directly as part of your work, but only in the sections owned by your role.
+Do not rewrite the whole shared context file.
+If the artifact is still placeholder-only and your role is not \`BUILDER\`, return \`NOT READY\` in the required response format and stop.
+Work inside \`$project_dir\`.
+Treat \`Target file\` as a starting point, not a hard restriction, unless the artifact explicitly says otherwise.
+If your work satisfies the relevant criteria, validation passes, and no unresolved high-severity issue remains, publish the intended files with \`bash scripts/codex-commit.sh --push ...\`.
+Never ask for commit approval.
+Do not include commit message or commit request text in the response unless explicitly requested.
+Use the output format already defined in the shared context file.
+
 $prompt_body
-
-$(workflow_contract)
-
-Read and update this artifact shape in the shared context file:
-$(task_artifact_template)
-
-$(common_tail_template)
-
-Return:
-1. Your role.
-2. A short summary of how you will use the shared task artifact.
-3. A short summary of what you should avoid.
-4. Any questions about the project folder or scope.
-
-If you have no questions, say you are ready.
 EOF
 }
 
 launch_ghostty_session() {
+  local project_dir=$1
+  shift
   local prompt1=$1
   local prompt2=$2
   local prompt3=$3
@@ -617,7 +595,7 @@ tell application "Ghostty"
 
   set launcherWindow to front window
   set cfg to new surface configuration
-  set initial working directory of cfg to $(applescript_string "$HOME")
+  set initial working directory of cfg to $(applescript_string "$project_dir")
   set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1"}
   set win to new window with configuration cfg
   set pane1 to terminal 1 of selected tab of win
@@ -626,25 +604,35 @@ tell application "Ghostty"
   set pane4 to split pane2 direction right with configuration cfg
 
   input text "codex" to pane1
-  input text "codex" to pane2
-  input text "codex" to pane3
-  input text "codex" to pane4
-
   send key "enter" to pane1
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text "codex" to pane2
   send key "enter" to pane2
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text "codex" to pane3
   send key "enter" to pane3
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text "codex" to pane4
   send key "enter" to pane4
 
-  delay 2
+  delay ${CODEX_STARTUP_DELAY_SECONDS}
 
   input text $(applescript_string "$prompt1") to pane1
-  input text $(applescript_string "$prompt3") to pane2
-  input text $(applescript_string "$prompt2") to pane3
-  input text $(applescript_string "$prompt4") to pane4
-
   send key "enter" to pane1
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text $(applescript_string "$prompt3") to pane2
   send key "enter" to pane2
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text $(applescript_string "$prompt2") to pane3
   send key "enter" to pane3
+  delay ${CODEX_PROMPT_STAGGER_SECONDS}
+
+  input text $(applescript_string "$prompt4") to pane4
   send key "enter" to pane4
 
   try
@@ -696,7 +684,7 @@ main() {
     prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file")")
   done
 
-  launch_ghostty_session "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
+  launch_ghostty_session "$project_dir" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
 }

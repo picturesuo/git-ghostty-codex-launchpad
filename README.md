@@ -6,6 +6,8 @@ A macOS Ghostty launcher that opens a ready-to-work Codex setup with multiple pa
 
 Starting a coding session usually involves repetitive setup: opening terminals, finding the project, creating context, and getting each agent into the right role. This project compresses that startup work into one launcher so the workflow is consistent every time.
 
+`ghostty-codex-launchpad` is the canonical repo for ongoing work. The duplicate `ghostty-codex-launcher` folder was the wrong place to keep evolving the project because the real launcher code and workflow engine already live here.
+
 ## What It Does
 
 - Opens a fresh Ghostty window and splits it into four panes
@@ -14,7 +16,7 @@ Starting a coding session usually involves repetitive setup: opening terminals, 
 - Starts Codex in each pane without sending `/fast`
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Seeds a shared task artifact contract so all four panes work from the same definition of success
-- Keeps the GitHub commit/push workflow built into the handoff
+- Prompts the roles to auto-publish successful completed work through the repo-local Git helper
 
 The visible left-to-right pane order is:
 
@@ -32,6 +34,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
+- Once a task meets that completion bar, the workflow is expected to publish the intended files with `bash scripts/codex-commit.sh --push ...`.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
 There is one first-pass exception:
