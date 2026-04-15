@@ -4,13 +4,16 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/codex-commit.sh [--push] [-m "commit message"] <path> [<path> ...]
+  bash scripts/codex-commit.sh --push -m "commit message" <path> [<path> ...]
+  bash scripts/codex-commit.sh --push <path> [<path> ...]
+  bash scripts/codex-commit.sh -m "commit message" <path> [<path> ...]
+  bash scripts/codex-commit.sh <path> [<path> ...]
 
 Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
   - Otherwise generates a short message from the staged paths.
-  - Pushes the current branch after commit when `--push` is set.
+  - With `--push`, commits first and then pushes the current branch.
 EOF
 }
 
@@ -155,5 +158,5 @@ printf 'Committed: %s\n' "$message"
 
 if [ "$push_after_commit" -eq 1 ]; then
   git push
-  echo "Pushed current branch."
+  printf 'Pushed current branch.\n'
 fi
