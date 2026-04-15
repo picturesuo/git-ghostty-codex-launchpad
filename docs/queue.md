@@ -1,11 +1,12 @@
 # Queue
 
 ## Now
-- [ ] Validate the shared git helper against a representative selected project repo so commit-and-push works outside the launchpad repo.
-- [ ] Exercise one launcher run against an existing project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md`, `docs/queue.md`, and usable publish guidance before prompts are sent.
-- [ ] Run one live launcher session and confirm the generated role prompts point at the shared helper path for the selected project.
+- [ ] Exercise one launcher run against an existing project and verify the bootstrap path now seeds `docs/knowledge.md` plus the new shared-context sections.
 
 ## Next
+- [ ] Verify the generated `BACKEND` prompt tells agents to search `docs/knowledge.md`, shared context, and nearby repo docs before broader search.
+- [ ] Verify the generated `CRITIC` prompt preserves pressure testing while adding targeted coaching guidance from weak spots.
+- [ ] Decide whether existing selected projects need a migration step to seed `docs/knowledge.md` when `AGENTS.md` and `docs/queue.md` already exist.
 - [ ] Decide whether the shared helper should detect and warn on projects with no git remote before agents finish a task.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
 - [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
@@ -18,6 +19,9 @@
 - [ ] Waiting on concrete new launcher behavior requests.
 
 ## Discovered While Working
+- [ ] Edge case: verify relaunch behavior when an existing shared-context file predates the new `Reusable Knowledge` and `Weak Spots / Coaching` sections.
+- [ ] Edge case: verify the launcher does not overwrite an existing project `docs/knowledge.md`.
+- [ ] Cleanup: decide whether the starter `docs/knowledge.md` headings should be compacted further once real usage patterns appear.
 - [ ] Edge case: define how auto-publish should behave on a detached HEAD or on branches without an upstream remote.
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.
 - [ ] Edge case: verify the shared helper still refuses paths outside the selected project root when called by absolute path from another repo.

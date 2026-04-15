@@ -267,6 +267,7 @@ Keep it current.
 - If a shared context file exists, use it as the durable task artifact for the current task.
 - Update only the sections or artifact IDs owned by your role.
 - Do not rewrite the whole shared context file.
+- Keep durable reusable knowledge in `docs/knowledge.md`; keep current-task state in the shared context file.
 
 ## Working Rules
 - Keep scope tight.
@@ -298,6 +299,22 @@ EOF
 
 ## Discovered While Working
 - [ ] Fill this in as the session learns new details.
+EOF
+  fi
+
+  if [[ ! -e "$project_dir/docs/knowledge.md" ]]; then
+    cat > "$project_dir/docs/knowledge.md" <<'EOF'
+# Knowledge
+
+## User-Provided Knowledge
+- Capture durable user guidance, preferences, and constraints that should survive past a single task.
+
+## Project Facts
+- Capture stable project facts, decisions, and summaries worth reusing across tasks.
+
+## Retrieval Hints
+- Search this file, the shared context file, and nearby repo docs with `rg` before broader search.
+- Label each note by source when useful: `user`, `repo`, or `external`.
 EOF
   fi
 }
@@ -397,6 +414,10 @@ workflow_contract() {
 - Treat `Target file` as a starting point, not a hard restriction, unless the artifact explicitly says otherwise.
 - Do not invent unrelated requirements.
 - State assumptions as `Q` or `R` items.
+- Keep durable reusable knowledge in `docs/knowledge.md`; keep current-task state in the shared context file.
+- Prefer lightweight local retrieval first: search `docs/knowledge.md`, the shared context, and nearby repo docs with `rg` before broader search.
+- Use online search only when local project context and recorded knowledge are insufficient for the task.
+- Treat user-provided knowledge, repo facts, and search-derived information as distinct sources and label them when recording reusable notes.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
 - When that completion bar is met, publish the intended files with `bash $CODEX_COMMIT_HELPER <paths...>`.
@@ -498,7 +519,18 @@ task_artifact_template() {
 - SC2 -> Verify role prompts do not stop only because the artifact is still in bootstrap form.
 - SC3 -> Relaunch against an existing shared-context file and confirm it is not overwritten.
 
-10. Status
+10. Reusable Knowledge
+- User-provided knowledge: none captured yet
+- Durable project facts: none captured yet
+- Retrieval path: search `docs/knowledge.md`, this shared context file, and nearby repo docs with `rg` before broader search.
+- Ingestible sources in v1: direct user instructions, pasted facts, stable repo docs, and short summaries of resolved task decisions.
+
+11. Weak Spots / Coaching
+- Weak spots: none recorded yet
+- Coaching guidance: none recorded yet
+- Learning loop: `CRITIC` should turn repeated or high-severity weak points into targeted coaching guidance that later roles can reuse.
+
+12. Status
 - State: waiting for first concrete task
 - Outstanding issues: none yet
 - Next action: refine this artifact when the user gives the first specific request
@@ -620,11 +652,14 @@ Responsibilities:
 - Implement the smallest change that satisfies the artifact.
 - Keep changes tied directly to `SC` and `INV` IDs.
 - Update implementation notes and Status in the artifact.
+- Own the first knowledge-loop slice by storing durable reusable knowledge in `docs/knowledge.md` and reusing it during implementation.
 
 Rules:
 - If there is no concrete task yet, wait.
 - If the user redirects you, refine the minimum artifact sections you need and proceed.
 - Do not expand scope beyond the artifact unless a blocker forces it.
+- In v1, treat direct user instructions, pasted facts, stable repo docs, and shared-context summaries as ingestible knowledge when they are likely to matter again.
+- Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Do not claim final verification.
 - Publish only after verified completion with `bash $CODEX_COMMIT_HELPER ...`.
 EOF
@@ -636,12 +671,15 @@ ROLE: CRITIC
 
 Responsibilities:
 - Refine weak criteria and challenge risky assumptions.
+- Preserve the existing pressure-testing role as the primary owner of critique.
 - Record `PASS`, `FAIL`, or `NOT VERIFIED` against the artifact.
 - Add missing risks, failure modes, invariant judgments, and debugger guidance.
+- Detect recurring weak points from critique or recorded history and add targeted coaching guidance that later roles can reuse.
 
 Rules:
 - If there is no concrete task yet, wait.
 - Keep findings tied to artifact IDs.
+- Keep coaching guidance specific to observed weak points instead of generic advice.
 - Do not propose unrelated rewrites.
 - Do not publish failing or unverified work.
 EOF

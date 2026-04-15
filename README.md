@@ -16,6 +16,7 @@ Starting a coding session usually involves repetitive setup: opening terminals, 
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
+- Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
 - Prompts the roles to auto-publish successful completed work through one shared Git helper that operates on the selected project repo
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
 
@@ -24,7 +25,7 @@ The visible left-to-right pane order is:
 1. `BUILDER` - defines the first real task artifact, scope, constraints, success criteria, and invariants before implementation
 2. `BACKEND` - does most of the implementation work, mapped directly to the artifact criteria and constraints
 3. `DEBUGGER` - maps failures back to specific criteria or invariants and applies the minimum fix
-4. `CRITIC` - pressure-tests the artifact, adds risk and failure coverage, and acts as the verification gate with pass/fail judgments
+4. `CRITIC` - pressure-tests the artifact, adds risk and failure coverage, acts as the verification gate, and records targeted coaching guidance from recurring weak spots
 
 ## Workflow
 
@@ -39,13 +40,17 @@ The workflow rules are:
 - Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default when run from a normal branch.
 - If the current branch has no upstream, the helper uses `git push -u` to set it automatically; it refuses to push from a detached `HEAD` and fails fast if the configured remote does not exist.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
+- Durable reusable knowledge belongs in `docs/knowledge.md`, while the shared context file carries current-task state and active handoff notes.
+- The workflow should search `docs/knowledge.md`, the shared context, and nearby repo docs first; use broader search only when local context is insufficient.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
 Bootstrap behavior:
 
 - A fresh shared-context file starts with a usable bootstrap artifact instead of all-`TBD` sections.
+- A fresh project bootstrap also seeds `docs/knowledge.md` so user-provided knowledge and durable facts can be reused across later tasks with simple local search.
 - `BUILDER` should still refine that bootstrap artifact into task-specific criteria once the user gives a concrete request.
 - The other roles should refine the minimum sections they need when the user explicitly redirects them, rather than stopping at `NOT READY`.
+- `BACKEND` owns the first slice of knowledge ingest and retrieval, while `CRITIC` keeps the existing pressure-testing role and adds targeted coaching notes from observed weak points.
 - The launcher prompt wrapper stays intentionally short and relies on `AGENTS.md` plus the shared artifact for the rest of the durable workflow context.
 ## Files
 
