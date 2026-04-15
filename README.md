@@ -36,7 +36,8 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits and pushes against the selected project repo by default.
+- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default when run from a normal branch.
+- If the current branch has no upstream, the helper uses `git push -u` to set it automatically; it refuses to push from a detached `HEAD` and fails fast if the configured remote does not exist.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
