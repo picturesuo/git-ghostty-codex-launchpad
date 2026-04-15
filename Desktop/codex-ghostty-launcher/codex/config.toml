@@ -1,11 +1,14 @@
-model = "gpt-5.2-codex"
-model_reasoning_effort = "medium"
-tool_output_token_limit = 12000
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+model_verbosity = "medium"
+model_reasoning_summary = "concise"
+tool_output_token_limit = 8000
 
 # Keep a much larger safety margin so Codex can compact before quality drops.
-# Formula: 258000 - (tool_output_token_limit + 35000)
-# With tool_output_token_limit=12000 => 258000 - (12000 + 35000) = 211000
-model_auto_compact_token_limit = 211000
+# Formula: 258000 - (tool_output_token_limit + 90000)
+# With tool_output_token_limit=8000 => 258000 - (8000 + 90000) = 160000
+model_auto_compact_token_limit = 160000
+personality = "pragmatic"
 
 [features]
 ghost_commit = false
