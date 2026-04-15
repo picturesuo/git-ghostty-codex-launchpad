@@ -15,7 +15,15 @@ This repo currently documents the Codex operating workflow for the project. Keep
 
 This keeps prompt overhead low and reduces drift between turns.
 
-## Common Prompt Wrapper
+## Commit Defaults
+
+For this repo, the default is to commit every meaningful repo-visible change as soon as that unit of work is coherent. That includes code, config, workflow, and collaborator-facing docs changes that people need to review or use.
+
+Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
+
+## Common Base Prompt
+
+The launcher prepends this shared preamble before the role-specific prompt body.
 
 ```text
 Shared project context:
@@ -37,8 +45,6 @@ Never ask for commit approval.
 Do not include commit message or commit request text in the response unless explicitly requested.
 Use the output format already defined in the shared context file.
 ```
-
-The launcher sends this wrapper first, then appends exactly one role-specific block.
 
 ## Builder Prompt
 
@@ -107,15 +113,7 @@ Critic rules:
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 - Do not publish failing or unverified work.
 
-Under artifact updates, include:
-- refined criteria
-- added risks
-- added failure modes
-- verification results
-- invariant judgments
-- debugger guidance
-- identified ambiguities
-- status updates if changed
+Under artifact updates, include refined criteria, added risks, added failure modes, verification results, invariant judgments, debugger guidance, identified ambiguities, and status updates if changed.
 ```
 
 ## Debugger Prompt
@@ -131,20 +129,14 @@ Debugger responsibilities:
 - Re-run targeted verification for the affected criteria.
 - Update the artifact with diagnosis, fix applied, remaining uncertainty, and revised verification status.
 
-Rules:
+Debugger rules:
 - Prefer direct evidence over speculation.
 - If the failure cannot be reproduced, record that explicitly and note what was tried.
 - Do not broaden scope beyond the failing criteria unless a blocker requires it.
 - Map diagnosis and fix back to exact artifact IDs such as `SC1`, `FM1`, `R1`, `INV1`.
 - Publish with `bash scripts/codex-commit.sh --push ...` only after the fix restores verified completion.
 
-Under artifact updates, include:
-- reproduced failures
-- likely root cause
-- criteria rechecked
-- updated verification results
-- remaining uncertainty
-- status updates if changed
+Under artifact updates, include reproduced failures, likely root cause, criteria rechecked, updated verification results, remaining uncertainty, and status updates if changed.
 ```
 
 ## Queue-Manager Prompt
@@ -166,13 +158,7 @@ Rules:
 - Do not invent unrelated roadmap work.
 - Keep all queue updates tied to the current artifact and exact IDs where relevant.
 
-Under artifact updates, include:
-- queue/task breakdown changes
-- newly identified blockers
-- follow-up tasks
-- edge cases
-- cleanup items
-- status updates
+Under artifact updates, include queue/task breakdown changes, newly identified blockers, follow-up tasks, edge cases, cleanup items, and status updates.
 ```
 
 ## Response Format
