@@ -4,8 +4,8 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash /path/to/codex-commit.sh -m "commit message" [--no-push] [--remote origin] [--project-root /path/to/project] <path> [<path> ...]
-  bash /path/to/codex-commit.sh [--no-push] [--remote origin] [--project-root /path/to/project] <path> [<path> ...]
+  bash /path/to/codex-commit.sh -m "commit message" [--no-push] [--remote auto|<name>] [--project-root /path/to/project] <path> [<path> ...]
+  bash /path/to/codex-commit.sh [--no-push] [--remote auto|<name>] [--project-root /path/to/project] <path> [<path> ...]
 
 Behavior:
   - Stages only the paths you pass.
@@ -14,6 +14,8 @@ Behavior:
   - Pushes the current branch after a successful commit by default.
   - With --no-push, commits locally without pushing.
   - Uses the current working directory as the project root unless --project-root is provided.
+  - With --remote auto (default), prefers the repo's existing push remote and falls back
+    to searching the authenticated GitHub account for a matching repository name.
 EOF
 }
 
@@ -33,7 +35,7 @@ resolve_repo_root() {
 
 message=""
 push_after_commit=1
-remote_name="origin"
+remote_name="auto"
 explicit_project_root=""
 declare -a paths=()
 
@@ -129,24 +131,236 @@ current_branch() {
   git symbolic-ref --quiet --short HEAD 2>/dev/null || true
 }
 
+normalize_repo_key() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/\.git$//; s/[^a-z0-9]/ /g; s/[[:space:]]\+/ /g; s/^ //; s/ $//; s/ /-/g'
+}
+
+add_candidate_name() {
+  local candidate=$1 normalized existing
+
+  candidate="$(printf '%s' "$candidate" | sed 's/^ //; s/ $//')"
+  [ -n "$candidate" ] || return 0
+  normalized="$(normalize_repo_key "$candidate")"
+  [ -n "$normalized" ] || return 0
+
+  for existing in "${candidate_repo_names[@]:-}"; do
+    if [ "$existing" = "$normalized" ]; then
+      return 0
+    fi
+  done
+
+  candidate_repo_names+=("$normalized")
+}
+
+read_package_name() {
+  local package_file name
+
+  for package_file in "$project_root/package.json" "$repo_root/package.json"; do
+    if [ -f "$package_file" ]; then
+      name="$(sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$package_file" | head -n1)"
+      if [ -n "$name" ]; then
+        printf '%s\n' "$name"
+        return 0
+      fi
+    fi
+  done
+
+  return 1
+}
+
+read_readme_title() {
+  local readme_file heading
+
+  for readme_file in "$project_root/README.md" "$repo_root/README.md"; do
+    if [ -f "$readme_file" ]; then
+      heading="$(sed -n 's/^# \{0,1\}//p' "$readme_file" | head -n1 | sed 's/^ //; s/ $//')"
+      if [ -n "$heading" ]; then
+        printf '%s\n' "$heading"
+        return 0
+      fi
+    fi
+  done
+
+  return 1
+}
+
+infer_github_owner() {
+  if ! command -v gh >/dev/null 2>&1; then
+    return 1
+  fi
+
+  gh api user --jq '.login' 2>/dev/null || return 1
+}
+
+resolve_existing_remote() {
+  local upstream remote
+  local -a remotes=()
+
+  if [ "$remote_name" != "auto" ]; then
+    git remote get-url "$remote_name" >/dev/null 2>&1 || {
+      echo "Remote does not exist: $remote_name" >&2
+      exit 1
+    }
+    printf '%s\n' "$remote_name"
+    return 0
+  fi
+
+  upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+  if [ -n "$upstream" ]; then
+    printf '%s\n' "${upstream%%/*}"
+    return 0
+  fi
+
+  if git remote get-url origin >/dev/null 2>&1; then
+    printf '%s\n' "origin"
+    return 0
+  fi
+
+  while IFS= read -r remote; do
+    [ -n "$remote" ] && remotes+=("$remote")
+  done < <(git remote)
+
+  if [ "${#remotes[@]}" -eq 1 ]; then
+    printf '%s\n' "${remotes[0]}"
+    return 0
+  fi
+
+  return 1
+}
+
+find_matching_github_repo() {
+  local owner package_name readme_title repo_name project_name line name url normalized_name candidate score best_score ambiguous
+  local best_url=""
+  local best_name=""
+  local -a repo_rows=()
+  candidate_repo_names=()
+
+  owner="$(infer_github_owner)" || return 1
+
+  repo_name="$(basename "$repo_root")"
+  project_name="$(basename "$project_root")"
+  add_candidate_name "$repo_name"
+  add_candidate_name "$project_name"
+
+  if package_name="$(read_package_name 2>/dev/null)"; then
+    add_candidate_name "$package_name"
+  fi
+  if readme_title="$(read_readme_title 2>/dev/null)"; then
+    add_candidate_name "$readme_title"
+  fi
+
+  [ "${#candidate_repo_names[@]}" -gt 0 ] || return 1
+
+  for candidate in "${candidate_repo_names[@]}"; do
+    if gh repo view "$owner/$candidate" --json sshUrl --jq '.sshUrl' >/tmp/codex-commit-gh-match.$$ 2>/dev/null; then
+      cat /tmp/codex-commit-gh-match.$$
+      rm -f /tmp/codex-commit-gh-match.$$
+      return 0
+    fi
+  done
+
+  while IFS= read -r line; do
+    [ -n "$line" ] && repo_rows+=("$line")
+  done < <(gh repo list "$owner" --limit 500 --json name,sshUrl --jq '.[] | [.name, .sshUrl] | @tsv' 2>/dev/null)
+
+  best_score=0
+  ambiguous=0
+  for line in "${repo_rows[@]}"; do
+    name="${line%%$'\t'*}"
+    url="${line#*$'\t'}"
+    normalized_name="$(normalize_repo_key "$name")"
+    score=0
+
+    for candidate in "${candidate_repo_names[@]}"; do
+      if [ "$normalized_name" = "$candidate" ]; then
+        score=100
+        break
+      fi
+
+      case "$normalized_name" in
+        *"$candidate"*) score=$(( score < 70 ? 70 : score )) ;;
+      esac
+      case "$candidate" in
+        *"$normalized_name"*) score=$(( score < 60 ? 60 : score )) ;;
+      esac
+    done
+
+    if [ "$score" -gt "$best_score" ]; then
+      best_score="$score"
+      best_url="$url"
+      best_name="$name"
+      ambiguous=0
+    elif [ "$score" -eq "$best_score" ] && [ "$score" -gt 0 ] && [ "$name" != "$best_name" ]; then
+      ambiguous=1
+    fi
+  done
+
+  if [ "$best_score" -ge 70 ] && [ "$ambiguous" -eq 0 ] && [ -n "$best_url" ]; then
+    printf '%s\n' "$best_url"
+    return 0
+  fi
+
+  return 1
+}
+
+ensure_remote_for_url() {
+  local url=$1 name existing_url candidate index
+
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    existing_url="$(git remote get-url "$name" 2>/dev/null || true)"
+    if [ "$existing_url" = "$url" ]; then
+      printf '%s\n' "$name"
+      return 0
+    fi
+  done < <(git remote)
+
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    git remote add origin "$url"
+    printf 'origin\n'
+    return 0
+  fi
+
+  index=1
+  while :; do
+    candidate="github-auto-$index"
+    if ! git remote get-url "$candidate" >/dev/null 2>&1; then
+      git remote add "$candidate" "$url"
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    index=$((index + 1))
+  done
+}
+
+resolve_push_remote() {
+  local existing url remote
+
+  if existing="$(resolve_existing_remote)"; then
+    printf '%s\n' "$existing"
+    return 0
+  fi
+
+  url="$(find_matching_github_repo)" || {
+    echo "Could not resolve a push remote automatically. Configure a git remote or pass --remote <name>." >&2
+    exit 1
+  }
+
+  remote="$(ensure_remote_for_url "$url")"
+  printf 'Auto-linked remote %s -> %s\n' "$remote" "$url" >&2
+  printf '%s\n' "$remote"
+}
+
 push_current_branch() {
-  local branch=$1
+  local branch=$1 push_remote
 
   [ -n "$branch" ] || {
     echo "Refusing to push from a detached HEAD." >&2
     exit 1
   }
 
-  git remote get-url "$remote_name" >/dev/null 2>&1 || {
-    echo "Remote does not exist: $remote_name" >&2
-    exit 1
-  }
-
-  if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
-    git push
-  else
-    git push -u "$remote_name" "$branch"
-  fi
+  push_remote="$(resolve_push_remote)"
+  git push -u "$push_remote" "$branch"
 }
 
 generate_message() {
@@ -268,31 +482,21 @@ generate_message() {
     esac
   done
 
-  case "${#topics[@]}" in
-    0)
-      printf '%s\n' "$action changes"
-      ;;
-    1)
-      printf '%s %s\n' "$action" "${topics[0]}"
-      ;;
-    2)
-      printf '%s %s and %s\n' "$action" "${topics[0]}" "${topics[1]}"
-      ;;
-    *)
-      local joined=""
-      local i
-
-      for ((i=0; i<${#topics[@]}-1; i++)); do
-        if [ -n "$joined" ]; then
-          joined+=", "
-        fi
-        joined+="${topics[i]}"
-      done
-
-      printf '%s %s, and %s\n' "$action" "$joined" "${topics[$((${#topics[@]} - 1))]}"
-      ;;
-  esac
+  if [ "${#topics[@]}" -eq 0 ]; then
+    printf '%s\n' "$action ${#rel_paths[@]} files"
+  elif [ "${#topics[@]}" -eq 1 ]; then
+    printf '%s\n' "$action ${topics[0]}"
+  elif [ "${#topics[@]}" -eq 2 ]; then
+    printf '%s\n' "$action ${topics[0]} and ${topics[1]}"
+  else
+    printf '%s\n' "$action ${topics[0]}, ${topics[1]}, and related files"
+  fi
 }
+
+if git diff --cached --quiet -- "${rel_paths[@]}"; then
+  echo "No staged changes for the requested paths."
+  exit 0
+fi
 
 if [ -z "$message" ]; then
   message="$(generate_message)"
@@ -301,23 +505,10 @@ fi
 message="$(printf '%s' "$message" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
 [ -n "$message" ] || { echo "Commit message is empty." >&2; exit 1; }
 
-if git diff --cached --quiet -- "${rel_paths[@]}"; then
-  if [ "$push_after_commit" -eq 1 ]; then
-    branch="$(current_branch)"
-    push_current_branch "$branch"
-    printf 'Pushed branch: %s\n' "$branch"
-    exit 0
-  fi
-
-  echo "No staged changes for the requested paths."
-  exit 0
-fi
-
 git commit -m "$message" -- "${rel_paths[@]}"
 printf 'Committed: %s\n' "$message"
 
 if [ "$push_after_commit" -eq 1 ]; then
-  branch="$(current_branch)"
-  push_current_branch "$branch"
-  printf 'Pushed branch: %s\n' "$branch"
+  push_current_branch "$(current_branch)"
+  printf 'Pushed current branch.\n'
 fi
