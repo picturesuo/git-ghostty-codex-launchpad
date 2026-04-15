@@ -1,12 +1,12 @@
 # Queue
 
 ## Now
-- [ ] Exercise one launcher run against an existing project and verify the bootstrap path now seeds `docs/knowledge.md` plus the new shared-context sections.
+- [ ] Decide whether migrated shared-context sections should stay as lightweight `###` headings or be normalized into numbered artifact sections in a later slice.
 
 ## Next
-- [ ] Verify the generated `BACKEND` prompt tells agents to search `docs/knowledge.md`, shared context, and nearby repo docs before broader search.
-- [ ] Verify the generated `CRITIC` prompt preserves pressure testing while adding targeted coaching guidance from weak spots.
-- [ ] Decide whether existing selected projects need a migration step to seed `docs/knowledge.md` when `AGENTS.md` and `docs/queue.md` already exist.
+- [ ] Verify one live Ghostty launch against an existing repo now that the shared-context migration path is in place.
+- [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
+- [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
 - [ ] Decide whether the shared helper should detect and warn on projects with no git remote before agents finish a task.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
 - [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
@@ -19,9 +19,9 @@
 - [ ] Waiting on concrete new launcher behavior requests.
 
 ## Discovered While Working
-- [ ] Edge case: verify relaunch behavior when an existing shared-context file predates the new `Reusable Knowledge` and `Weak Spots / Coaching` sections.
-- [ ] Edge case: verify the launcher does not overwrite an existing project `docs/knowledge.md`.
-- [ ] Cleanup: decide whether the starter `docs/knowledge.md` headings should be compacted further once real usage patterns appear.
+- [ ] Edge case: verify migration behavior when a legacy shared-context file already contains one of the two new sections but not both.
+- [ ] Edge case: verify migration placement when the task artifact has no `Status` section or uses nonstandard numbering.
+- [ ] Cleanup: decide whether the migrated `###` knowledge/coaching headings should be normalized into numbered artifact sections once the format stabilizes.
 - [ ] Edge case: define how auto-publish should behave on a detached HEAD or on branches without an upstream remote.
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.
 - [ ] Edge case: verify the shared helper still refuses paths outside the selected project root when called by absolute path from another repo.

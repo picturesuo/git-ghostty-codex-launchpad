@@ -591,6 +591,86 @@ compact_shared_context_boilerplate() {
   fi
 }
 
+ensure_shared_context_knowledge_sections() {
+  local session_file=$1
+  local content updated
+
+  [[ -f "$session_file" ]] || return
+
+  content="$(cat "$session_file")"
+  updated="$content"
+
+  if [[ "$updated" != *"## TASK ARTIFACT"* ]]; then
+    return
+  fi
+
+  if [[ "$updated" == *"Reusable Knowledge"* && "$updated" == *"Weak Spots / Coaching"* ]]; then
+    return
+  fi
+
+  updated="$(
+    printf '%s\n' "$updated" | awk '
+      BEGIN {
+        in_artifact = 0
+        inserted = 0
+      }
+
+      function print_block() {
+        if (inserted) {
+          return
+        }
+
+        print ""
+        print "### Reusable Knowledge"
+        print "- User-provided knowledge: none captured yet"
+        print "- Durable project facts: none captured yet"
+        print "- Retrieval path: search `docs/knowledge.md`, this shared context file, and nearby repo docs with `rg` before broader search."
+        print "- Ingestible sources in v1: direct user instructions, pasted facts, stable repo docs, and short summaries of resolved task decisions."
+        print ""
+        print "### Weak Spots / Coaching"
+        print "- Weak spots: none recorded yet"
+        print "- Coaching guidance: none recorded yet"
+        print "- Learning loop: `CRITIC` should turn repeated or high-severity weak points into targeted coaching guidance that later roles can reuse."
+        print ""
+        inserted = 1
+      }
+
+      /^## TASK ARTIFACT$/ {
+        in_artifact = 1
+        print
+        next
+      }
+
+      in_artifact && /^## / {
+        print_block()
+        in_artifact = 0
+        print
+        next
+      }
+
+      in_artifact && /^[0-9]+\. Status$/ {
+        print_block()
+        print
+        next
+      }
+
+      {
+        print
+      }
+
+      END {
+        if (in_artifact && !inserted) {
+          print_block()
+        }
+      }
+    '
+  )"
+
+  if [[ "$updated" != "$content" ]]; then
+    printf '%s' "$updated" > "$session_file"
+  fi
+}
+
 make_shared_context() {
   local project_name=$1
   local project_dir=$2
@@ -601,6 +681,7 @@ make_shared_context() {
 
   if [[ -e "$session_file" ]]; then
     compact_shared_context_boilerplate "$session_file"
+    ensure_shared_context_knowledge_sections "$session_file"
     SHARED_CONTEXT_FILE="$session_file"
     return
   fi
