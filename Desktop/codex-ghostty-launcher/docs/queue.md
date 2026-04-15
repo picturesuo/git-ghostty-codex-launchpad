@@ -4,6 +4,9 @@
 - [ ] Validate default commit-and-push behavior once this repo has a configured GitHub remote and branch upstream.
 
 ## Next
+- [ ] Compare actual launcher prompt output against the README prompt blocks and remove any remaining duplicated lines.
+- [ ] Decide whether the shared artifact should own the bootstrap fallback so the base prompt can stay shorter.
+- [ ] Split prompt source blocks out of `README.md` if the launcher starts consuming them directly.
 - [ ] Add one concrete example showing how to use `scripts/codex-commit.sh` for a meaningful multi-file workflow change.
 - [ ] Add a short note clarifying when queue-only maintenance changes are too low-signal to commit alone.
 - [ ] Decide whether the README should mention that docs collaborators need are commit-worthy even when no code changed.
@@ -22,4 +25,7 @@
 - [ ] Edge case: verify the role prompt still works when `AGENTS.md` is missing and the shared artifact is the only durable context.
 - [ ] Edge case: verify the wrapper-plus-role-block ordering still renders cleanly if a future role prompt adds another fenced block or numbered list.
 - [ ] Edge case: verify long absolute paths in the shared wrapper remain readable in launched Codex panes.
+- [ ] Edge case: verify the restored `QUEUE-MANAGER` role block stays in sync with the actual launcher role list.
+- [ ] Edge case: verify the shorter base prompt still preserves auto-commit behavior and shared-artifact ownership across all roles.
 - [ ] Cleanup: reduce prompt drift by generating README prompt blocks from the canonical launcher source if this duplication changes again.
+- [ ] Cleanup: move prompt source blocks into a dedicated generated file if README starts accumulating prompt-maintenance churn again.
