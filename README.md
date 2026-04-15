@@ -12,12 +12,12 @@ Starting a coding session usually involves repetitive setup: opening terminals, 
 
 - Opens a fresh Ghostty window and splits it into four panes
 - Prompts for the project you want to work on and tries to find it locally
-- Writes a shared session note in `~/.codex/`
-- Starts Codex in each pane without sending `/fast`
+- Writes a shared session note in `~/.codex/` and preserves it across relaunches
+- Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
-- Seeds a shared task artifact contract so all four panes work from the same definition of success
+- Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Prompts the roles to auto-publish successful completed work through the repo-local Git helper
-- Bootstraps a missing project `AGENTS.md` and `docs/queue.md` so a fresh project has a usable first pass instead of three panes immediately stopping at `NOT READY`
+- Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
 
 The visible left-to-right pane order is:
 
@@ -28,7 +28,8 @@ The visible left-to-right pane order is:
 
 ## Workflow
 
-All four panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`.
+All four panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`, and existing task state should survive relaunches.
+Durable repo policy belongs in `AGENTS.md`; the shared context should carry the current task artifact and status instead of duplicating the full workflow contract.
 
 The workflow rules are:
 
@@ -39,11 +40,12 @@ The workflow rules are:
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
-There is one first-pass exception:
+Bootstrap behavior:
 
-- When a brand-new tab opens, the artifact may still be empty or only contain placeholders.
-- On that first pass, `BUILDER` should initialize the artifact.
-- On that first pass, the other roles should not treat the missing artifact as a problem yet; they should acknowledge that Builder needs to initialize it first.
+- A fresh shared-context file starts with a usable bootstrap artifact instead of all-`TBD` sections.
+- `BUILDER` should still refine that bootstrap artifact into task-specific criteria once the user gives a concrete request.
+- The other roles should refine the minimum sections they need when the user explicitly redirects them, rather than stopping at `NOT READY`.
+- The launcher prompt wrapper stays intentionally short and relies on `AGENTS.md` plus the shared artifact for the rest of the durable workflow context.
 ## Files
 
 - `git-ghostty-codex-launchpad.sh` - main launcher

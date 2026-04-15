@@ -1,12 +1,15 @@
 # Queue
 
 ## Now
-- [ ] Exercise one launcher run against a project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md` and `docs/queue.md` first.
+- [ ] Exercise one launcher run against an existing project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md` and `docs/queue.md` before prompts are sent.
+- [ ] Exercise one launcher relaunch against an existing shared-context file to confirm the launcher preserves task state instead of resetting it.
+- [ ] Run one live launcher session and compare startup context usage before and after the prompt/shared-context compaction pass.
 
 ## Next
 - [ ] Decide whether to keep the unused `QUEUE-MANAGER` prompt template as future scaffolding or remove it from the launcher source.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
 - [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
+- [ ] Decide whether the launcher should compact repeated boilerplate in existing project-local `AGENTS.md` files or leave that to repo owners.
 
 ## Later
 - [ ] Expand subsystem docs only when the project grows beyond a few scripts.
@@ -25,5 +28,8 @@
 - [ ] Edge case: verify commit helper behavior when committing from outside the repo directory.
 - [ ] Small improvement: add a short validation checklist if shell-based checks grow beyond `shellcheck`.
 - [ ] Small improvement: document any repeated Ghostty or AppleScript setup gotchas once they recur.
+- [ ] Edge case: verify `codex "<prompt>"` launch-time handoff still behaves correctly when the prompt contains quotes, backticks, or long multiline content.
+- [ ] Edge case: verify legacy shared-context files with hand-edited text around the generated boilerplate still compact safely.
 - [ ] Small improvement: add a release checklist if this repo starts shipping tagged versions.
 - [ ] Cleanup: remove duplicate local workspaces once the canonical repo path is stable.
+- [ ] Cleanup: remove the unused `QUEUE-MANAGER` template if the four-pane launcher will stay fixed.

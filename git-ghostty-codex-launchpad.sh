@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-CODEX_STARTUP_DELAY_SECONDS=3
+SHELL_STARTUP_DELAY_SECONDS=1.5
 CODEX_PROMPT_STAGGER_SECONDS=2
 
 applescript_string() {
@@ -9,6 +9,12 @@ applescript_string() {
   value=${value//\\/\\\\}
   value=${value//\"/\\\"}
   printf '"%s"' "$value"
+}
+
+shell_single_quote() {
+  local value=$1
+  value=${value//\'/\'\\\'\'}
+  printf "'%s'" "$value"
 }
 
 slugify() {
@@ -238,33 +244,11 @@ sanitize_relative_file_path() {
   printf '%s' "$value"
 }
 
-create_new_project() {
+seed_project_workflow_files() {
   local project_name=$1
-  local requested_file=$2
-  local project_root project_dir target_file parent_dir
-  local project_slug
+  local project_dir=$2
 
-  project_slug="$(slugify "$project_name")"
-  if [[ -z "$project_slug" ]]; then
-    project_slug="new-project"
-  fi
-
-  target_file="$(sanitize_relative_file_path "$requested_file")"
-  if [[ -z "$target_file" ]]; then
-    target_file="AGENTS.md"
-  fi
-
-  project_root="$(default_new_project_root)"
-  project_dir="$project_root/$project_slug"
-
-  mkdir -p "$project_dir"
   mkdir -p "$project_dir/docs"
-  parent_dir="$(dirname "$project_dir/$target_file")"
-  mkdir -p "$parent_dir"
-
-  if [[ ! -e "$project_dir/$target_file" ]]; then
-    : > "$project_dir/$target_file"
-  fi
 
   if [[ ! -e "$project_dir/AGENTS.md" ]]; then
     cat > "$project_dir/AGENTS.md" <<EOF
@@ -312,6 +296,36 @@ EOF
 - [ ] Fill this in as the session learns new details.
 EOF
   fi
+}
+
+create_new_project() {
+  local project_name=$1
+  local requested_file=$2
+  local project_root project_dir target_file parent_dir
+  local project_slug
+
+  project_slug="$(slugify "$project_name")"
+  if [[ -z "$project_slug" ]]; then
+    project_slug="new-project"
+  fi
+
+  target_file="$(sanitize_relative_file_path "$requested_file")"
+  if [[ -z "$target_file" ]]; then
+    target_file="AGENTS.md"
+  fi
+
+  project_root="$(default_new_project_root)"
+  project_dir="$project_root/$project_slug"
+
+  mkdir -p "$project_dir"
+  parent_dir="$(dirname "$project_dir/$target_file")"
+  mkdir -p "$parent_dir"
+
+  if [[ ! -e "$project_dir/$target_file" ]]; then
+    : > "$project_dir/$target_file"
+  fi
+
+  seed_project_workflow_files "$project_name" "$project_dir"
 
   CREATED_PROJECT_DIR="$project_dir"
   CREATED_TARGET_FILE="$target_file"
@@ -368,6 +382,45 @@ workflow_contract() {
 - Do not repeat repo policy in every prompt if `AGENTS.md` already covers it.
 - Keep prompts short, concrete, and role-specific.
 - Prefer clear ownership over overlapping responsibilities.
+- The launcher may seed a generic bootstrap artifact before the first concrete user task exists.
+- Refine the bootstrap artifact into task-specific details as soon as the user gives a concrete request.
+- Do not return `NOT READY` solely because the artifact is still in its bootstrap state.
+- Do not use `/fast` or enable fast mode as part of this workflow.
+- Do not rewrite the whole shared context file.
+- Update only the sections or artifact IDs owned by your role.
+- Preserve useful existing content.
+- Work inside the project directory.
+- Treat `Target file` as a starting point, not a hard restriction, unless the artifact explicitly says otherwise.
+- Do not invent unrelated requirements.
+- State assumptions as `Q` or `R` items.
+- No implementation starts before initial success criteria exist.
+- No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
+- When that completion bar is met, publish the intended files with `bash scripts/codex-commit.sh --push <paths...>`.
+- Do not auto-publish partial, failing, or unverified work.
+- Reference artifact IDs exactly: `SC1`, `INV1`, `FM1`, `R1`, `Q1`, `F1`.
+- Keep scope tight and avoid task expansion unless a true blocker is identified.
+- Distinguish clearly between goal, implementation, verification, and diagnosis.
+- Prefer structured, low-verbosity output that later roles can reuse directly.
+- Run the lightest checks that materially reduce risk.
+- Only claim verification that was actually performed.
+- Record verified items and remaining uncertainty in the artifact.
+- If validation is incomplete or failing, do not publish; record why in the artifact.
+- Never ask for commit approval.
+- Do not include commit message or commit request text in the response unless explicitly requested.
+- Stage only intended files inside the project directory.
+- If nothing changed, do not commit.
+EOF
+}
+
+legacy_workflow_contract_v1() {
+  cat <<'EOF'
+## Workflow Contract
+
+- `AGENTS.md` is the durable repo policy.
+- Use the shared context file as the durable TASK ARTIFACT and source of truth.
+- Do not repeat repo policy in every prompt if `AGENTS.md` already covers it.
+- Keep prompts short, concrete, and role-specific.
+- Prefer clear ownership over overlapping responsibilities.
 - On the first pass in a newly opened tab, the artifact may still be empty or only contain placeholders. Do not treat that as a failure.
 - If you are the Builder and the artifact is still empty, initialize it before implementation.
 - If you are not the Builder and the artifact is still empty on the first pass, return `NOT READY` in the normal response format and stop.
@@ -403,48 +456,48 @@ task_artifact_template() {
 ## TASK ARTIFACT
 
 1. Goal
-- TBD
+- Capture the next concrete request without blocking startup on placeholder setup.
 
 2. Scope
-- In scope: TBD
-- Out of scope: TBD
+- In scope: refine this artifact and make the smallest directly requested change once the task is clear.
+- Out of scope: unrelated expansion before a concrete request exists.
 
 3. Constraints
-- Technical constraints: TBD
-- Product constraints: TBD
-- Time or complexity constraints: TBD
+- Technical constraints: keep edits scoped to the selected project and preserve existing shared-context state across relaunches.
+- Product constraints: direct user instructions override workflow defaults when they conflict.
+- Time or complexity constraints: prefer the smallest safe change that unblocks work.
 
 4. Success Criteria
-- SC1: TBD
-- SC2: TBD
-- SC3: TBD
+- SC1: The shared context starts with usable artifact fields so a fresh session can begin immediately.
+- SC2: The first role handling a concrete task can refine this bootstrap artifact instead of returning `NOT READY`.
+- SC3: Relaunching the launcher preserves any existing shared-context task state.
 
 5. Invariants
-- INV1: TBD
-- INV2: TBD
+- INV1: Preserve user-provided instructions and existing task state once they exist.
+- INV2: Keep work scoped to the selected project unless the user explicitly redirects it.
 
 6. Implementation Plan
-- TBD
+- Refine the artifact just enough for the active role to proceed when the first concrete request arrives.
 
 7. Failure Modes
-- FM1: TBD
-- FM2: TBD
+- FM1: The launcher resets the shared artifact back to placeholders and destroys active task context.
+- FM2: Roles refuse to work because the artifact never moves past an empty bootstrap state.
 
 8. Risks / Open Questions
-- R1: TBD
-- R2: TBD
-- Q1: TBD
-- Q2: TBD
+- R1: A bootstrap artifact can still be too generic if the first concrete user request is not recorded promptly.
+- R2: Some projects may still need repo-local instructions seeded before role prompts are useful.
+- Q1: The first role to act should refine the artifact further if the user gives a concrete task.
+- Q2: User overrides take precedence if the workflow and the request conflict.
 
 9. Test Mapping
-- SC1 -> TBD
-- SC2 -> TBD
-- SC3 -> TBD
+- SC1 -> Inspect a newly created shared-context file for fully populated bootstrap sections.
+- SC2 -> Verify role prompts do not stop only because the artifact is still in bootstrap form.
+- SC3 -> Relaunch against an existing shared-context file and confirm it is not overwritten.
 
 10. Status
-- State: not started
-- Outstanding issues: TBD
-- Next action: TBD
+- State: waiting for first concrete task
+- Outstanding issues: none yet
+- Next action: refine this artifact when the user gives the first specific request
 EOF
 }
 
@@ -458,6 +511,50 @@ Use this end-of-turn format every time:
 EOF
 }
 
+response_format_template() {
+  cat <<'EOF'
+Return only:
+1. Summary
+2. Artifact updates
+3. Changed files
+4. Why
+EOF
+}
+
+compact_shared_context_boilerplate() {
+  local session_file=$1
+  local content updated workflow tail
+
+  [[ -f "$session_file" ]] || return
+
+  content="$(cat "$session_file")"
+  updated="$content"
+  tail="$(common_tail_template)"
+
+  for workflow in "$(workflow_contract)" "$(legacy_workflow_contract_v1)"; do
+    updated="${updated/$'\n\n'"$workflow"$'\n\n'/$'\n\n'}"
+    updated="${updated/"$workflow"$'\n\n'/}"
+  done
+
+  if [[ "$updated" == *"## Workflow Contract"* && "$updated" == *"## TASK ARTIFACT"* ]]; then
+    updated="$(
+      printf '%s\n' "$updated" | awk '
+        BEGIN { drop = 0 }
+        $0 == "## Workflow Contract" { drop = 1; next }
+        drop && $0 == "## TASK ARTIFACT" { drop = 0; print; next }
+        !drop { print }
+      '
+    )"
+  fi
+
+  updated="${updated/$'\n\n'"$tail"$'\n'/$'\n'}"
+  updated="${updated/$'\n\n'"$tail"/}"
+
+  if [[ "$updated" != "$content" ]]; then
+    printf '%s' "$updated" > "$session_file"
+  fi
+}
+
 make_shared_context() {
   local project_name=$1
   local project_dir=$2
@@ -465,6 +562,12 @@ make_shared_context() {
   local session_dir="$HOME/.codex"
   local session_file="$session_dir/$(slugify "$project_name")-shared-context.md"
   mkdir -p "$session_dir"
+
+  if [[ -e "$session_file" ]]; then
+    compact_shared_context_boilerplate "$session_file"
+    SHARED_CONTEXT_FILE="$session_file"
+    return
+  fi
 
   cat > "$session_file" <<EOF
 # Codex shared session context
@@ -474,14 +577,7 @@ make_shared_context() {
 - Target file: $target_file
 - Session source of truth: this file
 
-This session is for the named project only.
-Wait for the user to give the next instruction before making changes.
-
-$(workflow_contract)
-
 $(task_artifact_template)
-
-$(common_tail_template)
 EOF
 
   SHARED_CONTEXT_FILE="$session_file"
@@ -500,20 +596,15 @@ role_prompt() {
       prompt_body="$(cat <<'EOF'
 ROLE: BUILDER
 
-Builder responsibilities:
-- If the artifact is still placeholder-only, initialize it before implementation.
-- Clarify goal, scope, constraints, initial success criteria, initial invariants, initial failure modes, initial risks, initial open questions, initial test mapping, and status in the artifact.
+Responsibilities:
+- Initialize or refine Goal, Scope, Constraints, Success Criteria, Invariants, Failure Modes, Risks / Open Questions, Test Mapping, and Status.
 - Do not start implementation before initial success criteria exist.
-- Initialize and refine the artifact so other roles can act without guessing.
 - If a separate implementation role exists, stop after artifact setup and status update.
 
 Rules:
+- Use exact IDs such as `SC1`, `INV1`, `FM1`, `R1`, and `Q1`.
 - Keep scope tight.
-- Do not invent unrelated product requirements.
 - Do not claim verification you did not perform.
-- Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
-
-Under artifact updates, include Goal, Scope, Constraints, Success Criteria, Invariants, Failure Modes, Risks / Open Questions, Test Mapping, and Status.
 EOF
 )"
       ;;
@@ -521,22 +612,17 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: BACKEND
 
-Backend responsibilities:
-- Treat the shared artifact as the implementation contract and do most of the code changes needed to satisfy it.
-- Translate the Builder plan into concrete code changes.
-- Keep implementation tightly scoped to the artifact and constraints.
-- Leave verification pressure and pass/fail judgment to the Critic.
-- If your work completes the task and the artifact shows verified success, publish the intended files with `bash scripts/codex-commit.sh --push ...`.
+Responsibilities:
+- Implement the smallest change that satisfies the artifact.
+- Keep changes tied directly to `SC` and `INV` IDs.
+- Update implementation notes and Status in the artifact.
 
 Rules:
-- On the first pass, if the artifact is still only placeholders, note that Builder must initialize it and wait for a real task definition.
-- Do most of the coding for implementation tasks.
-- Do not drift into generic approval or final verification.
+- If there is no concrete task yet, wait.
+- If the user redirects you, refine the minimum artifact sections you need and proceed.
 - Do not expand scope beyond the artifact unless a blocker forces it.
-- Keep changes minimal and directly tied to `SC` and `INV` IDs.
-- Do not auto-publish partial or unverified work.
-
-Under artifact updates, include implementation plan updates, criteria coverage, assumptions, any artifact clarifications needed for implementation, and Status.
+- Do not claim final verification.
+- Publish only after verified completion with `bash scripts/codex-commit.sh --push ...`.
 EOF
 )"
       ;;
@@ -544,23 +630,16 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: CRITIC
 
-Critic responsibilities:
-- Review the artifact and challenge the Builder assumptions.
-- Refine vague or gameable success criteria into concrete, testable checks.
-- Add missing edge cases, regressions, integration risks, and failure modes without expanding scope unnecessarily.
-- Verify implementation against the artifact and record explicit `PASS`, `FAIL`, or `NOT VERIFIED` judgments.
-- Record each invariant as `preserved`, `violated`, or `unverified`.
-- Provide guidance for Debugger focused on the first thing to inspect if a criterion fails.
+Responsibilities:
+- Refine weak criteria and challenge risky assumptions.
+- Record `PASS`, `FAIL`, or `NOT VERIFIED` against the artifact.
+- Add missing risks, failure modes, invariant judgments, and debugger guidance.
 
-Critic rules:
-- On the first pass, if the artifact is still placeholder-only, note that Builder must initialize it before real critique or verification can begin.
-- Do not invent large new product requirements.
+Rules:
+- If there is no concrete task yet, wait.
+- Keep findings tied to artifact IDs.
 - Do not propose unrelated rewrites.
-- Every critique must map to a criterion, invariant, risk, or failure mode.
-- Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 - Do not publish failing or unverified work.
-
-Under artifact updates, include refined criteria, added risks, added failure modes, verification results, invariant judgments, debugger guidance, identified ambiguities, and status updates if changed.
 EOF
 )"
       ;;
@@ -568,22 +647,16 @@ EOF
       prompt_body="$(cat <<'EOF'
 ROLE: DEBUGGER
 
-Debugger responsibilities:
-- Start from failing criteria, violated invariants, or critic findings in the artifact.
-- Reproduce the failure with the smallest possible loop before editing when practical.
-- Identify the most likely root cause, not just the visible symptom.
-- Make the smallest fix that addresses the confirmed cause.
-- Re-run targeted verification for the affected criteria.
-- Update the artifact with diagnosis, fix applied, remaining uncertainty, and revised verification status.
+Responsibilities:
+- Reproduce the smallest failing loop before editing when practical.
+- Fix the confirmed cause with the smallest change.
+- Recheck affected criteria and update diagnosis, verification, and Status.
 
-Debugger rules:
+Rules:
 - Prefer direct evidence over speculation.
 - If the failure cannot be reproduced, record that explicitly and note what was tried.
-- Do not broaden scope beyond the failing criteria unless a blocker requires it.
-- Map diagnosis and fix back to exact artifact IDs such as `SC1`, `FM1`, `R1`, `INV1`.
+- Keep diagnosis and fixes tied to artifact IDs.
 - Publish with `bash scripts/codex-commit.sh --push ...` only after the fix restores verified completion.
-
-Under artifact updates, include reproduced failures, likely root cause, criteria rechecked, updated verification results, remaining uncertainty, and status updates if changed.
 EOF
 )"
       ;;
@@ -619,17 +692,12 @@ Shared project context:
 - Shared context file: $session_file
 
 Read \`$project_dir/AGENTS.md\` first if it exists.
-Read the shared context file next and use it as the durable TASK ARTIFACT and source of truth for the current task.
-Follow repo policy from \`AGENTS.md\` and task-specific requirements from the shared context file.
+Read the shared context file second and use it as the task artifact for the current task.
 Update the shared context file directly as part of your work, but only in the sections owned by your role.
-Do not rewrite the whole shared context file.
-If the artifact is still placeholder-only and your role is not \`BUILDER\`, return \`NOT READY\` in the required response format and stop.
 Work inside \`$project_dir\`.
-Treat \`Target file\` as a starting point, not a hard restriction, unless the artifact explicitly says otherwise.
-If your work satisfies the relevant criteria, validation passes, and no unresolved high-severity issue remains, publish the intended files with \`bash scripts/codex-commit.sh --push ...\`.
-Never ask for commit approval.
-Do not include commit message or commit request text in the response unless explicitly requested.
-Use the output format already defined in the shared context file.
+Treat \`Target file\` as a starting point unless the artifact says otherwise.
+
+$(response_format_template)
 
 $prompt_body
 EOF
@@ -642,51 +710,53 @@ launch_ghostty_session() {
   local prompt2=$2
   local prompt3=$3
   local prompt4=$4
+  local prompt_file1 prompt_file2 prompt_file3 prompt_file4
+  local pane1_command pane2_command pane3_command pane4_command
 
-  osascript <<EOF
+  prompt_file1="$(mktemp -t codex-launchpad-prompt1.XXXXXX)"
+  prompt_file2="$(mktemp -t codex-launchpad-prompt2.XXXXXX)"
+  prompt_file3="$(mktemp -t codex-launchpad-prompt3.XXXXXX)"
+  prompt_file4="$(mktemp -t codex-launchpad-prompt4.XXXXXX)"
+
+  printf '%s' "$prompt1" > "$prompt_file1"
+  printf '%s' "$prompt2" > "$prompt_file2"
+  printf '%s' "$prompt3" > "$prompt_file3"
+  printf '%s' "$prompt4" > "$prompt_file4"
+
+  pane1_command="codex \"\$(cat $(shell_single_quote "$prompt_file1"))\""
+  pane2_command="codex \"\$(cat $(shell_single_quote "$prompt_file3"))\""
+  pane3_command="codex \"\$(cat $(shell_single_quote "$prompt_file2"))\""
+  pane4_command="codex \"\$(cat $(shell_single_quote "$prompt_file4"))\""
+
+  if ! osascript <<EOF
 tell application "Ghostty"
   activate
 
   set launcherWindow to front window
   set cfg to new surface configuration
   set initial working directory of cfg to $(applescript_string "$project_dir")
-  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1"}
+  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true"}
   set win to new window with configuration cfg
   set pane1 to terminal 1 of selected tab of win
   set pane2 to split pane1 direction right with configuration cfg
   set pane3 to split pane1 direction right with configuration cfg
   set pane4 to split pane2 direction right with configuration cfg
 
-  input text "codex" to pane1
+  delay ${SHELL_STARTUP_DELAY_SECONDS}
+
+  input text $(applescript_string "$pane1_command") to pane1
   send key "enter" to pane1
   delay ${CODEX_PROMPT_STAGGER_SECONDS}
 
-  input text "codex" to pane2
+  input text $(applescript_string "$pane2_command") to pane2
   send key "enter" to pane2
   delay ${CODEX_PROMPT_STAGGER_SECONDS}
 
-  input text "codex" to pane3
+  input text $(applescript_string "$pane3_command") to pane3
   send key "enter" to pane3
   delay ${CODEX_PROMPT_STAGGER_SECONDS}
 
-  input text "codex" to pane4
-  send key "enter" to pane4
-
-  delay ${CODEX_STARTUP_DELAY_SECONDS}
-
-  input text $(applescript_string "$prompt1") to pane1
-  send key "enter" to pane1
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$prompt3") to pane2
-  send key "enter" to pane2
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$prompt2") to pane3
-  send key "enter" to pane3
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$prompt4") to pane4
+  input text $(applescript_string "$pane4_command") to pane4
   send key "enter" to pane4
 
   try
@@ -694,6 +764,12 @@ tell application "Ghostty"
   end try
 end tell
 EOF
+  then
+    rm -f "$prompt_file1" "$prompt_file2" "$prompt_file3" "$prompt_file4"
+    return 1
+  fi
+
+  rm -f "$prompt_file1" "$prompt_file2" "$prompt_file3" "$prompt_file4"
 }
 
 main() {
@@ -721,11 +797,17 @@ main() {
     project_dir="$CREATED_PROJECT_DIR"
     target_file="$CREATED_TARGET_FILE"
   else
-    target_file="$(choose_target_file "$project_dir")"
-    if [[ -z "$target_file" ]]; then
-      target_file="README.md"
-      if [[ ! -e "$project_dir/$target_file" ]]; then
-        : > "$project_dir/$target_file"
+    if [[ ! -f "$project_dir/AGENTS.md" ]]; then
+      seed_project_workflow_files "$project_name" "$project_dir"
+      target_file="AGENTS.md"
+    else
+      seed_project_workflow_files "$project_name" "$project_dir"
+      target_file="$(choose_target_file "$project_dir")"
+      if [[ -z "$target_file" ]]; then
+        target_file="README.md"
+        if [[ ! -e "$project_dir/$target_file" ]]; then
+          : > "$project_dir/$target_file"
+        fi
       fi
     fi
   fi
@@ -743,4 +825,6 @@ main() {
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
