@@ -1,12 +1,12 @@
 # Queue
 
 ## Now
-- [ ] Exercise one launcher run against an existing project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md` and `docs/queue.md` before prompts are sent.
-- [ ] Exercise one launcher relaunch against an existing shared-context file to confirm the launcher preserves task state instead of resetting it.
-- [ ] Run one live launcher session and compare startup context usage before and after the prompt/shared-context compaction pass.
+- [ ] Validate the shared git helper against a representative selected project repo so commit-and-push works outside the launchpad repo.
+- [ ] Exercise one launcher run against an existing project missing `AGENTS.md` to verify the bootstrap path now seeds `AGENTS.md`, `docs/queue.md`, and usable publish guidance before prompts are sent.
+- [ ] Run one live launcher session and confirm the generated role prompts point at the shared helper path for the selected project.
 
 ## Next
-- [ ] Decide whether to keep the unused `QUEUE-MANAGER` prompt template as future scaffolding or remove it from the launcher source.
+- [ ] Decide whether the shared helper should detect and warn on projects with no git remote before agents finish a task.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
 - [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
 - [ ] Decide whether the launcher should compact repeated boilerplate in existing project-local `AGENTS.md` files or leave that to repo owners.
@@ -20,6 +20,7 @@
 ## Discovered While Working
 - [ ] Edge case: define how auto-publish should behave on a detached HEAD or on branches without an upstream remote.
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.
+- [ ] Edge case: verify the shared helper still refuses paths outside the selected project root when called by absolute path from another repo.
 - [ ] Small improvement: consider a dedicated `codex-publish.sh` wrapper if `codex-commit.sh --push` becomes awkward to explain.
 - [ ] Cleanup: remove the unused `QUEUE-MANAGER` template from the launcher if it never becomes a real non-pane workflow.
 - [ ] Edge case: verify the bootstrap path does not overwrite an existing project `AGENTS.md` or `docs/queue.md`.

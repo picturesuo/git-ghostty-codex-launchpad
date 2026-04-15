@@ -3,6 +3,8 @@ set -euo pipefail
 
 SHELL_STARTUP_DELAY_SECONDS=1.5
 CODEX_PROMPT_STAGGER_SECONDS=2
+LAUNCHPAD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_COMMIT_HELPER="$LAUNCHPAD_ROOT/scripts/codex-commit.sh"
 
 applescript_string() {
   local value=$1
@@ -270,6 +272,8 @@ Keep it current.
 - Keep scope tight.
 - Prefer small, reversible changes.
 - State assumptions explicitly when needed.
+- Publish verified completed work with `bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>`.
+- Use `--no-push` only when a local-only commit is intentional.
 - Do not auto-publish partial, failing, or unverified work.
 EOF
   fi
@@ -395,7 +399,7 @@ workflow_contract() {
 - State assumptions as `Q` or `R` items.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- When that completion bar is met, publish the intended files with `bash scripts/codex-commit.sh --push <paths...>`.
+- When that completion bar is met, publish the intended files with `bash $CODEX_COMMIT_HELPER <paths...>`.
 - Do not auto-publish partial, failing, or unverified work.
 - Reference artifact IDs exactly: `SC1`, `INV1`, `FM1`, `R1`, `Q1`, `F1`.
 - Keep scope tight and avoid task expansion unless a true blocker is identified.
@@ -622,7 +626,7 @@ Rules:
 - If the user redirects you, refine the minimum artifact sections you need and proceed.
 - Do not expand scope beyond the artifact unless a blocker forces it.
 - Do not claim final verification.
-- Publish only after verified completion with `bash scripts/codex-commit.sh --push ...`.
+- Publish only after verified completion with `bash $CODEX_COMMIT_HELPER ...`.
 EOF
 )"
       ;;
@@ -656,7 +660,7 @@ Rules:
 - Prefer direct evidence over speculation.
 - If the failure cannot be reproduced, record that explicitly and note what was tried.
 - Keep diagnosis and fixes tied to artifact IDs.
-- Publish with `bash scripts/codex-commit.sh --push ...` only after the fix restores verified completion.
+- Publish with `bash $CODEX_COMMIT_HELPER ...` only after the fix restores verified completion.
 EOF
 )"
       ;;

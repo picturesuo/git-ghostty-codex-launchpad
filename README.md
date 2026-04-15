@@ -16,7 +16,7 @@ Starting a coding session usually involves repetitive setup: opening terminals, 
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
-- Prompts the roles to auto-publish successful completed work through the repo-local Git helper
+- Prompts the roles to auto-publish successful completed work through one shared Git helper that operates on the selected project repo
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
 
 The visible left-to-right pane order is:
@@ -36,7 +36,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow is expected to publish the intended files with `bash scripts/codex-commit.sh --push ...`.
+- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits and pushes against the selected project repo by default.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 

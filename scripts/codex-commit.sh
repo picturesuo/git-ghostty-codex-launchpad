@@ -4,30 +4,37 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/codex-commit.sh -m "commit message" [--push] [--remote origin] <path> [<path> ...]
-  bash scripts/codex-commit.sh [--push] [--remote origin] <path> [<path> ...]
+  bash /path/to/codex-commit.sh -m "commit message" [--no-push] [--remote origin] [--project-root /path/to/project] <path> [<path> ...]
+  bash /path/to/codex-commit.sh [--no-push] [--remote origin] [--project-root /path/to/project] <path> [<path> ...]
 
 Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
   - Otherwise generates a short message from the staged paths.
-  - With --push, pushes the current branch after a successful commit.
-  - With --push and no new staged changes, pushes the current branch if it is already ahead or has no upstream yet.
+  - Pushes the current branch after a successful commit by default.
+  - With --no-push, commits locally without pushing.
+  - Uses the current working directory as the project root unless --project-root is provided.
 EOF
 }
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-project_root="$(cd "$script_dir/.." && pwd)"
-repo_root="$(git -C "$project_root" rev-parse --show-toplevel)"
-if [ "$project_root" = "$repo_root" ]; then
-  project_prefix=""
-else
-  project_prefix="${project_root#$repo_root/}"
-fi
+invocation_dir="$(pwd)"
+project_root="$invocation_dir"
+
+resolve_repo_root() {
+  local root=$1
+
+  if ! git -C "$root" rev-parse --show-toplevel >/dev/null 2>&1; then
+    echo "Selected project is not inside a git repository: $root" >&2
+    exit 1
+  fi
+
+  git -C "$root" rev-parse --show-toplevel
+}
 
 message=""
-push_after_commit=0
+push_after_commit=1
 remote_name="origin"
+explicit_project_root=""
 declare -a paths=()
 
 while [ "$#" -gt 0 ]; do
@@ -40,10 +47,18 @@ while [ "$#" -gt 0 ]; do
     --push)
       push_after_commit=1
       ;;
+    --no-push)
+      push_after_commit=0
+      ;;
     --remote)
       shift
       [ "$#" -gt 0 ] || { echo "Missing remote name." >&2; exit 1; }
       remote_name="$1"
+      ;;
+    --project-root)
+      shift
+      [ "$#" -gt 0 ] || { echo "Missing project root." >&2; exit 1; }
+      explicit_project_root="$1"
       ;;
     -h|--help)
       usage
@@ -65,6 +80,20 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ "${#paths[@]}" -gt 0 ] || { usage >&2; exit 1; }
+
+if [ -n "$explicit_project_root" ]; then
+  project_root="$(cd "$explicit_project_root" && pwd)"
+else
+  project_root="$invocation_dir"
+fi
+
+repo_root="$(resolve_repo_root "$project_root")"
+
+if [ "$project_root" = "$repo_root" ]; then
+  project_prefix=""
+else
+  project_prefix="${project_root#$repo_root/}"
+fi
 
 cd "$repo_root"
 
@@ -141,11 +170,15 @@ generate_message() {
   if [ "${#rel_paths[@]}" -eq 1 ]; then
     case "$first" in
       */AGENTS.md|AGENTS.md)
-        printf '%s\n' "$action codex workflow"
+        printf '%s\n' "$action repo workflow rules"
+        return
+        ;;
+      */README.md|README.md)
+        printf '%s\n' "$action project documentation"
         return
         ;;
       */docs/queue.md|docs/queue.md)
-        printf '%s\n' "$action queue docs"
+        printf '%s\n' "$action work queue"
         return
         ;;
       */scripts/codex-commit.sh|scripts/codex-commit.sh)
@@ -221,11 +254,14 @@ generate_message() {
         esac
         ;;
       *)
+        stem="$(basename "$rel_path")"
+        stem="${stem%.*}"
+        stem="${stem//[-_]/ }"
         case "|$topic_keys|" in
-          *"|$(basename "$rel_path")|"*) ;;
+          *"|$stem|"*) ;;
           *)
-            topic_keys="${topic_keys}${topic_keys:+|}$(basename "$rel_path")"
-            topics+=("$(basename "$rel_path")")
+            topic_keys="${topic_keys}${topic_keys:+|}$stem"
+            topics+=("$stem")
             ;;
         esac
         ;;

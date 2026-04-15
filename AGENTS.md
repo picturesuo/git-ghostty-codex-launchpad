@@ -136,10 +136,11 @@ Responsibilities:
 
 ## Commit Policy
 - Commit after each meaningful unit of work.
+- Push verified completed work by default when the selected project repo has a usable remote and branch context.
 - Keep commits atomic and easy to understand.
 - Default to `main` unless the user says otherwise.
 - Do not stage unrelated files.
-- When the artifact is complete, all success criteria pass, critical invariants hold, and no unresolved high-severity risk remains, publish the intended files with `bash scripts/codex-commit.sh --push ...`.
+- When the artifact is complete, all success criteria pass, critical invariants hold, and no unresolved high-severity risk remains, publish the intended files with the shared helper at `scripts/codex-commit.sh` for this repo or the launcher-provided helper path in selected projects.
 - Do not auto-push partial, failing, or unverified work.
 - Do not ask for commit approval when the publish bar is met.
 - Do not include commit message or commit request text in normal role responses.
@@ -161,7 +162,7 @@ bash scripts/codex-commit.sh AGENTS.md docs/queue.md
 For successful verified work that should be published immediately:
 
 ```bash
-bash scripts/codex-commit.sh --push git-ghostty-codex-launchpad.sh AGENTS.md README.md
+bash scripts/codex-commit.sh git-ghostty-codex-launchpad.sh AGENTS.md README.md
 ```
 
 Rules:
@@ -169,7 +170,7 @@ Rules:
 - Messages should be concise, accurate, and human-sounding.
 - Target roughly 3 to 8 words.
 - Avoid random or empty phrasing.
-- `--push` should be used only after the artifact says the task is complete and verified.
+- Default behavior is commit-and-push; use `--no-push` only when push is intentionally undesired or impossible.
 
 Examples:
 - `add auth callback handler`
