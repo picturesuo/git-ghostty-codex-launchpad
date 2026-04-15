@@ -4,16 +4,18 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/codex-commit.sh --push -m "commit message" <path> [<path> ...]
-  bash scripts/codex-commit.sh --push <path> [<path> ...]
   bash scripts/codex-commit.sh -m "commit message" <path> [<path> ...]
+  bash scripts/codex-commit.sh -m "commit message" <path> [<path> ...]
+  bash scripts/codex-commit.sh --no-push -m "commit message" <path> [<path> ...]
+  bash scripts/codex-commit.sh --no-push <path> [<path> ...]
   bash scripts/codex-commit.sh <path> [<path> ...]
 
 Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
   - Otherwise generates a short message from the staged paths.
-  - With `--push`, commits first and then pushes the current branch.
+  - By default, commits first and then pushes the current branch.
+  - With `--no-push`, commits locally without pushing.
 EOF
 }
 
@@ -23,7 +25,7 @@ repo_root="$(git -C "$project_root" rev-parse --show-toplevel)"
 project_prefix="${project_root#$repo_root/}"
 
 message=""
-push_after_commit=0
+push_after_commit=1
 declare -a paths=()
 
 while [ "$#" -gt 0 ]; do
@@ -35,6 +37,9 @@ while [ "$#" -gt 0 ]; do
       ;;
     --push)
       push_after_commit=1
+      ;;
+    --no-push)
+      push_after_commit=0
       ;;
     -h|--help)
       usage
@@ -176,6 +181,10 @@ git commit -m "$message" -- "${rel_paths[@]}"
 printf 'Committed: %s\n' "$message"
 
 if [ "$push_after_commit" -eq 1 ]; then
+  if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+    echo "Cannot push: current branch has no upstream. Configure a remote and upstream, or rerun with --no-push." >&2
+    exit 1
+  fi
   git push
   printf 'Pushed current branch.\n'
 fi

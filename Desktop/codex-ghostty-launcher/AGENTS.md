@@ -121,6 +121,7 @@ When reporting completion, separate:
 
 ## Commit Policy
 - Commit after each meaningful unit of work.
+- Push each meaningful repo-visible commit to GitHub by default when the repo has a configured remote and branch upstream.
 - Commit every meaningful repo-visible change by default, not just at the end of a session.
 - Treat code, config, behavior, workflow, and collaborator-facing docs changes as commit-worthy when someone reviewing or using the project would need to see them.
 - Do not wait to bundle separate meaningful changes together when they can ship as small atomic commits.
@@ -161,12 +162,19 @@ Or let it generate a concise message:
 bash scripts/codex-commit.sh AGENTS.md docs/queue.md
 ```
 
+Use `--no-push` only when a local-only commit is intentional or the repo does not yet have a working upstream:
+
+```bash
+bash scripts/codex-commit.sh --no-push AGENTS.md docs/queue.md
+```
+
 Rules:
 - Always pass the intended file paths explicitly.
 - Messages should be concise, accurate, and human-sounding.
 - Prefer a short sentence that says what changed, not a placeholder like `add 3 files`.
 - Target roughly 3 to 8 words.
 - Avoid random or empty phrasing.
+- Default to commit-and-push; use `--no-push` only when a push is impossible or intentionally undesired.
 
 Examples:
 - `add auth callback handler`
