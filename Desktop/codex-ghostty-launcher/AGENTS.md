@@ -164,6 +164,7 @@ bash scripts/codex-commit.sh AGENTS.md docs/queue.md
 Rules:
 - Always pass the intended file paths explicitly.
 - Messages should be concise, accurate, and human-sounding.
+- Prefer a short sentence that says what changed, not a placeholder like `add 3 files`.
 - Target roughly 3 to 8 words.
 - Avoid random or empty phrasing.
 
@@ -172,6 +173,8 @@ Examples:
 - `fix pagination edge case`
 - `refactor queue parsing`
 - `improve settings form validation`
+- `document commit defaults across repo docs`
+- `update commit helper messaging`
 
 ## Docs as Working Memory
 - Use `docs/` to store durable project knowledge.

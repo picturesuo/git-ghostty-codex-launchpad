@@ -93,7 +93,8 @@ if git diff --cached --quiet -- "${rel_paths[@]}"; then
 fi
 
 generate_message() {
-  local status first base stem action all_workflow_paths rel_path
+  local status first base stem action rel_path
+  local -a labels=()
   status="$(git diff --cached --name-status -- "${rel_paths[@]}" | awk 'NR==1 {print substr($1,1,1)}')"
   first="$(printf '%s\n' "${rel_paths[@]}" | head -n1)"
   base="$(basename "$first")"
@@ -110,15 +111,19 @@ generate_message() {
   if [ "${#rel_paths[@]}" -eq 1 ]; then
     case "$first" in
       */AGENTS.md|AGENTS.md)
-        printf '%s\n' "$action codex workflow"
+        printf '%s\n' "$action repo workflow rules"
+        return
+        ;;
+      */README.md|README.md)
+        printf '%s\n' "$action repo documentation"
         return
         ;;
       */docs/queue.md|docs/queue.md)
-        printf '%s\n' "$action queue docs"
+        printf '%s\n' "$action work queue"
         return
         ;;
       */scripts/codex-commit.sh|scripts/codex-commit.sh)
-        printf '%s\n' "$action commit helper"
+        printf '%s\n' "$action commit helper messaging"
         return
         ;;
     esac
@@ -127,23 +132,37 @@ generate_message() {
     return
   fi
 
-  all_workflow_paths=1
   for rel_path in "${rel_paths[@]}"; do
     case "$rel_path" in
-      "$project_prefix/AGENTS.md"|"$project_prefix/docs/queue.md"|"$project_prefix/scripts/codex-commit.sh") ;;
+      "$project_prefix/AGENTS.md")
+        labels+=("repo workflow rules")
+        ;;
+      "$project_prefix/README.md")
+        labels+=("repo documentation")
+        ;;
+      "$project_prefix/docs/queue.md")
+        labels+=("work queue")
+        ;;
+      "$project_prefix/scripts/codex-commit.sh")
+        labels+=("commit helper")
+        ;;
       *)
-        all_workflow_paths=0
-        break
+        labels+=("related files")
         ;;
     esac
   done
 
-  if [ "$all_workflow_paths" -eq 1 ]; then
-    printf '%s\n' "$action codex workflow files"
+  if [ "${#labels[@]}" -eq 2 ]; then
+    printf '%s\n' "$action ${labels[0]} and ${labels[1]}"
     return
   fi
 
-  printf '%s\n' "$action ${#rel_paths[@]} files"
+  if [ "${#labels[@]}" -gt 2 ]; then
+    printf '%s\n' "$action ${labels[0]}, ${labels[1]}, and related files"
+    return
+  fi
+
+  printf '%s\n' "$action related files"
 }
 
 if [ -z "$message" ]; then

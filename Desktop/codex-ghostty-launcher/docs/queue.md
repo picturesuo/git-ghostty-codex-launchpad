@@ -1,7 +1,7 @@
 # Queue
 
 ## Now
-- [ ] Confirm the updated commit policy reads cleanly and matches actual helper usage.
+- [ ] Validate that generated commit messages read like short human summaries instead of file-count placeholders.
 
 ## Next
 - [ ] Add one concrete example showing how to use `scripts/codex-commit.sh` for a meaningful multi-file workflow change.
@@ -16,6 +16,7 @@
 
 ## Discovered While Working
 - [ ] Edge case: confirm the default commit rule still excludes external shared-context files even when they are updated during local task execution.
+- [ ] Edge case: improve generated messages when staged paths mix one named workflow file with several unrelated files.
 - [ ] Edge case: verify `scripts/codex-commit.sh --push` fails cleanly when the current branch has no upstream.
 - [ ] Edge case: verify the role prompt still works when `AGENTS.md` is missing and the shared artifact is the only durable context.
 - [ ] Edge case: verify the wrapper-plus-role-block ordering still renders cleanly if a future role prompt adds another fenced block or numbered list.
