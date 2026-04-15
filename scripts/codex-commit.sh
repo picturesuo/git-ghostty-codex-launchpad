@@ -360,6 +360,18 @@ push_current_branch() {
   }
 
   push_remote="$(resolve_push_remote)"
+  if git push -u "$push_remote" "$branch"; then
+    return 0
+  fi
+
+  echo "Initial push failed. Fetching latest $push_remote/$branch and retrying with rebase." >&2
+  git fetch "$push_remote" "$branch"
+
+  if ! git pull --rebase "$push_remote" "$branch"; then
+    echo "Automatic rebase failed. Resolve the rebase manually, then push again." >&2
+    exit 1
+  fi
+
   git push -u "$push_remote" "$branch"
 }
 
