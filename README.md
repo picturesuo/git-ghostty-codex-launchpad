@@ -23,7 +23,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, then threads those values into all four panes and the shared session context
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
-- Prompts the roles to auto-publish successful completed work through one shared Git helper that operates on the selected project repo
+- Prompts the roles to auto-commit coherent repo-visible changes by default through one shared Git helper that operates on the selected project repo
 - Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
@@ -73,7 +73,7 @@ Bootstrap behavior:
 
 ## Publishing Defaults
 
-This repo should automatically commit any coherent non-private repo-visible file change.
+This repo should auto-commit coherent non-private repo-visible file changes by default.
 
 Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.

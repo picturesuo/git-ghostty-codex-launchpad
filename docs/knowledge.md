@@ -4,7 +4,7 @@
 - Capture durable user guidance, preferences, and constraints that should survive past a single task.
 - `user`: Keep agent prompts token-efficient and role-specific. Do not give every role shared context it does not need.
 - `user`: Use four roles only in this repo's prompt docs and launcher prompts: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
-- `user`: Automatically commit any non-private repo-visible file change once it is coherent enough to save.
+- `user`: Auto-commit coherent repo-visible non-private changes by default.
 - `user`: Apply the automatic commit rule to all four launcher panes, not just the implementation role.
 - `user`: When a GitHub remote and upstream are configured, publish non-private repo-visible commits in the same turn by default.
 - `user`: Before asking where to push, try to infer the GitHub destination automatically from remotes, repo docs, nearby canonical repos, and the authenticated GitHub account.

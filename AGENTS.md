@@ -59,7 +59,7 @@ Rules:
 - If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
 
 ## Commit Policy
-- Commit every coherent repo-visible non-private change in the same turn.
+- Auto-commit coherent repo-visible non-private changes by default.
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Keep commits atomic and avoid unrelated staging.
 - Default to `main` unless told otherwise.
