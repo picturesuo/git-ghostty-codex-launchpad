@@ -15,8 +15,7 @@ Behavior:
   - With --no-push, commits locally without pushing.
   - Uses the current working directory as the project root unless --project-root is provided.
   - With --remote auto (default), prefers the repo's existing push remote and otherwise
-    tries to infer a single confident GitHub destination from repo docs, nearby canonical
-    repo hints, and the authenticated GitHub account before failing.
+    fails if the selected project has no safe existing remote context.
 EOF
 }
 
@@ -306,38 +305,8 @@ find_matching_github_repo() {
   return 1
 }
 
-ensure_remote_for_url() {
-  local url=$1 name existing_url candidate index
-
-  while IFS= read -r name; do
-    [ -n "$name" ] || continue
-    existing_url="$(git remote get-url "$name" 2>/dev/null || true)"
-    if [ "$existing_url" = "$url" ]; then
-      printf '%s\n' "$name"
-      return 0
-    fi
-  done < <(git remote)
-
-  if ! git remote get-url origin >/dev/null 2>&1; then
-    git remote add origin "$url"
-    printf 'origin\n'
-    return 0
-  fi
-
-  index=1
-  while :; do
-    candidate="github-auto-$index"
-    if ! git remote get-url "$candidate" >/dev/null 2>&1; then
-      git remote add "$candidate" "$url"
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-    index=$((index + 1))
-  done
-}
-
 resolve_push_remote() {
-  local existing url remote
+  local existing
 
   if existing="$(resolve_existing_remote)"; then
     printf '%s\n' "$existing"
@@ -349,14 +318,14 @@ resolve_push_remote() {
     exit 1
   fi
 
-  url="$(find_matching_github_repo)" || {
-    echo "Could not resolve a single confident push remote automatically from remotes, repo docs, or GitHub account context. Configure a git remote or pass --remote <name>." >&2
+  if [ "$remote_name" != "auto" ]; then
+    echo "Remote does not exist: $remote_name" >&2
     exit 1
-  }
+  fi
 
-  remote="$(ensure_remote_for_url "$url")"
-  printf 'Auto-linked remote %s -> %s\n' "$remote" "$url" >&2
-  printf '%s\n' "$remote"
+  echo "Could not resolve a safe push remote automatically from the selected project's existing remotes." >&2
+  echo "Configure an upstream remote or pass --remote <name>." >&2
+  exit 1
 }
 
 push_current_branch() {

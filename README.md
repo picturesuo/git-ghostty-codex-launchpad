@@ -48,8 +48,8 @@ The workflow rules are:
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
 - Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default.
-- The helper prefers an existing upstream. When the selected project already has remote context to work from, it can resolve a safe GitHub destination from repo docs, remotes, and account context, then uses `git push -u` when it needs to establish the branch tracking setup.
-- It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination.
+- The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
+- It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Durable reusable knowledge belongs in `docs/knowledge.md`, while the shared context file carries current-task state and active handoff notes.
 - The workflow should search `docs/knowledge.md`, the shared context, and nearby repo docs first; use broader search only when local context is insufficient.
@@ -69,10 +69,10 @@ Bootstrap behavior:
 This repo should automatically commit any coherent non-private repo-visible file change.
 
 Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
-The helper commits first, then pushes by default, prefers an existing upstream when available, and otherwise resolves a safe GitHub destination from repo docs, remotes, and account context when the selected project already has remote context to work from before using `git push -u`.
+The helper commits first, then pushes by default, prefers an existing upstream when available, and otherwise uses the selected project's existing remote context before using `git push -u`.
 If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; use `--no-push` only for an intentional local-only commit.
 
-When destination is unclear, the workflow should first try to infer it from git remotes, repo docs, nearby canonical repos, and the authenticated GitHub account. It should ask only when the destination is still genuinely ambiguous.
+When destination is unclear, the workflow should first check git remotes and existing upstreams. If no safe destination exists, it should fail clearly and ask for a remote or `--no-push` instead of inventing one.
 ## Files
 
 - `git-ghostty-codex-launchpad.sh` - main launcher
