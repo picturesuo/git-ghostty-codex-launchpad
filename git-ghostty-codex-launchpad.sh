@@ -298,7 +298,9 @@ EOF
 }
 
 print_last_launch_state() {
-  local project_name project_dir target_file session_id session_file queue_file knowledge_file queue_now branch git_status saved_at watch_command
+  local project_name project_dir target_file session_id artifact_id phase context_budget context_bar
+  local session_file queue_file knowledge_file queue_now branch git_status saved_at watch_command
+  local git_remote_path github_repo_slug
 
   if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
     echo "No saved launch state has been recorded yet."
