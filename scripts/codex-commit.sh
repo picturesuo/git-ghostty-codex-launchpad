@@ -14,8 +14,9 @@ Behavior:
   - Pushes the current branch after a successful commit by default.
   - With --no-push, commits locally without pushing.
   - Uses the current working directory as the project root unless --project-root is provided.
-  - With --remote auto (default), prefers the repo's existing push remote and falls back
-    to searching the authenticated GitHub account for a matching repository name.
+  - With --remote auto (default), prefers the repo's existing push remote and otherwise
+    tries to infer a single confident GitHub destination from repo docs, nearby canonical
+    repo hints, and the authenticated GitHub account before failing.
 EOF
 }
 
@@ -388,7 +389,7 @@ resolve_push_remote() {
   fi
 
   url="$(find_matching_github_repo)" || {
-    echo "Could not resolve a push remote automatically. Configure a git remote or pass --remote <name>." >&2
+    echo "Could not resolve a single confident push remote automatically from remotes, repo docs, or GitHub account context. Configure a git remote or pass --remote <name>." >&2
     exit 1
   }
 

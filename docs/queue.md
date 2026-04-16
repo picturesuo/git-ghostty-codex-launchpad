@@ -1,13 +1,14 @@
 # Queue
 
 ## Now
-- [ ] Decide whether migrated shared-context sections should stay as lightweight `###` headings or be normalized into numbered artifact sections in a later slice.
+- [ ] Validate `scripts/codex-commit.sh` auto-discovery against one non-canonical project repo with no configured remote.
 
 ## Next
-- [ ] Verify one live Ghostty launch against an existing repo now that the shared-context migration path is in place.
+- [ ] Verify one live Ghostty launch against an existing repo with the canonical prompt source now wired into launcher output.
+- [ ] Add one helper test case for doc-mapped GitHub destination inference.
+- [ ] Decide whether migrated shared-context sections should stay as lightweight `###` headings or be normalized into numbered artifact sections in a later slice.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
-- [ ] Decide whether the shared helper should detect and warn on projects with no git remote before agents finish a task.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
 - [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
 - [ ] Decide whether the launcher should compact repeated boilerplate in existing project-local `AGENTS.md` files or leave that to repo owners.
