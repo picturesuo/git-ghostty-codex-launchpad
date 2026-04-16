@@ -475,12 +475,14 @@ github_repo_slug_from_remote_url() {
 
   repo_slug="$(printf '%s' "$remote_url" | sed -nE 's#^(git@github\.com:|ssh://git@github\.com/|https://github\.com/|http://github\.com/)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(\.git)?$#\2#p')"
   if [[ -n "$repo_slug" ]]; then
+    repo_slug="${repo_slug%.git}"
     printf '%s' "$repo_slug"
     return 0
   fi
 
   repo_slug="$(printf '%s' "$remote_url" | sed -nE 's#.*github\.com[:/]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(\.git)?$#\1#p')"
   if [[ -n "$repo_slug" ]]; then
+    repo_slug="${repo_slug%.git}"
     printf '%s' "$repo_slug"
     return 0
   fi
