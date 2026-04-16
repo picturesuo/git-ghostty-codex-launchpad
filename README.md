@@ -44,7 +44,7 @@ Durable repo policy belongs in `AGENTS.md`; the shared context should carry the 
 
 Prompt source is no longer documented inline in `README.md`.
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
-Use [docs/role-selection.md](/Users/bensuo/ghostty-codex-launchpad/docs/role-selection.md) for the short role rubric and [docs/context-budget.md](/Users/bensuo/ghostty-codex-launchpad/docs/context-budget.md) for the context-budget rules.
+Use the generated [docs/role-selection.md](/Users/bensuo/ghostty-codex-launchpad/docs/role-selection.md) for the short role rubric and [docs/context-budget.md](/Users/bensuo/ghostty-codex-launchpad/docs/context-budget.md) for the context-budget rules.
 Use [scripts/check-prompt-drift.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-prompt-drift.sh) to detect drift between the launcher, prompt source, and generated prompt docs.
 Use [scripts/check-commit-helper-doc-map.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-commit-helper-doc-map.sh) to verify the repo-doc GitHub mapping that commit-helper auto-discovery relies on.
 

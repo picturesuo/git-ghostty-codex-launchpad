@@ -8,9 +8,10 @@ source "$project_root/prompts/prompt-source.sh"
 source "$project_root/git-ghostty-codex-launchpad.sh"
 
 tmp_generated="$(mktemp -t codex-prompt-generated.XXXXXX)"
+tmp_role_selection="$(mktemp -t codex-role-selection.XXXXXX)"
 tmp_expected="$(mktemp -t codex-prompt-expected.XXXXXX)"
 tmp_actual="$(mktemp -t codex-prompt-actual.XXXXXX)"
-trap 'rm -f "$tmp_generated" "$tmp_expected" "$tmp_actual"' EXIT
+trap 'rm -f "$tmp_generated" "$tmp_role_selection" "$tmp_expected" "$tmp_actual"' EXIT
 
 cat > "$tmp_generated" <<'EOF'
 # Generated Prompts
@@ -70,6 +71,13 @@ role_prompt_body "DEBUGGER" >> "$tmp_generated"
 cat >> "$tmp_generated" <<'EOF'
 ```
 EOF
+
+role_selection_summary > "$tmp_role_selection"
+
+if ! diff -u "$project_root/docs/role-selection.md" "$tmp_role_selection" >/dev/null; then
+  echo "Role selection doc is out of date. Re-run scripts/render-prompt-docs.sh." >&2
+  exit 1
+fi
 
 if ! diff -u "$project_root/docs/generated-prompts.md" "$tmp_generated" >/dev/null; then
   echo "Generated prompt docs are out of date. Re-run scripts/render-prompt-docs.sh." >&2

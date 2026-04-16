@@ -4,7 +4,7 @@
 This file is the durable repo policy for Codex in `ghostty-codex-launchpad`.
 The shared context file at `~/.codex/ghostty-codex-launchpad-shared-context.md`, when present, is the current-task record.
 
-Keep `AGENTS.md` short and stable. Launch-time behavior belongs in `prompts/prompt-source.sh`; the human role summary belongs in `docs/role-selection.md`; current task memory belongs in the shared context file.
+Keep `AGENTS.md` short and stable. Launch-time behavior belongs in `prompts/prompt-source.sh`; the generated role summary belongs in `docs/role-selection.md`; current task memory belongs in the shared context file.
 
 ## Repo Layout
 - `README.md`: user-facing project overview.
@@ -12,7 +12,7 @@ Keep `AGENTS.md` short and stable. Launch-time behavior belongs in `prompts/prom
 - `prompts/prompt-source.sh`: canonical launcher and pane prompt source.
 - `docs/generated-prompts.md`: generated documentation for the prompt source.
 - `docs/prompt-source.md`: prompt ownership overview.
-- `docs/role-selection.md`: one-page role summary.
+- `docs/role-selection.md`: generated role summary.
 - `docs/context-budget.md`: context-budget rules.
 - `docs/queue.md`: working queue.
 - `docs/knowledge.md`: durable user guidance and project facts.

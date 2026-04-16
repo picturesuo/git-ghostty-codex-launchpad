@@ -6,6 +6,7 @@ project_root="$(cd "$script_dir/.." && pwd)"
 source "$project_root/prompts/prompt-source.sh"
 
 output_file="$project_root/docs/generated-prompts.md"
+role_selection_file="$project_root/docs/role-selection.md"
 
 cat > "$output_file" <<'EOF'
 # Generated Prompts
@@ -65,3 +66,5 @@ role_prompt_body "DEBUGGER" >> "$output_file"
 cat >> "$output_file" <<'EOF'
 ```
 EOF
+
+role_selection_summary > "$role_selection_file"
