@@ -5,7 +5,7 @@ Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostt
 Generated prompt docs live in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
 
 Rules:
-- Keep the wrapper limited to terminal-local project facts plus `ROLE`.
+- Keep the wrapper limited to terminal-local project facts, session metadata, and `ROLE`.
 - Keep shared fallback behavior in `AGENTS.md` and the shared artifact instead of repeating it in every role block.
 - Keep role bodies role-specific and token-efficient.
 - Keep the documented role set to `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.

@@ -16,6 +16,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Reuses an existing project and shared-context file when the typed project name is only a close match, instead of creating a near-duplicate session by name alone
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
+- Surfaces a compact session snapshot in each prompt with the project, branch, queue, and knowledge-path context so the panes can resume faster
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home

@@ -12,12 +12,19 @@ Shared project context:
 - Project name: {PROJECT_NAME}
 - Project directory: {PROJECT_DIR}
 - Target file: {TARGET_FILE}
+- Session ID: {SESSION_ID}
+- Git branch: n/a
+- Git status: n/a
+- Queue now: n/a
+- Queue file: {PROJECT_DIR}/docs/queue.md
+- Knowledge file: {PROJECT_DIR}/docs/knowledge.md
 - Shared context file: {SHARED_CONTEXT_FILE}
 
 Read `{PROJECT_DIR}/AGENTS.md` first if it exists.
 Read the shared context file second and use it as the task artifact for the current task.
 Update the shared context file directly as part of your work, but only in the sections owned by your role.
 Work inside `{PROJECT_DIR}`.
+Use the queue and knowledge files as the first local context after the shared artifact.
 ROLE: {ROLE}
 ```
 
@@ -66,6 +73,7 @@ Must:
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
+- Check `docs/queue.md` for the current `Now` item before broadening scope.
 - Refine only the minimum artifact sections needed to implement.
 
 Must not:
@@ -91,6 +99,7 @@ Must:
 - Record explicit `PASS`, `FAIL`, or `NOT VERIFIED` per relevant criterion.
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
+- Use the queue item and shared context snapshot to keep verification tightly scoped.
 
 Must not:
 - Invent broad new scope.
@@ -116,6 +125,7 @@ Must:
 - Start from failing criteria, violated invariants, or critic findings.
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
+- Re-read the queue item and shared context snapshot before changing code.
 
 Must not:
 - Broaden scope beyond the failing path without a blocker.

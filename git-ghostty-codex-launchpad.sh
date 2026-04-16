@@ -150,6 +150,94 @@ shared_context_header_value() {
   sed -n "s/^- ${field_name}: //p" "$session_file" | head -n 1
 }
 
+generate_session_id() {
+  if command -v uuidgen >/dev/null 2>&1; then
+    uuidgen | tr '[:upper:]' '[:lower:]' | tr -d '-' | cut -c1-8
+    return
+  fi
+
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 4
+    return
+  fi
+
+  date +%s | shasum -a 256 | cut -c1-8
+}
+
+ensure_shared_context_session_id() {
+  local session_file=$1 session_id tmp_file
+
+  session_id="$(shared_context_header_value "$session_file" "Session ID" || true)"
+  if [[ -n "$session_id" ]]; then
+    SHARED_CONTEXT_SESSION_ID="$session_id"
+    return 0
+  fi
+
+  session_id="$(generate_session_id)"
+  tmp_file="$(mktemp)"
+
+  awk -v session_id="$session_id" '
+    BEGIN { inserted = 0 }
+    /^- Session ID: / { next }
+    {
+      print
+      if (!inserted && /^- Target file: /) {
+        print "- Session ID: " session_id
+        inserted = 1
+      }
+    }
+    END {
+      if (!inserted) {
+        print "- Session ID: " session_id
+      }
+    }
+  ' "$session_file" > "$tmp_file" && mv "$tmp_file" "$session_file"
+
+  SHARED_CONTEXT_SESSION_ID="$session_id"
+}
+
+sanitize_title_text() {
+  local value=$1 max_len=${2:-0}
+
+  value="$(printf '%s' "$value" | tr '\r\n\t' '   ' | sed 's/[|]/ /g; s/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+
+  if [[ "$max_len" -gt 0 && "${#value}" -gt "$max_len" ]]; then
+    value="${value:0:max_len}"
+    value="${value%"${value##*[![:space:]]}"}"
+  fi
+
+  printf '%s' "$value"
+}
+
+build_session_title() {
+  local project_name=$1 project_dir=$2 session_file=$3 role=$4
+  local branch task_label session_id
+
+  project_name="$(sanitize_title_text "$project_name" 24)"
+  branch="$(sanitize_title_text "$(project_git_branch "$project_dir")" 24)"
+  task_label="$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)"
+  role="$(sanitize_title_text "$role" 12)"
+  session_id="$(sanitize_title_text "$(shared_context_session_id "$session_file")" 8)"
+
+  if [[ -z "$task_label" || "$task_label" == "n/a" ]]; then
+    task_label="$(sanitize_title_text "$(basename "$target_file" 2>/dev/null || printf '%s' "$project_name")" 28)"
+  fi
+  if [[ -z "$branch" || "$branch" == "n/a" ]]; then
+    branch="no-git"
+  fi
+  if [[ -z "$session_id" ]]; then
+    session_id="session"
+  fi
+
+  printf '%s | %s | %s | %s | %s' "$project_name" "$branch" "$task_label" "$role" "$session_id"
+}
+
+pane_command_with_title() {
+  local title=$1 prompt_file=$2
+
+  printf "printf '\\033]0;%%s\\a' %s; codex \"\\$(cat %s)\"" "$(shell_single_quote "$title")" "$(shell_single_quote "$prompt_file")"
+}
+
 prompt_project_name() {
   local dialog_result
 
@@ -1011,6 +1099,9 @@ make_shared_context() {
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
+- Session ID: $(shared_context_session_id "$session_file")
+- Queue file: $project_dir/docs/queue.md
+- Knowledge file: $project_dir/docs/knowledge.md
 - Session source of truth: this file
 
 $(task_artifact_template)
@@ -1162,6 +1253,12 @@ main() {
   launch_ghostty_session "$project_dir" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
+  printf 'Session ID: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\n' \
+    "$(shared_context_session_id "$session_file")" \
+    "$project_dir/docs/queue.md" \
+    "$project_dir/docs/knowledge.md" \
+    "$(project_git_branch "$project_dir")" \
+    "$(project_git_status "$project_dir")"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
