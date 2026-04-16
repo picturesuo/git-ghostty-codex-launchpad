@@ -254,100 +254,66 @@ store_last_launch_state() {
   local git_remote_path=$5
   local github_repo_slug=$6
   local watch_command=$7
-  local queue_now branch git_status session_id artifact_id phase budget timestamp context_bar
-  local state_dir
+  local state_dir snapshot
   local summary_role=BUILDER
 
   state_dir="$(dirname "$LAUNCHPAD_LAST_SESSION_FILE")"
   mkdir -p "$state_dir"
+  snapshot="$(launch_state_snapshot_fields "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$watch_command")"
 
-  session_id="$(shared_context_session_id "$session_file")"
-  artifact_id="$(shared_context_header_value "$session_file" "Active task artifact ID" || true)"
-  if [[ -z "$artifact_id" ]]; then
-    artifact_id="$(basename "$target_file")"
-  fi
-  branch="$(project_git_branch "$project_dir")"
-  git_status="$(project_git_status "$project_dir")"
-  queue_now="$(queue_now_item "$project_dir/docs/queue.md")"
-  phase="$(session_phase_for_role "$summary_role")"
-  budget="$(context_budget_indicator "$session_file")"
-  context_bar="$(launcher_context_bar "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file")"
-  timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  IFS=$'\t' read -r \
+    saved_at \
+    snapshot_role \
+    snapshot_project_name \
+    snapshot_project_dir \
+    snapshot_target_file \
+    artifact_id \
+    session_id \
+    phase \
+    context_budget \
+    context_bar \
+    snapshot_session_file \
+    snapshot_git_remote_path \
+    snapshot_github_repo_slug \
+    queue_file \
+    knowledge_file \
+    queue_now \
+    branch \
+    git_status \
+    snapshot_watch_command \
+    <<< "$snapshot"
 
   cat > "$LAUNCHPAD_LAST_SESSION_FILE" <<EOF
 # Ghostty Codex Launchpad Last Session
 
-- Saved at: $timestamp
-- Project name: $project_name
-- Project directory: $project_dir
-- Target file: $target_file
-- Active task artifact ID: $artifact_id
-- Session ID: $session_id
-- Session phase: $phase
-- Context budget: $budget
-- Context bar: $context_bar
-- Shared context file: $session_file
-- Git remote path: $git_remote_path
-- GitHub repo: $github_repo_slug
-- Queue file: $project_dir/docs/queue.md
-- Knowledge file: $project_dir/docs/knowledge.md
-- Queue now: $queue_now
-- Git branch: $branch
-- Git status: $git_status
-- Watch command: $watch_command
-EOF
-}
-
-print_last_launch_state() {
-  local project_name project_dir target_file session_id artifact_id phase context_budget context_bar
-  local session_file queue_file knowledge_file queue_now branch git_status saved_at watch_command
-  local git_remote_path github_repo_slug
-
-  if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
-    echo "No saved launch state has been recorded yet."
-    return 1
-  fi
-
-  project_name="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project name")"
-  project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
-  target_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Target file")"
-  session_id="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Session ID")"
-  artifact_id="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Active task artifact ID")"
-  phase="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Session phase")"
-  context_budget="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Context budget")"
-  context_bar="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Context bar")"
-  session_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Shared context file")"
-  queue_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Queue file")"
-  knowledge_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Knowledge file")"
-  queue_now="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Queue now")"
-  branch="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git branch")"
-  git_status="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git status")"
-  saved_at="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Saved at")"
-  watch_command="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
-  git_remote_path="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")"
-  github_repo_slug="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
-
-  cat <<EOF
-Last saved launch state
 - Saved at: $saved_at
-- Project name: $project_name
-- Project directory: $project_dir
-- Target file: $target_file
+- Snapshot role: $snapshot_role
+- Project name: $snapshot_project_name
+- Project directory: $snapshot_project_dir
+- Target file: $snapshot_target_file
 - Active task artifact ID: $artifact_id
 - Session ID: $session_id
 - Session phase: $phase
 - Context budget: $context_budget
 - Context bar: $context_bar
-- Shared context file: $session_file
-- Git remote path: $git_remote_path
-- GitHub repo: $github_repo_slug
+- Shared context file: $snapshot_session_file
+- Git remote path: $snapshot_git_remote_path
+- GitHub repo: $snapshot_github_repo_slug
+- Queue file: $queue_file
+- Knowledge file: $knowledge_file
 - Queue now: $queue_now
 - Git branch: $branch
 - Git status: $git_status
-- Queue file: $queue_file
-- Knowledge file: $knowledge_file
-- Watch command: $watch_command
+- Watch command: $snapshot_watch_command
 EOF
+}
+
+print_last_launch_state() {
+  if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
+    echo "No saved launch state has been recorded yet."
+    return 1
+  fi
+  cat "$LAUNCHPAD_LAST_SESSION_FILE"
 }
 
 build_default_watch_command() {
@@ -370,6 +336,52 @@ while true; do
   sleep 2
 done
 EOF
+}
+
+launch_state_snapshot_fields() {
+  local role=$1
+  local project_name=$2
+  local project_dir=$3
+  local target_file=$4
+  local session_file=$5
+  local git_remote_path=$6
+  local github_repo_slug=$7
+  local watch_command=$8
+  local saved_at summary_role artifact_id session_id phase context_budget context_bar queue_file knowledge_file queue_now branch git_status
+
+  summary_role="$role"
+  saved_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  artifact_id="$(shared_context_active_artifact_id "$session_file" "$target_file")"
+  session_id="$(shared_context_session_id "$session_file")"
+  phase="$(session_phase_for_role "$summary_role")"
+  context_budget="$(context_budget_indicator "$session_file")"
+  context_bar="$(launcher_context_bar_core "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file")"
+  queue_file="$project_dir/docs/queue.md"
+  knowledge_file="$project_dir/docs/knowledge.md"
+  queue_now="$(queue_now_item "$queue_file")"
+  branch="$(project_git_branch "$project_dir")"
+  git_status="$(project_git_status "$project_dir")"
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$saved_at" \
+    "$summary_role" \
+    "$project_name" \
+    "$project_dir" \
+    "$target_file" \
+    "$artifact_id" \
+    "$session_id" \
+    "$phase" \
+    "$context_budget" \
+    "$context_bar" \
+    "$session_file" \
+    "$git_remote_path" \
+    "$github_repo_slug" \
+    "$queue_file" \
+    "$knowledge_file" \
+    "$queue_now" \
+    "$branch" \
+    "$git_status" \
+    "$watch_command"
 }
 
 build_session_title() {

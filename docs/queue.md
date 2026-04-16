@@ -1,9 +1,10 @@
 # Queue
 
 ## Now
-- [ ] Verify a live Ghostty launch still auto-opens exact matches and asks before using close fuzzy matches.
+- [ ] Refactor the launch-state rendering into one structured snapshot helper.
 
 ## Next
+- [ ] Verify a live Ghostty launch still auto-opens exact matches and asks before using close fuzzy matches.
 - [ ] Verify the remote-path and GitHub-repo dialogs prefill from the last launch or repo config on repeated launches.
 - [ ] Verify `--resume-last` reuses saved remote metadata without prompting for the project again.
 - [ ] Verify `--status-last` prints the last saved project, Builder/plan phase, and remote fields.

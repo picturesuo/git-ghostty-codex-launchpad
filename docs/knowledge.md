@@ -25,6 +25,7 @@
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.
 - `repo`: Launcher prompts and the launch summary now surface a compact session snapshot with the session ID, git branch/status, queue head, task artifact ID, phase, and a lightweight context-budget indicator.
 - `repo`: The launcher now records last-launch metadata so it can reopen the same project session or print the last saved state on demand.
+- `repo`: A single structured launch-snapshot helper now feeds the stored launch state, `--status-last`, and the launcher title bar.
 - `repo`: `scripts/check-shell.sh` is the standard shell sanity check and wraps `shellcheck` for the repo's shell entry points and helpers.
 - `repo`: The saved launch summary now uses the Builder/plan snapshot instead of hardcoding Backend/build.
 
