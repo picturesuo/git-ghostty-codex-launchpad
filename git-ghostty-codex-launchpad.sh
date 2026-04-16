@@ -436,13 +436,93 @@ EOF
   NEW_FILE_NAME="$dialog_result"
 }
 
+project_git_remote_path() {
+  local project_dir=$1 upstream remote
+  local -a remotes=()
+
+  if [[ ! -d "$project_dir" || ! -d "$project_dir/.git" ]]; then
+    return 1
+  fi
+
+  upstream="$(git -C "$project_dir" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+  if [[ -n "$upstream" ]]; then
+    remote="${upstream%%/*}"
+    if [[ -n "$remote" ]] && git -C "$project_dir" remote get-url "$remote" >/dev/null 2>&1; then
+      git -C "$project_dir" remote get-url "$remote"
+      return 0
+    fi
+  fi
+
+  if git -C "$project_dir" remote get-url origin >/dev/null 2>&1; then
+    git -C "$project_dir" remote get-url origin
+    return 0
+  fi
+
+  while IFS= read -r remote; do
+    [ -n "$remote" ] && remotes+=("$remote")
+  done < <(git -C "$project_dir" remote)
+
+  if [[ "${#remotes[@]}" -eq 1 ]]; then
+    git -C "$project_dir" remote get-url "${remotes[0]}" 2>/dev/null || return 1
+    return 0
+  fi
+
+  return 1
+}
+
+github_repo_slug_from_remote_url() {
+  local remote_url=$1 repo_slug
+
+  repo_slug="$(printf '%s' "$remote_url" | sed -nE 's#^(git@github\.com:|ssh://git@github\.com/|https://github\.com/|http://github\.com/)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(\.git)?$#\2#p')"
+  if [[ -n "$repo_slug" ]]; then
+    printf '%s' "$repo_slug"
+    return 0
+  fi
+
+  repo_slug="$(printf '%s' "$remote_url" | sed -nE 's#.*github\.com[:/]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(\.git)?$#\1#p')"
+  if [[ -n "$repo_slug" ]]; then
+    printf '%s' "$repo_slug"
+    return 0
+  fi
+
+  return 1
+}
+
+launch_remote_defaults() {
+  local project_dir=$1 last_project_dir remote_url
+
+  GIT_REMOTE_PATH_DEFAULT=""
+  GITHUB_REPO_SLUG_DEFAULT=""
+
+  if [[ -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
+    last_project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory" || true)"
+    if [[ "$last_project_dir" == "$project_dir" ]]; then
+      GIT_REMOTE_PATH_DEFAULT="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path" || true)"
+      GITHUB_REPO_SLUG_DEFAULT="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo" || true)"
+    fi
+  fi
+
+  if [[ -z "$GIT_REMOTE_PATH_DEFAULT" ]]; then
+    remote_url="$(project_git_remote_path "$project_dir" 2>/dev/null || true)"
+    if [[ -n "$remote_url" ]]; then
+      GIT_REMOTE_PATH_DEFAULT="$remote_url"
+    fi
+  fi
+
+  if [[ -z "$GITHUB_REPO_SLUG_DEFAULT" && -n "$GIT_REMOTE_PATH_DEFAULT" ]]; then
+    GITHUB_REPO_SLUG_DEFAULT="$(github_repo_slug_from_remote_url "$GIT_REMOTE_PATH_DEFAULT" 2>/dev/null || true)"
+  fi
+}
+
 prompt_git_remote_path() {
-  local dialog_result
+  local dialog_result default_answer=${1-}
+
+  default_answer="$(applescript_string "$default_answer")"
 
   if ! dialog_result="$(
-    osascript <<'EOF'
+    osascript <<EOF
 try
-  text returned of (display dialog "What git remote path should this project push to?" default answer "" buttons {"Cancel", "Continue"} default button "Continue")
+  text returned of (display dialog "What git remote path should this project push to?" default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
 on error number -128
   return ""
 end try
@@ -455,12 +535,14 @@ EOF
 }
 
 prompt_github_repo_slug() {
-  local dialog_result
+  local dialog_result default_answer=${1-}
+
+  default_answer="$(applescript_string "$default_answer")"
 
   if ! dialog_result="$(
-    osascript <<'EOF'
+    osascript <<EOF
 try
-  text returned of (display dialog "What GitHub repo should this project commit to?" default answer "" buttons {"Cancel", "Continue"} default button "Continue")
+  text returned of (display dialog "What GitHub repo should this project commit to?" default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
 on error number -128
   return ""
 end try
@@ -1629,9 +1711,11 @@ EOF
     break
   done
 
-  prompt_git_remote_path
+  launch_remote_defaults "$project_dir"
+
+  prompt_git_remote_path "$GIT_REMOTE_PATH_DEFAULT"
   git_remote_path="$GIT_REMOTE_PATH"
-  prompt_github_repo_slug
+  prompt_github_repo_slug "$GITHUB_REPO_SLUG_DEFAULT"
   github_repo_slug="$GITHUB_REPO_SLUG"
 
   if [[ -z "$git_remote_path" || -z "$github_repo_slug" ]]; then

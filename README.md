@@ -20,7 +20,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Sets each pane title with the project, branch, dirty state, active role, active task artifact, phase, queue-now task, context budget, and session ID so interrupted sessions are easier to resume
 - Keeps the prompt source as the canonical control surface for the launcher wrapper, role prompts, and commit-helper guidance, while the launcher injects only the minimum live context
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
-- Prompts once for the git remote path and GitHub repo name, then threads those values into all four panes and the shared session context
+- Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, then threads those values into all four panes and the shared session context
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
 - Prompts the roles to auto-publish successful completed work through one shared Git helper that operates on the selected project repo

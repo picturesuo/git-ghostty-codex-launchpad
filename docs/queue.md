@@ -1,14 +1,14 @@
 # Queue
 
 ## Now
-- [ ] Verify a live Ghostty launch auto-opens exact matches and asks before using close fuzzy matches.
+- [ ] Verify a live Ghostty launch still auto-opens exact matches and asks before using close fuzzy matches.
 
 ## Next
+- [ ] Verify the remote-path and GitHub-repo dialogs prefill from the last launch or repo config on repeated launches.
 - [ ] Verify `--resume-last` reuses saved remote metadata without prompting for the project again.
 - [ ] Verify `--status-last` prints the last saved project, phase, and remote fields.
 - [ ] Verify `--watch-command` still opens a live watcher window in a fresh Ghostty window.
 - [ ] Decide whether the confirmation dialog should show the candidate path, the folder name, or both.
-- [ ] Decide whether any additional README note is needed for exact-match vs close-match launch behavior.
 - [ ] Document one or two real validation commands beyond `bash -n` if more checks become standard.
 
 ## Later
