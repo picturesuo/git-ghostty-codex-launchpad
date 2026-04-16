@@ -17,3 +17,5 @@ Edit the source file, then re-run the generator.
 EOF
 
 cat "$source_file" >> "$output_file"
+
+bash "$project_root/scripts/render-launcher-contract.sh"

@@ -1,11 +1,12 @@
 # Queue
 
 ## Now
-- [ ] Keep the prompt-source contract, generated docs, and canonical launcher output aligned.
+- [ ] Keep the prompt-source contract, launcher contract, and canonical launcher output aligned.
 
 ## Next
 - [ ] Add one README example that shows smart push configuring upstream on first publish.
 - [ ] Teach `scripts/check-prompt-drift.sh` to verify wrapper notes as well as role bodies if the canonical launcher gains extra shared lines.
+- [ ] Extend `scripts/validate-codex-commit.sh` to cover the doc-mapped zero-remote publish path.
 - [ ] Decide whether bootstrap fallback text belongs in the shared artifact instead of the launcher wrapper.
 
 ## Later
@@ -20,4 +21,5 @@
 - [ ] Edge case: verify smart push still picks the correct remote when one GitHub remote exists under a non-`origin` name.
 - [ ] Edge case: verify repo-doc mapping stays unambiguous if multiple GitHub repo slugs appear in docs.
 - [ ] Edge case: verify the helper fails clearly when the configured upstream has unrelated history.
+- [ ] Edge case: verify `scripts/check-role-set.sh` fails clearly if the launcher role order changes without docs changing.
 - [ ] Cleanup: keep the documented role list aligned with the actual launcher role list.

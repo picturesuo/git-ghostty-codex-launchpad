@@ -52,8 +52,11 @@ Prompt source blocks no longer live in `README.md`.
 
 - Canonical prompt source: [docs/prompt-source.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/prompt-source.md)
 - Generated prompt doc: [docs/generated-prompts.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/generated-prompts.md)
+- Generated launcher contract: [docs/generated-launcher-contract.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/generated-launcher-contract.md)
 - Generator: [scripts/render-prompt-docs.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/render-prompt-docs.sh)
 - Drift checker: [scripts/check-prompt-drift.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/check-prompt-drift.sh)
+- Role-set checker: [scripts/check-role-set.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/check-role-set.sh)
+- Commit-helper validator: [scripts/validate-codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/validate-codex-commit.sh)
 - Context budget: [docs/context-budget.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/context-budget.md)
 
 Regenerate docs with:
@@ -66,6 +69,18 @@ Check the canonical launcher against the documented prompt contract with:
 
 ```bash
 bash scripts/check-prompt-drift.sh
+```
+
+Check that only the intended four roles appear with:
+
+```bash
+bash scripts/check-role-set.sh
+```
+
+Exercise `scripts/codex-commit.sh` edge cases with:
+
+```bash
+bash scripts/validate-codex-commit.sh
 ```
 
 ## Launcher Drift

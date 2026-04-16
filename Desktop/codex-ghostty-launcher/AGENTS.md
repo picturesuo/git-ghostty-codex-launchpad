@@ -19,11 +19,15 @@ Use `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md` as the durab
 - `AGENTS.md`: repo policy
 - `docs/prompt-source.md`: canonical prompt contract
 - `docs/generated-prompts.md`: generated prompt doc
+- `docs/generated-launcher-contract.md`: generated launcher contract
 - `docs/context-budget.md`: prompt-budget rules
 - `docs/queue.md`: current work queue
 - `scripts/render-prompt-docs.sh`: prompt-doc generator
 - `scripts/check-prompt-drift.sh`: prompt drift checker
+- `scripts/check-role-set.sh`: role-set checker
+- `scripts/render-launcher-contract.sh`: launcher-contract generator
 - `scripts/codex-commit.sh`: scoped commit and publish helper
+- `scripts/validate-codex-commit.sh`: commit-helper validator
 
 Do not invent build, test, or runtime commands that are not present in the repo. If new project-specific commands become real, document them here or in `docs/`.
 
