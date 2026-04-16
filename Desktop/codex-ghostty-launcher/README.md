@@ -31,11 +31,11 @@ The ideal shape is explicit but sparse: low redundancy, clear ownership, and eno
 
 ## Commit Defaults
 
-For this repo, the default is to commit and push every meaningful repo-visible change as soon as that unit of work is coherent. That includes code, config, workflow, and collaborator-facing docs changes that people need to review or use.
+For this repo, the default is to commit every non-private repo-visible file change as soon as that change is coherent enough to save. That includes code, config, scripts, workflow files, and collaborator-facing docs.
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-If the repo does not yet have a configured remote and branch upstream, use `--no-push` until GitHub push is wired up.
+If the repo has a configured remote and branch upstream, push after the commit by default. If it does not, still make the local commit with `--no-push`.
 
 ## Prompt Source
 

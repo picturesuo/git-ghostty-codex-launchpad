@@ -5,6 +5,7 @@
 - `user`: Backend turns should update the shared context file directly, but only in sections owned by the role.
 - `user`: Keep agent prompts token-efficient. Prefer role-specific instructions only, and avoid giving every agent context it does not need.
 - `user`: Use four roles only in this repo's prompt docs: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`. Do not reintroduce `QUEUE-MANAGER` unless the user asks for it.
+- `user`: Automatically commit any non-private repo-visible file change once it is coherent enough to save. Personal or local-only files should remain uncommitted unless explicitly requested.
 
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
