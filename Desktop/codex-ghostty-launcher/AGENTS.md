@@ -90,6 +90,9 @@ When reporting completion, separate:
 
 ## Commit Rules
 - Commit after each repo-visible non-private change, even when the change is small.
+- In multi-part requests, commit each completed fix before starting the next fix.
+- Do not batch separate fixes into one commit just because they came from the same user prompt.
+- When changes to different files are independent, prefer separate commits per completed file-level fix.
 - Do not leave non-private repo-visible file edits uncommitted at end of turn when they are coherent enough to save.
 - Commit every meaningful repo-visible change by default, not just at the end of a session.
 - Treat any code, config, docs, script, or workflow file change inside the repo as commit-worthy by default unless it is explicitly personal or local-only.
