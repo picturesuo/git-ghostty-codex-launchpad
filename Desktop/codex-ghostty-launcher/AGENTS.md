@@ -3,28 +3,25 @@
 ## Purpose
 This file is the repo-local operating manual for Codex in `ghostty-codex-launcher`.
 
-Read it at the start of each session.
-Follow it unless the user explicitly overrides it.
+Read it at the start of each session and follow it unless the user explicitly overrides it.
 Keep it current. If the same mistake, correction, or gotcha happens twice, update this file.
-
-If `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md` exists, use it as the durable task artifact and session source of truth. Treat this `AGENTS.md` as the standing repo policy and the shared context file as the current-task record.
+If `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md` exists, use it as the durable task artifact and session source of truth.
 
 ## Prompt Layering
-- Keep durable repo policy in `AGENTS.md`.
+- Keep durable repo policy here.
 - Keep current-task state in `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md`.
-- Keep per-request prompts minimal: project context, role, and the instruction to read `AGENTS.md` plus the shared artifact first.
-- Do not repeat long workflow contracts, commit ceremony, or response-level status requirements in every prompt when this file and the shared artifact already define them.
+- Keep per-request prompts minimal.
+- Do not repeat workflow or status rules that already live here or in the shared artifact.
 
 ## Repo Layout
 Current repo-local structure is intentionally small:
-
-- `README.md`: user-facing project documentation.
-- `AGENTS.md`: repo-operating instructions for Codex.
-- `docs/prompt-source.md`: canonical prompt source for wrapper and role blocks.
-- `docs/generated-prompts.md`: generated prompt documentation derived from the canonical source.
-- `docs/queue.md`: lightweight work queue and follow-up memory.
-- `scripts/render-prompt-docs.sh`: helper to regenerate prompt docs from the canonical prompt source.
-- `scripts/codex-commit.sh`: helper for staging intended files and committing small atomic changes.
+- `README.md`: user-facing project documentation
+- `AGENTS.md`: repo-operating instructions
+- `docs/prompt-source.md`: canonical prompt source
+- `docs/generated-prompts.md`: generated prompt doc
+- `docs/queue.md`: work queue and follow-up memory
+- `scripts/render-prompt-docs.sh`: prompt-doc generator
+- `scripts/codex-commit.sh`: scoped commit helper
 
 Do not invent build, test, or runtime commands that are not present in the repo. If new project-specific commands become real, document them here or in `docs/`.
 
@@ -45,8 +42,8 @@ Do not invent build, test, or runtime commands that are not present in the repo.
 1. Read `AGENTS.md`.
 2. Read `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md` if it exists.
 3. Read `docs/queue.md`.
-4. Inspect the current repo-local files before editing.
-5. Check scoped git status for the files you plan to touch, for example `git status --short -- AGENTS.md docs/queue.md` or `git status --short -- .`.
+4. Inspect the files you plan to touch.
+5. Check scoped git status for those files.
 
 ## Queue-Driven Execution
 `docs/queue.md` is the working queue.
@@ -68,31 +65,10 @@ Rules:
 - If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
 
 ## Role Workflow
-
-### builder
-Responsibilities:
-- Initialize or refine the artifact for the current concrete task.
-- Define small, testable success criteria and constraints.
-- Hand off a clear implementation contract.
-
-### backend
-Responsibilities:
-- Implement the smallest change that satisfies the current artifact.
-- Keep edits localized to the scoped task.
-- Update implementation notes and status for the next role.
-
-### critic
-Responsibilities:
-- Review the artifact and recent changes for correctness, regressions, weak criteria, and missing edge cases.
-- Record explicit pass/fail/not-verified judgments tied to artifact IDs.
-- Leave concrete debugger guidance when something fails.
-
-### debugger
-Responsibilities:
-- Reproduce failures with the smallest possible loop.
-- Inspect logs, CLI output, diffs, and targeted checks before editing.
-- Prefer the smallest fix that addresses the identified cause.
-- State clearly what failed, what was reproduced, and what remains uncertain.
+- `builder`: refine the artifact, define success criteria, and hand off a clear implementation contract.
+- `backend`: implement the smallest change that satisfies the artifact and update status.
+- `critic`: review for regressions, weak criteria, and missing edge cases with explicit pass/fail/not-verified judgments.
+- `debugger`: reproduce first, inspect the smallest loop possible, and fix the identified cause with minimal edits.
 
 ## Navigation and Tooling
 - Prefer `rg` for search and `rg --files` for file discovery.
@@ -121,11 +97,6 @@ When reporting completion, separate:
 ## Commit Policy
 - Commit after each repo-visible non-private change, even when the change is small.
 - Do not leave non-private repo-visible file edits uncommitted at end of turn when they are coherent enough to save.
-- Push each meaningful repo-visible commit to GitHub by default when the repo has a configured remote and branch upstream.
-- If a GitHub remote and branch upstream are configured, publish repo-visible non-private commits to GitHub in the same turn by default.
-- The current repo-local helper only pushes when the current branch already has an upstream.
-- Do not claim the helper can infer a GitHub destination from repo docs, nearby canonical repos, or GitHub account state until that logic exists in `scripts/codex-commit.sh`.
-- If no upstream is configured, either configure the remote and upstream first or use `--no-push` for an intentional local-only commit.
 - Commit every meaningful repo-visible change by default, not just at the end of a session.
 - Treat any code, config, docs, script, or workflow file change inside the repo as commit-worthy by default unless it is explicitly personal or local-only.
 - Treat code, config, behavior, workflow, and collaborator-facing docs changes as commit-worthy when someone reviewing or using the project would need to see them.
@@ -134,7 +105,10 @@ When reporting completion, separate:
 - Default to `main` unless the user says otherwise.
 - Do not stage unrelated files.
 - Do not commit private, machine-specific, secret, scratch, cache, log, editor-metadata, or other local-only files unless the user explicitly asks for them.
-- If no upstream is configured, still make the local commit with `--no-push` instead of skipping the commit.
+- Publish in the same turn by default when the branch already has a configured upstream.
+- The current helper only pushes to the configured upstream branch.
+- Do not claim the helper can infer a destination from repo docs, canonical repo mapping, nearby repos, remotes, or GitHub account state until that logic exists in `scripts/codex-commit.sh`.
+- If no upstream is configured, either configure it first or use `--no-push` for an intentional local-only commit.
 - If no GitHub remote or upstream is configured, report that limitation explicitly and do not claim the work is published.
 - Do not push to a merely similar or guessed GitHub repo when the repo identity is ambiguous.
 - Before any push, state exactly which files changed and exactly which files are being published if the publish set is not already obvious from the task.
@@ -182,7 +156,8 @@ Rules:
 - Prefer a short sentence that says what changed, not a placeholder like `add 3 files`.
 - Target roughly 3 to 8 words.
 - Avoid random or empty phrasing.
-- Default to commit-and-push when an upstream already exists; use `--no-push` when a push is impossible or intentionally undesired.
+- Default to commit-and-push when an upstream already exists.
+- Use `--no-push` when a push is impossible or intentionally undesired.
 
 Examples:
 - `add auth callback handler`

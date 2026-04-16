@@ -36,11 +36,15 @@ For this repo, the default is to commit every non-private repo-visible file chan
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, do not pretend the work was published: configure the remote and upstream first, or make the local commit with `--no-push`.
+The current helper contract is simple: [scripts/codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/codex-commit.sh) commits the paths you pass and, by default, pushes only to the branch's configured upstream.
 
-Current helper behavior is narrower than the long-term publish policy. [scripts/codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/codex-commit.sh) only pushes when the current branch already has an upstream. It does not yet infer a destination from repo docs, canonical repo mapping, nearby repos, or GitHub account state, and it does not auto-configure remotes or upstreams.
+That means:
+- if an upstream exists, the helper pushes to that exact upstream
+- if no upstream exists, the helper exits with a clear error unless you use `--no-push`
+- it does not infer a destination from repo docs, canonical repo mapping, nearby repos, remotes, or GitHub account state
+- it does not auto-configure a remote or upstream
 
-Treat smarter destination discovery as follow-up work, not current behavior. Until that lands, automatic publishing here means "commit, then push the existing upstream if one is already configured."
+Treat smarter destination discovery as follow-up work, not current behavior.
 
 ## Prompt Source
 
@@ -63,7 +67,7 @@ The actual launcher-emitted prompt currently lives in `/Users/bensuo/ghostty-cod
 Current drift versus this repo's canonical prompt source:
 - The launcher still emits extra wrapper lines beyond project facts and role.
 - The launcher still carries fallback behavior that should move into the shared artifact.
-- The launcher still includes `QUEUE-MANAGER`, while this repo's documented role set is `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
+- The launcher role list still needs to stay aligned with this repo's documented role set: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 
 Treat `docs/prompt-source.md` as the target prompt contract for cleanup work.
 
