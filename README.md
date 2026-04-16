@@ -32,6 +32,9 @@ The visible left-to-right pane order is:
 All four panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`, and existing task state should survive relaunches.
 Durable repo policy belongs in `AGENTS.md`; the shared context should carry the current task artifact and status instead of duplicating the full workflow contract.
 
+Prompt source is no longer documented inline in `README.md`.
+Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
+
 The workflow rules are:
 
 - Do not use `/fast` as part of launch or normal role behavior.
@@ -52,6 +55,15 @@ Bootstrap behavior:
 - The other roles should refine the minimum sections they need when the user explicitly redirects them, rather than stopping at `NOT READY`.
 - `BACKEND` owns the first slice of knowledge ingest and retrieval, while `CRITIC` keeps the existing pressure-testing role and adds targeted coaching notes from observed weak points.
 - The launcher prompt wrapper stays intentionally short and relies on `AGENTS.md` plus the shared artifact for the rest of the durable workflow context.
+
+## Publishing Defaults
+
+This repo should automatically commit any coherent non-private repo-visible file change.
+
+If a GitHub remote and upstream are configured, verified completed work should be published in the same turn by default.
+If they are not configured, the work should still be committed locally with `--no-push`, and the missing publish path should be reported explicitly instead of implied.
+
+When destination is unclear, the workflow should first try to infer it from git remotes, repo docs, nearby canonical repos, and the authenticated GitHub account. It should ask only when the destination is still genuinely ambiguous.
 ## Files
 
 - `git-ghostty-codex-launchpad.sh` - main launcher

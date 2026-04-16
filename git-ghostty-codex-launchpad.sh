@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/prompts/prompt-source.sh"
+
 SHELL_STARTUP_DELAY_SECONDS=1.5
 CODEX_PROMPT_STAGGER_SECONDS=2
 LAUNCHPAD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -547,16 +550,6 @@ Use this end-of-turn format every time:
 EOF
 }
 
-response_format_template() {
-  cat <<'EOF'
-Return only:
-1. Summary
-2. Artifact updates
-3. Changed files
-4. Why
-EOF
-}
-
 compact_shared_context_boilerplate() {
   local session_file=$1
   local content updated workflow tail
@@ -708,119 +701,10 @@ role_prompt() {
   local session_file=$5
   local prompt_body
 
-  case "$role" in
-    BUILDER)
-      prompt_body="$(cat <<'EOF'
-ROLE: BUILDER
-
-Responsibilities:
-- Initialize or refine Goal, Scope, Constraints, Success Criteria, Invariants, Failure Modes, Risks / Open Questions, Test Mapping, and Status.
-- Do not start implementation before initial success criteria exist.
-- If a separate implementation role exists, stop after artifact setup and status update.
-
-Rules:
-- Use exact IDs such as `SC1`, `INV1`, `FM1`, `R1`, and `Q1`.
-- Keep scope tight.
-- Do not claim verification you did not perform.
-EOF
-)"
-      ;;
-    BACKEND)
-      prompt_body="$(cat <<'EOF'
-ROLE: BACKEND
-
-Responsibilities:
-- Implement the smallest change that satisfies the artifact.
-- Keep changes tied directly to `SC` and `INV` IDs.
-- Update implementation notes and Status in the artifact.
-- Own the first knowledge-loop slice by storing durable reusable knowledge in `docs/knowledge.md` and reusing it during implementation.
-
-Rules:
-- If there is no concrete task yet, wait.
-- If the user redirects you, refine the minimum artifact sections you need and proceed.
-- Do not expand scope beyond the artifact unless a blocker forces it.
-- In v1, treat direct user instructions, pasted facts, stable repo docs, and shared-context summaries as ingestible knowledge when they are likely to matter again.
-- Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
-- Do not claim final verification.
-- Publish only after verified completion with `bash $CODEX_COMMIT_HELPER ...`.
-EOF
-)"
-      ;;
-    CRITIC)
-      prompt_body="$(cat <<'EOF'
-ROLE: CRITIC
-
-Responsibilities:
-- Refine weak criteria and challenge risky assumptions.
-- Preserve the existing pressure-testing role as the primary owner of critique.
-- Record `PASS`, `FAIL`, or `NOT VERIFIED` against the artifact.
-- Add missing risks, failure modes, invariant judgments, and debugger guidance.
-- Detect recurring weak points from critique or recorded history and add targeted coaching guidance that later roles can reuse.
-
-Rules:
-- If there is no concrete task yet, wait.
-- Keep findings tied to artifact IDs.
-- Keep coaching guidance specific to observed weak points instead of generic advice.
-- Do not propose unrelated rewrites.
-- Do not publish failing or unverified work.
-EOF
-)"
-      ;;
-    DEBUGGER)
-      prompt_body="$(cat <<'EOF'
-ROLE: DEBUGGER
-
-Responsibilities:
-- Reproduce the smallest failing loop before editing when practical.
-- Fix the confirmed cause with the smallest change.
-- Recheck affected criteria and update diagnosis, verification, and Status.
-
-Rules:
-- Prefer direct evidence over speculation.
-- If the failure cannot be reproduced, record that explicitly and note what was tried.
-- Keep diagnosis and fixes tied to artifact IDs.
-- Publish with `bash $CODEX_COMMIT_HELPER ...` only after the fix restores verified completion.
-EOF
-)"
-      ;;
-    QUEUE-MANAGER)
-      prompt_body="$(cat <<'EOF'
-ROLE: QUEUE-MANAGER
-
-Queue-manager responsibilities:
-- Keep the task artifact and repo queue aligned.
-- Convert vague goals into small executable tasks.
-- Keep work sequenced so the next step is always obvious.
-- Add discovered follow-ups, edge cases, cleanup items, and blockers without expanding scope unnecessarily.
-- Update status, outstanding issues, and next action so another role can continue immediately.
-
-Rules:
-- Prefer the smallest independently shippable next step.
-- Split large tasks into concrete slices.
-- Remove stale or already-completed queue items when appropriate.
-- Do not invent unrelated roadmap work.
-- Keep all queue updates tied to the current artifact and exact IDs where relevant.
-
-Under artifact updates, include queue/task breakdown changes, newly identified blockers, follow-up tasks, edge cases, cleanup items, and status updates.
-EOF
-)"
-      ;;
-  esac
+  prompt_body="$(role_prompt_body "$role")"
 
   cat <<EOF
-Shared project context:
-- Project name: $project_name
-- Project directory: $project_dir
-- Target file: $target_file
-- Shared context file: $session_file
-
-Read \`$project_dir/AGENTS.md\` first if it exists.
-Read the shared context file second and use it as the task artifact for the current task.
-Update the shared context file directly as part of your work, but only in the sections owned by your role.
-Work inside \`$project_dir\`.
-Treat \`Target file\` as a starting point unless the artifact says otherwise.
-
-$(response_format_template)
+$(base_wrapper_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file")
 
 $prompt_body
 EOF
