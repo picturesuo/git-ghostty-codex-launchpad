@@ -4,13 +4,13 @@
 - [ ] Validate close-match project reuse and shared-context reuse against one existing repo that previously produced duplicate `.codex` session files.
 
 ## Next
-- [ ] Validate `scripts/codex-commit.sh` auto-discovery against one non-canonical project repo with no configured remote.
+- [ ] Verify the helper still commits and pushes normally against a repo with a configured remote after the no-remote fail-fast fix.
 - [ ] Verify one live Ghostty launch against an existing repo with the canonical prompt source now wired into launcher output.
 - [ ] Verify that a typed variant like `Ghosty Codex Launch` resolves to the existing canonical repo and its prior shared-context file.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
-- [ ] Decide whether the README should document detached-HEAD and no-upstream auto-publish behavior explicitly.
+- [ ] Decide whether any additional README note is needed for detached-HEAD and no-upstream auto-publish behavior beyond the current wording.
 - [ ] Decide whether the launcher should compact repeated boilerplate in existing project-local `AGENTS.md` files or leave that to repo owners.
 
 ## Later

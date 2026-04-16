@@ -786,7 +786,7 @@ legacy_workflow_contract_v1() {
 - State assumptions as `Q` or `R` items.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- When that completion bar is met, publish the intended files with `bash scripts/codex-commit.sh --push <paths...>`.
+- When that completion bar is met, publish the intended files with `bash $CODEX_COMMIT_HELPER <paths...>`.
 - Do not auto-publish partial, failing, or unverified work.
 - Reference artifact IDs exactly: `SC1`, `INV1`, `FM1`, `R1`, `Q1`, `F1`.
 - Keep scope tight and avoid task expansion unless a true blocker is identified.

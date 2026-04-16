@@ -270,11 +270,8 @@ resolve_existing_remote() {
 }
 
 find_matching_github_repo() {
-  local owner package_name readme_title repo_name project_name line name url normalized_name candidate score best_score ambiguous
+  local owner package_name readme_title repo_name project_name candidate
   local mapped_repo
-  local best_url=""
-  local best_name=""
-  local -a repo_rows=()
   candidate_repo_names=()
 
   if mapped_repo="$(read_doc_mapped_repo 2>/dev/null)"; then
@@ -305,47 +302,6 @@ find_matching_github_repo() {
       return 0
     fi
   done
-
-  while IFS= read -r line; do
-    [ -n "$line" ] && repo_rows+=("$line")
-  done < <(gh repo list "$owner" --limit 500 --json name,sshUrl --jq '.[] | [.name, .sshUrl] | @tsv' 2>/dev/null)
-
-  best_score=0
-  ambiguous=0
-  for line in "${repo_rows[@]}"; do
-    name="${line%%$'\t'*}"
-    url="${line#*$'\t'}"
-    normalized_name="$(normalize_repo_key "$name")"
-    score=0
-
-    for candidate in "${candidate_repo_names[@]}"; do
-      if [ "$normalized_name" = "$candidate" ]; then
-        score=100
-        break
-      fi
-
-      case "$normalized_name" in
-        *"$candidate"*) score=$(( score < 70 ? 70 : score )) ;;
-      esac
-      case "$candidate" in
-        *"$normalized_name"*) score=$(( score < 60 ? 60 : score )) ;;
-      esac
-    done
-
-    if [ "$score" -gt "$best_score" ]; then
-      best_score="$score"
-      best_url="$url"
-      best_name="$name"
-      ambiguous=0
-    elif [ "$score" -eq "$best_score" ] && [ "$score" -gt 0 ] && [ "$name" != "$best_name" ]; then
-      ambiguous=1
-    fi
-  done
-
-  if [ "$best_score" -ge 70 ] && [ "$ambiguous" -eq 0 ] && [ -n "$best_url" ]; then
-    printf '%s\n' "$best_url"
-    return 0
-  fi
 
   return 1
 }
@@ -386,6 +342,11 @@ resolve_push_remote() {
   if existing="$(resolve_existing_remote)"; then
     printf '%s\n' "$existing"
     return 0
+  fi
+
+  if [ -z "$(git remote)" ]; then
+    echo "No git remote is configured for this project. Add a remote or use --no-push." >&2
+    exit 1
   fi
 
   url="$(find_matching_github_repo)" || {
