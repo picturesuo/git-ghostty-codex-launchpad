@@ -1,11 +1,12 @@
 # Queue
 
 ## Now
-- [ ] Validate `scripts/codex-commit.sh` auto-discovery against one non-canonical project repo with no configured remote.
+- [ ] Validate close-match project reuse and shared-context reuse against one existing repo that previously produced duplicate `.codex` session files.
 
 ## Next
+- [ ] Validate `scripts/codex-commit.sh` auto-discovery against one non-canonical project repo with no configured remote.
 - [ ] Verify one live Ghostty launch against an existing repo with the canonical prompt source now wired into launcher output.
-- [ ] Decide whether migrated shared-context sections should stay as lightweight `###` headings or be normalized into numbered artifact sections in a later slice.
+- [ ] Verify that a typed variant like `Ghosty Codex Launch` resolves to the existing canonical repo and its prior shared-context file.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
@@ -21,6 +22,7 @@
 ## Discovered While Working
 - [ ] Edge case: verify migration behavior when a legacy shared-context file already contains one of the two new sections but not both.
 - [ ] Edge case: verify migration placement when the task artifact has no `Status` section or uses nonstandard numbering.
+- [ ] Edge case: if several old shared-context files point at the same project directory, confirm the launcher reuses the newest one deterministically.
 - [ ] Cleanup: decide whether the migrated `###` knowledge/coaching headings should be normalized into numbered artifact sections once the format stabilizes.
 - [ ] Edge case: define how auto-publish should behave on a detached HEAD or on branches without an upstream remote.
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.

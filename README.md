@@ -13,6 +13,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 
 - Opens a fresh Ghostty window and splits it into four panes
 - Prompts for the project you want to work on and tries to find it locally
+- Reuses an existing project and shared-context file when the typed project name is only a close match, instead of creating a near-duplicate session by name alone
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities

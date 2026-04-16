@@ -30,6 +30,126 @@ slugify() {
   printf '%s' "$value"
 }
 
+display_name_from_slug() {
+  local value=$1
+  value="${value//-/ }"
+  value="${value//_/ }"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+shared_prefix_length() {
+  local left=$1
+  local right=$2
+  local i max_len
+
+  max_len=${#left}
+  if (( ${#right} < max_len )); then
+    max_len=${#right}
+  fi
+
+  for ((i = 0; i < max_len; i++)); do
+    if [[ "${left:i:1}" != "${right:i:1}" ]]; then
+      printf '%s' "$i"
+      return
+    fi
+  done
+
+  printf '%s' "$max_len"
+}
+
+token_match_strength() {
+  local input_token=$1
+  local candidate_token=$2
+  local prefix_len
+
+  if [[ "$input_token" == "$candidate_token" ]]; then
+    printf '3'
+    return
+  fi
+
+  if (( ${#input_token} >= 5 || ${#candidate_token} >= 5 )); then
+    if [[ "$candidate_token" == "$input_token"* || "$input_token" == "$candidate_token"* ]]; then
+      printf '2'
+      return
+    fi
+
+    prefix_len="$(shared_prefix_length "$input_token" "$candidate_token")"
+    if (( prefix_len >= 5 )); then
+      printf '1'
+      return
+    fi
+  fi
+
+  printf '0'
+}
+
+name_similarity_metrics() {
+  local input_name=$1
+  local candidate_name=$2
+  local input_slug candidate_slug token candidate_token strength best_strength matched_input_tokens input_token_count prefix_len
+  local -a input_tokens candidate_tokens
+
+  input_slug="$(slugify "$input_name")"
+  candidate_slug="$(slugify "$candidate_name")"
+
+  if [[ -z "$input_slug" || -z "$candidate_slug" ]]; then
+    printf '0\t0\t0\n'
+    return
+  fi
+
+  IFS='-' read -r -a input_tokens <<< "$input_slug"
+  IFS='-' read -r -a candidate_tokens <<< "$candidate_slug"
+
+  matched_input_tokens=0
+  input_token_count=0
+  best_strength=0
+
+  for token in "${input_tokens[@]}"; do
+    if (( ${#token} < 3 )); then
+      continue
+    fi
+
+    input_token_count=$((input_token_count + 1))
+    strength=0
+
+    for candidate_token in "${candidate_tokens[@]}"; do
+      local candidate_strength
+      candidate_strength="$(token_match_strength "$token" "$candidate_token")"
+      if (( candidate_strength > strength )); then
+        strength=$candidate_strength
+      fi
+    done
+
+    if (( strength > 0 )); then
+      matched_input_tokens=$((matched_input_tokens + 1))
+      best_strength=$((best_strength + strength))
+    fi
+  done
+
+  if [[ "$candidate_slug" == "$input_slug" ]]; then
+    best_strength=$((best_strength + 6))
+  elif [[ "$candidate_slug" == "$input_slug"* || "$input_slug" == "$candidate_slug"* ]]; then
+    best_strength=$((best_strength + 4))
+  else
+    prefix_len="$(shared_prefix_length "$input_slug" "$candidate_slug")"
+    if (( prefix_len >= 5 )); then
+      best_strength=$((best_strength + prefix_len))
+    fi
+  fi
+
+  printf '%s\t%s\t%s\n' "$best_strength" "$matched_input_tokens" "$input_token_count"
+}
+
+shared_context_header_value() {
+  local session_file=$1
+  local field_name=$2
+
+  [[ -f "$session_file" ]] || return 1
+  sed -n "s/^- ${field_name}: //p" "$session_file" | head -n 1
+}
+
 prompt_project_name() {
   local dialog_result
 
@@ -146,6 +266,129 @@ search_root_for_project() {
   return 1
 }
 
+search_root_for_project_similarity() {
+  local search_root=$1
+  local project_name=$2
+  local max_depth=$3
+  local candidate best_candidate best_score best_matches best_tokens ambiguous
+  local candidate_name score matches token_count
+
+  [[ -d "$search_root" ]] || return 1
+
+  best_candidate=""
+  best_score=0
+  best_matches=0
+  best_tokens=0
+  ambiguous=0
+
+  while IFS= read -r -d '' candidate; do
+    candidate_name="$(basename "$candidate")"
+    IFS=$'\t' read -r score matches token_count <<< "$(name_similarity_metrics "$project_name" "$candidate_name")"
+
+    if (( token_count == 0 || matches < 2 )); then
+      continue
+    fi
+
+    if (( matches * 2 < token_count + 1 )); then
+      continue
+    fi
+
+    if (( score > best_score || (score == best_score && matches > best_matches) )); then
+      best_candidate="$candidate"
+      best_score=$score
+      best_matches=$matches
+      best_tokens=$token_count
+      ambiguous=0
+      continue
+    fi
+
+    if (( score == best_score && matches == best_matches && score > 0 )); then
+      ambiguous=1
+    fi
+  done < <(
+    find "$search_root" -maxdepth "$max_depth" -type d \
+      \( -exec test -d {}/.git \; -o -exec test -f {}/package.json \; -o -exec test -f {}/README.md \; -o -exec test -f {}/README.mdx \; \) \
+      -print0 2>/dev/null
+  )
+
+  if [[ -n "$best_candidate" && $ambiguous -eq 0 && $best_score -ge 4 && $best_matches -ge 2 ]]; then
+    printf '%s' "$best_candidate"
+    return 0
+  fi
+
+  return 1
+}
+
+search_shared_context_for_project() {
+  local project_name=$1
+  local session_dir="$HOME/.codex"
+  local session_file candidate_dir candidate_name candidate_label
+  local score_dir matches_dir tokens_dir score_name matches_name tokens_name
+  local score_label matches_label tokens_label score matches tokens
+  local best_dir best_score best_matches ambiguous
+
+  [[ -d "$session_dir" ]] || return 1
+
+  best_dir=""
+  best_score=0
+  best_matches=0
+  ambiguous=0
+
+  while IFS= read -r session_file; do
+    [[ -f "$session_file" ]] || continue
+
+    candidate_dir="$(shared_context_header_value "$session_file" "Project directory")"
+    [[ -n "$candidate_dir" && -d "$candidate_dir" ]] || continue
+    [[ "$candidate_dir" != "$HOME" ]] || continue
+    if [[ ! -d "$candidate_dir/.git" && ! -f "$candidate_dir/package.json" && ! -f "$candidate_dir/README.md" && ! -f "$candidate_dir/README.mdx" ]]; then
+      continue
+    fi
+
+    candidate_name="$(shared_context_header_value "$session_file" "Project name")"
+    candidate_label="$(basename "$candidate_dir")"
+
+    IFS=$'\t' read -r score_dir matches_dir tokens_dir <<< "$(name_similarity_metrics "$project_name" "$candidate_label")"
+    IFS=$'\t' read -r score_name matches_name tokens_name <<< "$(name_similarity_metrics "$project_name" "$candidate_name")"
+
+    score=$score_dir
+    matches=$matches_dir
+    tokens=$tokens_dir
+
+    if (( score_name > score || (score_name == score && matches_name > matches) )); then
+      score=$score_name
+      matches=$matches_name
+      tokens=$tokens_name
+    fi
+
+    if (( score_dir < 4 || matches_dir < 2 || tokens == 0 || matches < 2 || score < 4 )); then
+      continue
+    fi
+
+    if (( matches * 2 < tokens + 1 )); then
+      continue
+    fi
+
+    if (( score > best_score || (score == best_score && matches > best_matches) )); then
+      best_dir="$candidate_dir"
+      best_score=$score
+      best_matches=$matches
+      ambiguous=0
+      continue
+    fi
+
+    if (( score == best_score && matches == best_matches && score > 0 )) && [[ "$candidate_dir" != "$best_dir" ]]; then
+      ambiguous=1
+    fi
+  done < <(find "$session_dir" -maxdepth 1 -type f -name '*-shared-context.md' -print | sort)
+
+  if [[ -n "$best_dir" && $ambiguous -eq 0 ]]; then
+    printf '%s' "$best_dir"
+    return 0
+  fi
+
+  return 1
+}
+
 search_project_dir() {
   local project_name=$1
   local search_root candidate pattern
@@ -168,6 +411,11 @@ search_project_dir() {
   )
   fuzzy_roots=("$HOME")
 
+  if candidate="$(search_shared_context_for_project "$project_name")"; then
+    printf '%s' "$candidate"
+    return
+  fi
+
   for search_root in "${exact_roots[@]}"; do
     for pattern in "$(find_glob_escape "$project_name")" "$(find_glob_escape "$normalized")"; do
       if candidate="$(search_root_for_project "$search_root" "$pattern" 5)"; then
@@ -184,6 +432,13 @@ search_project_dir() {
         return
       fi
     done
+  done
+
+  for search_root in "${exact_roots[@]}" "${likely_roots[@]}"; do
+    if candidate="$(search_root_for_project_similarity "$search_root" "$project_name" 5)"; then
+      printf '%s' "$candidate"
+      return
+    fi
   done
 
   if command -v mdfind >/dev/null 2>&1; then
@@ -212,6 +467,75 @@ search_project_dir() {
   done
 
   printf '%s' ""
+}
+
+find_shared_context_by_project_dir() {
+  local session_dir=$1
+  local project_dir=$2
+  local candidate best_candidate candidate_mtime best_mtime
+
+  [[ -d "$session_dir" ]] || return 1
+
+  best_candidate=""
+  best_mtime=0
+
+  while IFS= read -r candidate; do
+    [[ -f "$candidate" ]] || continue
+    if ! grep -Fqx -- "- Project directory: $project_dir" "$candidate"; then
+      continue
+    fi
+
+    candidate_mtime="$(stat -f '%m' "$candidate" 2>/dev/null || printf '0')"
+    if (( candidate_mtime >= best_mtime )); then
+      best_mtime=$candidate_mtime
+      best_candidate="$candidate"
+    fi
+  done < <(find "$session_dir" -maxdepth 1 -type f -name '*-shared-context.md' -print | sort)
+
+  if [[ -n "$best_candidate" ]]; then
+    printf '%s' "$best_candidate"
+    return 0
+  fi
+
+  return 1
+}
+
+shared_context_matches_project_dir() {
+  local session_file=$1
+  local project_dir=$2
+
+  [[ -f "$session_file" ]] || return 1
+  grep -Fqx -- "- Project directory: $project_dir" "$session_file"
+}
+
+resolve_shared_context_file() {
+  local project_name=$1
+  local project_dir=$2
+  local session_dir=$3
+  local desired_file canonical_file basename_file basename_slug
+
+  desired_file="$session_dir/$(slugify "$project_name")-shared-context.md"
+  basename_slug="$(slugify "$(basename "$project_dir")")"
+  basename_file="$session_dir/$basename_slug-shared-context.md"
+
+  if [[ -e "$basename_file" ]]; then
+    printf '%s' "$basename_file"
+    return
+  fi
+
+  if canonical_file="$(find_shared_context_by_project_dir "$session_dir" "$project_dir")"; then
+    printf '%s' "$canonical_file"
+    return
+  fi
+
+  if [[ -e "$desired_file" ]]; then
+    if shared_context_matches_project_dir "$desired_file" "$project_dir"; then
+      printf '%s' "$desired_file"
+      return
+    fi
+  fi
+
+  printf '%s' "$desired_file"
 }
 
 default_new_project_root() {
@@ -669,8 +993,10 @@ make_shared_context() {
   local project_dir=$2
   local target_file=$3
   local session_dir="$HOME/.codex"
-  local session_file="$session_dir/$(slugify "$project_name")-shared-context.md"
+  local session_file
   mkdir -p "$session_dir"
+
+  session_file="$(resolve_shared_context_file "$project_name" "$project_dir" "$session_dir")"
 
   if [[ -e "$session_file" ]]; then
     compact_shared_context_boilerplate "$session_file"
@@ -781,6 +1107,7 @@ EOF
 
 main() {
   local project_name project_dir session_file project_name_compact target_file requested_file
+  local resolved_project_slug
   local -a roles prompts
   local role
 
@@ -804,6 +1131,11 @@ main() {
     project_dir="$CREATED_PROJECT_DIR"
     target_file="$CREATED_TARGET_FILE"
   else
+    resolved_project_slug="$(slugify "$(basename "$project_dir")")"
+    if [[ -n "$resolved_project_slug" ]]; then
+      project_name="$(display_name_from_slug "$resolved_project_slug")"
+    fi
+
     if [[ ! -f "$project_dir/AGENTS.md" ]]; then
       seed_project_workflow_files "$project_name" "$project_dir"
       target_file="AGENTS.md"
