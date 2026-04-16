@@ -7,6 +7,7 @@
 - `user`: Use four roles only in this repo's prompt docs: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`. Do not reintroduce `QUEUE-MANAGER` unless the user asks for it.
 - `user`: Automatically commit any non-private repo-visible file change once it is coherent enough to save. Personal or local-only files should remain uncommitted unless explicitly requested.
 - `user`: When a GitHub remote and upstream are configured, publish non-private repo-visible commits in the same turn by default. If not configured, say so explicitly.
+- `user`: Before asking where to push, try to infer the GitHub destination automatically from remotes, repo docs, nearby canonical repos, and the authenticated GitHub account. Ask only when the destination is genuinely ambiguous.
 
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.

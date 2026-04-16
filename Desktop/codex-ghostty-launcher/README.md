@@ -35,7 +35,9 @@ For this repo, the default is to commit every non-private repo-visible file chan
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, still make the local commit with `--no-push` and report that the work is not yet published.
+If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, first try to discover the correct GitHub destination automatically from existing remotes, repo docs, nearby canonical repos, and the authenticated GitHub account. If there is one confident match, configure it and push. If not, still make the local commit with `--no-push` and report the ambiguity instead of guessing.
+
+Automatic publishing should be aggressive about discovery and conservative about identity: search first, ask rarely, and do not push to a merely similar repo name when the destination is not clearly the same project.
 
 ## Prompt Source
 
