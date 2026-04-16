@@ -36,15 +36,15 @@ For this repo, the default is to commit every non-private repo-visible file chan
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-The current helper contract is simple: [scripts/codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/codex-commit.sh) commits the paths you pass and, by default, pushes only to the branch's configured upstream.
+The helper contract is now:
+- [scripts/codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/codex-commit.sh) commits only the paths you pass
+- generated commit messages should be short, human-readable, and a little more descriptive than bare labels
+- if an upstream already exists, the helper pushes there directly
+- if no upstream exists, the helper first tries to infer a safe GitHub destination from existing remotes, repo docs, the canonical repo mapping, and the authenticated GitHub account
+- if there is one confident destination, it pushes and sets upstream automatically
+- if there is not one confident destination, it fails clearly and tells you to configure the destination or use `--no-push`
 
-That means:
-- if an upstream exists, the helper pushes to that exact upstream
-- if no upstream exists, the helper exits with a clear error unless you use `--no-push`
-- it does not infer a destination from repo docs, canonical repo mapping, nearby repos, remotes, or GitHub account state
-- it does not auto-configure a remote or upstream
-
-Treat smarter destination discovery as follow-up work, not current behavior.
+Automatic publishing should still be conservative about identity: infer when the match is clear, but do not guess when repo identity is ambiguous.
 
 ## Prompt Source
 
@@ -53,11 +53,19 @@ Prompt source blocks no longer live in `README.md`.
 - Canonical prompt source: [docs/prompt-source.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/prompt-source.md)
 - Generated prompt doc: [docs/generated-prompts.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/generated-prompts.md)
 - Generator: [scripts/render-prompt-docs.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/render-prompt-docs.sh)
+- Drift checker: [scripts/check-prompt-drift.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/check-prompt-drift.sh)
+- Context budget: [docs/context-budget.md](/Users/bensuo/Desktop/codex-ghostty-launcher/docs/context-budget.md)
 
 Regenerate docs with:
 
 ```bash
 bash scripts/render-prompt-docs.sh
+```
+
+Check the canonical launcher against the documented prompt contract with:
+
+```bash
+bash scripts/check-prompt-drift.sh
 ```
 
 ## Launcher Drift

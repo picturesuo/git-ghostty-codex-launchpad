@@ -81,6 +81,7 @@ Owns:
 Must:
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
+- Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Refine only the minimum artifact sections needed to implement.
 
 Must not:
