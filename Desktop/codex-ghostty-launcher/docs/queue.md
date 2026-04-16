@@ -20,6 +20,7 @@
 ## Discovered While Working
 - [ ] Edge case: decide whether missing-upstream runs should stay hard failures on the default path even when repo docs name a canonical GitHub destination.
 - [ ] Edge case: verify helper messaging stays clear when a remote exists but the branch upstream does not.
+- [ ] Edge case: verify the helper pushes cleanly when the local branch name differs from the upstream branch name.
 - [ ] Cleanup: trim duplicate commit-policy wording between README.md and AGENTS.md once the helper contract settles.
 - [ ] Edge case: confirm the default commit rule still excludes external shared-context files even when they are updated during local task execution.
 - [ ] Edge case: improve generated messages when staged paths mix one named workflow file with several unrelated files.

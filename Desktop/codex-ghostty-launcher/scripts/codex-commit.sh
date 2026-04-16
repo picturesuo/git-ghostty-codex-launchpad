@@ -13,7 +13,7 @@ Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
   - Otherwise generates a short message from the staged paths.
-  - By default, commits and then pushes the current branch.
+  - By default, commits and then pushes to the configured upstream branch.
   - With --no-push, commits locally without pushing.
 EOF
 }
@@ -25,6 +25,9 @@ project_prefix="${project_root#$repo_root/}"
 
 message=""
 push_after_commit=1
+upstream_ref=""
+upstream_remote=""
+upstream_branch=""
 declare -a paths=()
 
 while [ "$#" -gt 0 ]; do
@@ -89,9 +92,14 @@ for path in "${paths[@]}"; do
   rel_paths+=("$rel_path")
 done
 
-if [ "$push_after_commit" -eq 1 ] && ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
-  echo "Cannot push: current branch has no upstream. Configure a remote and upstream, or rerun with --no-push." >&2
-  exit 1
+if [ "$push_after_commit" -eq 1 ]; then
+  if ! upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)"; then
+    echo "Cannot push: current branch has no upstream. Configure a remote and upstream, or rerun with --no-push." >&2
+    exit 1
+  fi
+
+  upstream_remote="${upstream_ref%%/*}"
+  upstream_branch="${upstream_ref#*/}"
 fi
 
 git add -- "${rel_paths[@]}"
@@ -185,6 +193,6 @@ git commit -m "$message" -- "${rel_paths[@]}"
 printf 'Committed: %s\n' "$message"
 
 if [ "$push_after_commit" -eq 1 ]; then
-  git push
-  printf 'Pushed current branch.\n'
+  git push "$upstream_remote" "HEAD:$upstream_branch"
+  printf 'Pushed to %s.\n' "$upstream_ref"
 fi
