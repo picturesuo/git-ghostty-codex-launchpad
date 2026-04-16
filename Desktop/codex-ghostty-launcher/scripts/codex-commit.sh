@@ -5,7 +5,6 @@ usage() {
   cat <<'EOF'
 Usage:
   bash scripts/codex-commit.sh -m "commit message" <path> [<path> ...]
-  bash scripts/codex-commit.sh -m "commit message" <path> [<path> ...]
   bash scripts/codex-commit.sh --no-push -m "commit message" <path> [<path> ...]
   bash scripts/codex-commit.sh --no-push <path> [<path> ...]
   bash scripts/codex-commit.sh <path> [<path> ...]
@@ -14,8 +13,8 @@ Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
   - Otherwise generates a short message from the staged paths.
-  - By default, commits first and then pushes the current branch.
-  - With `--no-push`, commits locally without pushing.
+  - By default, commits and then pushes the current branch.
+  - With --no-push, commits locally without pushing.
 EOF
 }
 
@@ -73,7 +72,7 @@ for path in "${paths[@]}"; do
   fi
 
   case "$abs_path" in
-    "$project_root"/*) ;;
+    "$project_root"/*|"$project_root") ;;
     *)
       echo "Refusing to stage path outside project root: $path" >&2
       exit 1
@@ -89,6 +88,11 @@ for path in "${paths[@]}"; do
 
   rel_paths+=("$rel_path")
 done
+
+if [ "$push_after_commit" -eq 1 ] && ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+  echo "Cannot push: current branch has no upstream. Configure a remote and upstream, or rerun with --no-push." >&2
+  exit 1
+fi
 
 git add -- "${rel_paths[@]}"
 
@@ -128,7 +132,7 @@ generate_message() {
         return
         ;;
       */scripts/codex-commit.sh|scripts/codex-commit.sh)
-        printf '%s\n' "$action commit helper messaging"
+        printf '%s\n' "$action commit helper"
         return
         ;;
     esac
@@ -181,10 +185,6 @@ git commit -m "$message" -- "${rel_paths[@]}"
 printf 'Committed: %s\n' "$message"
 
 if [ "$push_after_commit" -eq 1 ]; then
-  if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
-    echo "Cannot push: current branch has no upstream. Configure a remote and upstream, or rerun with --no-push." >&2
-    exit 1
-  fi
   git push
   printf 'Pushed current branch.\n'
 fi

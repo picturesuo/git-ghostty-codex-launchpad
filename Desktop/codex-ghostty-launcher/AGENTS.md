@@ -20,7 +20,10 @@ Current repo-local structure is intentionally small:
 
 - `README.md`: user-facing project documentation.
 - `AGENTS.md`: repo-operating instructions for Codex.
+- `docs/prompt-source.md`: canonical prompt source for wrapper and role blocks.
+- `docs/generated-prompts.md`: generated prompt documentation derived from the canonical source.
 - `docs/queue.md`: lightweight work queue and follow-up memory.
+- `scripts/render-prompt-docs.sh`: helper to regenerate prompt docs from the canonical prompt source.
 - `scripts/codex-commit.sh`: helper for staging intended files and committing small atomic changes.
 
 Do not invent build, test, or runtime commands that are not present in the repo. If new project-specific commands become real, document them here or in `docs/`.
@@ -64,22 +67,25 @@ Rules:
   - 1 cleanup or simplification item
 - If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
 
-## Four-Pane Workflow
+## Role Workflow
 
 ### builder
 Responsibilities:
-- Implement the current highest-value queued task.
-- Make the smallest viable change that satisfies the success criteria.
-- Keep changes localized and reversible.
-- Update docs and queue entries as part of the same unit of work.
-- Commit after each meaningful unit using `scripts/codex-commit.sh`.
+- Initialize or refine the artifact for the current concrete task.
+- Define small, testable success criteria and constraints.
+- Hand off a clear implementation contract.
+
+### backend
+Responsibilities:
+- Implement the smallest change that satisfies the current artifact.
+- Keep edits localized to the scoped task.
+- Update implementation notes and status for the next role.
 
 ### critic
 Responsibilities:
-- Review recent changes for correctness, unnecessary complexity, missing edge cases, and validation gaps.
-- Focus on bugs, regressions, risky assumptions, unclear naming, and documentation drift.
-- Produce concrete, actionable findings.
-- Do not block progress unless risk is material.
+- Review the artifact and recent changes for correctness, regressions, weak criteria, and missing edge cases.
+- Record explicit pass/fail/not-verified judgments tied to artifact IDs.
+- Leave concrete debugger guidance when something fails.
 
 ### debugger
 Responsibilities:
@@ -87,13 +93,6 @@ Responsibilities:
 - Inspect logs, CLI output, diffs, and targeted checks before editing.
 - Prefer the smallest fix that addresses the identified cause.
 - State clearly what failed, what was reproduced, and what remains uncertain.
-
-### queue-manager
-Responsibilities:
-- Keep `docs/queue.md` current.
-- Convert vague ideas into concrete small tasks.
-- Add follow-up tasks, edge cases, and cleanup items discovered during work.
-- Prevent idle time by keeping the next small unit ready.
 
 ## Navigation and Tooling
 - Prefer `rg` for search and `rg --files` for file discovery.

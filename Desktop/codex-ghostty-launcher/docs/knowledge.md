@@ -1,0 +1,17 @@
+# Knowledge
+
+## User-Provided Knowledge
+- Capture durable user guidance, preferences, and constraints that should survive past a single task.
+- `user`: Backend turns should update the shared context file directly, but only in sections owned by the role.
+- `user`: Keep agent prompts token-efficient. Prefer role-specific instructions only, and avoid giving every agent context it does not need.
+- `user`: Use four roles only in this repo's prompt docs: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`. Do not reintroduce `QUEUE-MANAGER` unless the user asks for it.
+
+## Project Facts
+- Capture stable project facts, decisions, and summaries worth reusing across tasks.
+- `repo`: This repository is a duplicate documentation/workflow copy; `/Users/bensuo/ghostty-codex-launchpad` is the canonical implementation repo.
+- `repo`: Even in this duplicate repo, artifact-scoped workflow behavior should stay in repo-local files unless the shared artifact is revised first.
+- `repo`: Prompt source blocks should live in `docs/prompt-source.md`, with generated prompt docs in `docs/generated-prompts.md`, not inline in `README.md`.
+
+## Retrieval Hints
+- Search this file, the shared context file, and nearby repo docs with `rg` before broader search.
+- Label each note by source when useful: `user`, `repo`, or `external`.
