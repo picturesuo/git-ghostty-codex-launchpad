@@ -6,7 +6,7 @@
 ## Next
 - [ ] Verify the remote-path and GitHub-repo dialogs prefill from the last launch or repo config on repeated launches.
 - [ ] Verify `--resume-last` reuses saved remote metadata without prompting for the project again.
-- [ ] Verify `--status-last` prints the last saved project, phase, and remote fields.
+- [ ] Verify `--status-last` prints the last saved project, Builder/plan phase, and remote fields.
 - [ ] Verify `--watch-command` still opens a live watcher window in a fresh Ghostty window.
 - [ ] Decide whether the confirmation dialog should show the candidate path, the folder name, or both.
 - [ ] Verify `scripts/check-shell.sh` runs cleanly once `shellcheck` is available in the environment.

@@ -256,6 +256,7 @@ store_last_launch_state() {
   local watch_command=$7
   local queue_now branch git_status session_id artifact_id phase budget timestamp context_bar
   local state_dir
+  local summary_role=BUILDER
 
   state_dir="$(dirname "$LAUNCHPAD_LAST_SESSION_FILE")"
   mkdir -p "$state_dir"
@@ -268,9 +269,9 @@ store_last_launch_state() {
   branch="$(project_git_branch "$project_dir")"
   git_status="$(project_git_status "$project_dir")"
   queue_now="$(queue_now_item "$project_dir/docs/queue.md")"
-  phase="build"
+  phase="$(session_phase_for_role "$summary_role")"
   budget="$(context_budget_indicator "$session_file")"
-  context_bar="$(launcher_context_bar "BACKEND" "$project_name" "$project_dir" "$target_file" "$session_file")"
+  context_bar="$(launcher_context_bar "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file")"
   timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
   cat > "$LAUNCHPAD_LAST_SESSION_FILE" <<EOF
@@ -1503,12 +1504,10 @@ launch_ghostty_watch_window() {
   local project_dir=$2
   local session_file=$3
   local watch_command=$4
-  local watch_title watch_file watch_shell_command
+  local watch_title watch_shell_command
 
   watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
-  watch_file="$(mktemp -t codex-launchpad-watch.XXXXXX)"
-  printf '%s' "$watch_command" > "$watch_file"
-  watch_shell_command="printf '\\033]0;%s\\a' $(shell_single_quote "$watch_title"); bash -lc \"\$(cat $(shell_single_quote "$watch_file"))\""
+  watch_shell_command="printf '\\033]0;%s\\a' $(shell_single_quote "$watch_title"); bash -lc $(shell_single_quote "$watch_command")"
 
   if ! osascript <<EOF
 tell application "Ghostty"
@@ -1527,11 +1526,8 @@ tell application "Ghostty"
 end tell
 EOF
   then
-    rm -f "$watch_file"
     return 1
   fi
-
-  rm -f "$watch_file"
 }
 
 main() {
@@ -1642,7 +1638,7 @@ EOF
       "$(shared_context_session_id "$session_file")" \
       "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
       "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
-      "$(session_phase_for_role "BACKEND")" \
+      "$(session_phase_for_role "BUILDER")" \
       "$(context_budget_indicator "$session_file")" \
       "$project_dir/docs/queue.md" \
       "$project_dir/docs/knowledge.md" \
@@ -1741,7 +1737,7 @@ EOF
     "$(shared_context_session_id "$session_file")" \
     "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
     "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
-    "$(session_phase_for_role "BACKEND")" \
+    "$(session_phase_for_role "BUILDER")" \
     "$(context_budget_indicator "$session_file")" \
     "$project_dir/docs/queue.md" \
     "$project_dir/docs/knowledge.md" \
