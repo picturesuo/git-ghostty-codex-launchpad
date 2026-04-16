@@ -1,16 +1,15 @@
 # Queue
 
 ## Now
-- [ ] Validate the new prompt/session snapshot metadata and launcher launch summary against the generated prompt docs.
+- [ ] Validate the `--resume-last`, `--status-last`, and `--watch-command` launcher paths against the current shared-context format.
 
 ## Next
-- [ ] Verify `scripts/check-prompt-drift.sh` still passes after the prompt metadata change.
-- [ ] Check that the launcher prints project, session, queue, knowledge, branch, and git-status metadata on startup.
-- [ ] Decide whether the snapshot should also include the current task-artifact state once the format settles.
-- [ ] Capture the no-remote fail-fast rule in `docs/knowledge.md` if it recurs.
-- [ ] Confirm a sample remote-backed repo still auto-resolves the intended destination.
-- [ ] Verify one live Ghostty launch against an existing repo with the canonical prompt source now wired into launcher output.
-- [ ] Verify that a typed variant like `Ghosty Codex Launch` resolves to the existing canonical repo and its prior shared-context file.
+- [ ] Regenerate the prompt docs after the prompt-source wording change.
+- [ ] Verify `scripts/check-prompt-drift.sh` still passes after the commit-discipline prompt change.
+- [ ] Check that the launcher prints and stores the last launch state on startup.
+- [ ] Confirm `--resume-last` restores the saved shared context without prompting for the project again.
+- [ ] Confirm `--status-last` prints the last saved project, branch, queue, and watch-command summary.
+- [ ] Confirm `--watch-command` opens a live watcher window in a fresh Ghostty window.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.
@@ -33,6 +32,8 @@
 - [ ] Edge case: verify the shared helper still refuses paths outside the selected project root when called by absolute path from another repo.
 - [ ] Edge case: verify the new session snapshot shows `n/a` cleanly for non-git projects.
 - [ ] Edge case: verify the queue snapshot helper returns the first `Now` item and not a later section.
+- [ ] Edge case: verify `--resume-last` fails cleanly if the last saved project directory no longer exists.
+- [ ] Edge case: verify `--watch-command` preserves shell quoting when the command contains spaces, quotes, or pipes.
 - [ ] Edge case: confirm the helper still fails cleanly on a generic no-remote repo name that could match many GitHub repos.
 - [ ] Edge case: verify helper doc-mapped auto-discovery still behaves correctly when multiple repo docs mention different GitHub repos.
 - [ ] Small improvement: consider a dedicated `codex-publish.sh` wrapper if `codex-commit.sh --push` becomes awkward to explain.

@@ -17,10 +17,14 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Surfaces a compact session snapshot in each prompt with the project, branch, queue, and knowledge-path context so the panes can resume faster
+- Sets each pane title with project, branch, queue-now task, role, and session ID so interrupted sessions are easier to resume
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
+- Prompts once for the git remote path and GitHub repo name, then threads those values into all four panes and the shared session context
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
 - Prompts the roles to auto-publish successful completed work through one shared Git helper that operates on the selected project repo
+- Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening
+- Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
 
 The visible left-to-right pane order is:
@@ -53,6 +57,7 @@ The workflow rules are:
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Durable reusable knowledge belongs in `docs/knowledge.md`, while the shared context file carries current-task state and active handoff notes.
+- `--resume-last` reopens the last saved project session, `--status-last` prints the last saved launch summary, and `--watch` opens a live state watcher for the current project.
 - The workflow should search `docs/knowledge.md`, the shared context, and nearby repo docs first; use broader search only when local context is insufficient.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
@@ -70,7 +75,8 @@ Bootstrap behavior:
 This repo should automatically commit any coherent non-private repo-visible file change.
 
 Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
-The helper commits first, then pushes by default, prefers an existing upstream when available, and otherwise uses the selected project's existing remote context before using `git push -u`.
+The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
+The helper commits first, then pushes by default, prefers an existing upstream when available, and fails clearly if the selected project has no safe existing remote context.
 If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; use `--no-push` only for an intentional local-only commit.
 
 When destination is unclear, the workflow should first check git remotes and existing upstreams. If no safe destination exists, it should fail clearly and ask for a remote or `--no-push` instead of inventing one.
@@ -83,6 +89,11 @@ When destination is unclear, the workflow should first check git remotes and exi
 ## How To Use It
 
 Run the launcher from Terminal, or double-click the `.command` file from Finder.
+Useful command-line modes:
+
+- `bash git-ghostty-codex-launchpad.sh --resume-last`
+- `bash git-ghostty-codex-launchpad.sh --status-last`
+- `bash git-ghostty-codex-launchpad.sh --watch-command "npm test -- --watch"`
 
 ## Notes
 

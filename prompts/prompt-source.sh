@@ -3,10 +3,19 @@
 shared_context_session_id() {
   local session_file=$1
   local basename
+  local session_id
 
   if [[ "$session_file" == *"{"* ]]; then
     printf '%s' "{SESSION_ID}"
     return
+  fi
+
+  if [[ -f "$session_file" ]]; then
+    session_id="$(sed -n 's/^- Session ID: //p' "$session_file" | head -n 1)"
+    if [[ -n "$session_id" ]]; then
+      printf '%s' "$session_id"
+      return
+    fi
   fi
 
   basename="$(basename "$session_file")"
@@ -80,6 +89,8 @@ base_wrapper_prompt() {
   local project_dir=$3
   local target_file=$4
   local session_file=$5
+  local git_remote_path=${6:-"{GIT_REMOTE_PATH}"}
+  local github_repo_slug=${7:-"{GITHUB_REPO_SLUG}"}
   local session_id queue_file knowledge_file git_branch git_state queue_now
 
   session_id="$(shared_context_session_id "$session_file")"
@@ -94,6 +105,8 @@ Shared project context:
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
 - Session ID: $session_id
 - Git branch: $git_branch
 - Git status: $git_state
@@ -159,6 +172,8 @@ Must:
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
+- Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
+- Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
 - Refine only the minimum artifact sections needed to implement.
 
 Must not:

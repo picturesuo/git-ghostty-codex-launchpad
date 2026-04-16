@@ -12,6 +12,8 @@ Shared project context:
 - Project name: {PROJECT_NAME}
 - Project directory: {PROJECT_DIR}
 - Target file: {TARGET_FILE}
+- Git remote path: {GIT_REMOTE_PATH}
+- GitHub repo: {GITHUB_REPO_SLUG}
 - Session ID: {SESSION_ID}
 - Git branch: n/a
 - Git status: n/a
@@ -74,6 +76,8 @@ Must:
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
+- Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
+- Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
 - Refine only the minimum artifact sections needed to implement.
 
 Must not:

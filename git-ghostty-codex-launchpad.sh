@@ -8,6 +8,7 @@ SHELL_STARTUP_DELAY_SECONDS=1.5
 CODEX_PROMPT_STAGGER_SECONDS=2
 LAUNCHPAD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_COMMIT_HELPER="$LAUNCHPAD_ROOT/scripts/codex-commit.sh"
+LAUNCHPAD_LAST_SESSION_FILE="$HOME/.codex/ghostty-codex-launchpad-last-session.md"
 
 applescript_string() {
   local value=$1
@@ -150,6 +151,14 @@ shared_context_header_value() {
   sed -n "s/^- ${field_name}: //p" "$session_file" | head -n 1
 }
 
+launch_state_header_value() {
+  local state_file=$1
+  local field_name=$2
+
+  [[ -f "$state_file" ]] || return 1
+  sed -n "s/^- ${field_name}: //p" "$state_file" | head -n 1
+}
+
 generate_session_id() {
   if command -v uuidgen >/dev/null 2>&1; then
     uuidgen | tr '[:upper:]' '[:lower:]' | tr -d '-' | cut -c1-8
@@ -196,6 +205,110 @@ ensure_shared_context_session_id() {
   SHARED_CONTEXT_SESSION_ID="$session_id"
 }
 
+store_last_launch_state() {
+  local project_name=$1
+  local project_dir=$2
+  local target_file=$3
+  local session_file=$4
+  local git_remote_path=$5
+  local github_repo_slug=$6
+  local watch_command=$7
+  local queue_now branch git_status session_id timestamp
+  local state_dir
+
+  state_dir="$(dirname "$LAUNCHPAD_LAST_SESSION_FILE")"
+  mkdir -p "$state_dir"
+
+  session_id="$(shared_context_session_id "$session_file")"
+  branch="$(project_git_branch "$project_dir")"
+  git_status="$(project_git_status "$project_dir")"
+  queue_now="$(queue_now_item "$project_dir/docs/queue.md")"
+  timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+  cat > "$LAUNCHPAD_LAST_SESSION_FILE" <<EOF
+# Ghostty Codex Launchpad Last Session
+
+- Saved at: $timestamp
+- Project name: $project_name
+- Project directory: $project_dir
+- Target file: $target_file
+- Session ID: $session_id
+- Shared context file: $session_file
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
+- Queue file: $project_dir/docs/queue.md
+- Knowledge file: $project_dir/docs/knowledge.md
+- Queue now: $queue_now
+- Git branch: $branch
+- Git status: $git_status
+- Watch command: $watch_command
+EOF
+}
+
+print_last_launch_state() {
+  local project_name project_dir target_file session_id session_file queue_file knowledge_file queue_now branch git_status saved_at watch_command
+
+  if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
+    echo "No saved launch state has been recorded yet."
+    return 1
+  fi
+
+  project_name="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project name")"
+  project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
+  target_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Target file")"
+  session_id="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Session ID")"
+  session_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Shared context file")"
+  queue_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Queue file")"
+  knowledge_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Knowledge file")"
+  queue_now="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Queue now")"
+  branch="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git branch")"
+  git_status="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git status")"
+  saved_at="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Saved at")"
+  watch_command="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
+  git_remote_path="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")"
+  github_repo_slug="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
+
+  cat <<EOF
+Last saved launch state
+- Saved at: $saved_at
+- Project name: $project_name
+- Project directory: $project_dir
+- Target file: $target_file
+- Session ID: $session_id
+- Shared context file: $session_file
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
+- Queue now: $queue_now
+- Git branch: $branch
+- Git status: $git_status
+- Queue file: $queue_file
+- Knowledge file: $knowledge_file
+- Watch command: $watch_command
+EOF
+}
+
+build_default_watch_command() {
+  local project_dir=$1
+
+  cat <<EOF
+while true; do
+  clear
+  echo "Project: $project_dir"
+  echo "Git branch: \$(git -C $(shell_single_quote "$project_dir") branch --show-current 2>/dev/null || echo detached)"
+  echo "Git status:"
+  git -C $(shell_single_quote "$project_dir") status --short --branch --untracked-files=no 2>/dev/null || true
+  echo
+  echo "Queue now:"
+  awk '
+    /^## Now$/ { in_now = 1; next }
+    /^## / && in_now { exit }
+    in_now && /^- \[[ xX]\] / { sub(/^- \[[ xX]\] /, ""); print; exit }
+  ' $(shell_single_quote "$project_dir/docs/queue.md") 2>/dev/null || echo "n/a"
+  sleep 2
+done
+EOF
+}
+
 sanitize_title_text() {
   local value=$1 max_len=${2:-0}
 
@@ -210,8 +323,8 @@ sanitize_title_text() {
 }
 
 build_session_title() {
-  local project_name=$1 project_dir=$2 session_file=$3 role=$4
-  local branch task_label session_id
+  local project_name=$1 project_dir=$2 target_file=$3 session_file=$4 role=$5
+  local branch task_label session_id fallback_label
 
   project_name="$(sanitize_title_text "$project_name" 24)"
   branch="$(sanitize_title_text "$(project_git_branch "$project_dir")" 24)"
@@ -220,7 +333,11 @@ build_session_title() {
   session_id="$(sanitize_title_text "$(shared_context_session_id "$session_file")" 8)"
 
   if [[ -z "$task_label" || "$task_label" == "n/a" ]]; then
-    task_label="$(sanitize_title_text "$(basename "$target_file" 2>/dev/null || printf '%s' "$project_name")" 28)"
+    fallback_label="$(basename "$target_file" 2>/dev/null || true)"
+    if [[ -z "$fallback_label" ]]; then
+      fallback_label="$project_name"
+    fi
+    task_label="$(sanitize_title_text "$fallback_label" 28)"
   fi
   if [[ -z "$branch" || "$branch" == "n/a" ]]; then
     branch="no-git"
@@ -232,10 +349,28 @@ build_session_title() {
   printf '%s | %s | %s | %s | %s' "$project_name" "$branch" "$task_label" "$role" "$session_id"
 }
 
-pane_command_with_title() {
-  local title=$1 prompt_file=$2
+build_watch_title() {
+  local project_name=$1 project_dir=$2 session_file=$3
+  local branch session_id
 
-  printf "printf '\\033]0;%%s\\a' %s; codex \"\\$(cat %s)\"" "$(shell_single_quote "$title")" "$(shell_single_quote "$prompt_file")"
+  project_name="$(sanitize_title_text "$project_name" 24)"
+  branch="$(sanitize_title_text "$(project_git_branch "$project_dir")" 24)"
+  session_id="$(sanitize_title_text "$(shared_context_session_id "$session_file")" 8)"
+
+  if [[ -z "$branch" || "$branch" == "n/a" ]]; then
+    branch="no-git"
+  fi
+  if [[ -z "$session_id" ]]; then
+    session_id="session"
+  fi
+
+  printf '%s | %s | watch | %s' "$project_name" "$branch" "$session_id"
+}
+
+pane_command_with_title() {
+  local title=$1 prompt_text=$2
+
+  printf "printf '\\033]0;%%s\\a' %s; codex %s" "$(shell_single_quote "$title")" "$(shell_single_quote "$prompt_text")"
 }
 
 prompt_project_name() {
@@ -272,6 +407,42 @@ EOF
   fi
 
   NEW_FILE_NAME="$dialog_result"
+}
+
+prompt_git_remote_path() {
+  local dialog_result
+
+  if ! dialog_result="$(
+    osascript <<'EOF'
+try
+  text returned of (display dialog "What git remote path should this project push to?" default answer "" buttons {"Cancel", "Continue"} default button "Continue")
+on error number -128
+  return ""
+end try
+EOF
+  )"; then
+    dialog_result=""
+  fi
+
+  GIT_REMOTE_PATH="$dialog_result"
+}
+
+prompt_github_repo_slug() {
+  local dialog_result
+
+  if ! dialog_result="$(
+    osascript <<'EOF'
+try
+  text returned of (display dialog "What GitHub repo should this project commit to?" default answer "" buttons {"Cancel", "Continue"} default button "Continue")
+on error number -128
+  return ""
+end try
+EOF
+  )"; then
+    dialog_result=""
+  fi
+
+  GITHUB_REPO_SLUG="$dialog_result"
 }
 
 derive_project_name_from_file() {
@@ -964,18 +1135,13 @@ EOF
 
 compact_shared_context_boilerplate() {
   local session_file=$1
-  local content updated workflow tail
+  local content updated tail
 
   [[ -f "$session_file" ]] || return
 
   content="$(cat "$session_file")"
   updated="$content"
   tail="$(common_tail_template)"
-
-  for workflow in "$(workflow_contract)" "$(legacy_workflow_contract_v1)"; do
-    updated="${updated/$'\n\n'"$workflow"$'\n\n'/$'\n\n'}"
-    updated="${updated/"$workflow"$'\n\n'/}"
-  done
 
   if [[ "$updated" == *"## Workflow Contract"* && "$updated" == *"## TASK ARTIFACT"* ]]; then
     updated="$(
@@ -1080,6 +1246,8 @@ make_shared_context() {
   local project_name=$1
   local project_dir=$2
   local target_file=$3
+  local git_remote_path=$4
+  local github_repo_slug=$5
   local session_dir="$HOME/.codex"
   local session_file
   mkdir -p "$session_dir"
@@ -1089,6 +1257,7 @@ make_shared_context() {
   if [[ -e "$session_file" ]]; then
     compact_shared_context_boilerplate "$session_file"
     ensure_shared_context_knowledge_sections "$session_file"
+    ensure_shared_context_session_id "$session_file"
     SHARED_CONTEXT_FILE="$session_file"
     return
   fi
@@ -1099,7 +1268,9 @@ make_shared_context() {
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
-- Session ID: $(shared_context_session_id "$session_file")
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
+- Session ID: $(generate_session_id)
 - Queue file: $project_dir/docs/queue.md
 - Knowledge file: $project_dir/docs/knowledge.md
 - Session source of truth: this file
@@ -1107,6 +1278,7 @@ make_shared_context() {
 $(task_artifact_template)
 EOF
 
+  ensure_shared_context_session_id "$session_file"
   SHARED_CONTEXT_FILE="$session_file"
 }
 
@@ -1116,41 +1288,42 @@ role_prompt() {
   local project_dir=$3
   local target_file=$4
   local session_file=$5
+  local git_remote_path=${6:-"{GIT_REMOTE_PATH}"}
+  local github_repo_slug=${7:-"{GITHUB_REPO_SLUG}"}
   local prompt_body
 
   prompt_body="$(role_prompt_body "$role")"
 
   cat <<EOF
-$(base_wrapper_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file")
+$(base_wrapper_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")
 
 $prompt_body
 EOF
 }
 
 launch_ghostty_session() {
-  local project_dir=$1
-  shift
-  local prompt1=$1
-  local prompt2=$2
-  local prompt3=$3
-  local prompt4=$4
-  local prompt_file1 prompt_file2 prompt_file3 prompt_file4
+  local project_name=$1
+  local project_dir=$2
+  local target_file=$3
+  local session_file=$4
+  local git_remote_path=$5
+  local github_repo_slug=$6
+  local prompt1=$7
+  local prompt2=$8
+  local prompt3=$9
+  local prompt4=${10}
+  local pane1_title pane2_title pane3_title pane4_title
   local pane1_command pane2_command pane3_command pane4_command
 
-  prompt_file1="$(mktemp -t codex-launchpad-prompt1.XXXXXX)"
-  prompt_file2="$(mktemp -t codex-launchpad-prompt2.XXXXXX)"
-  prompt_file3="$(mktemp -t codex-launchpad-prompt3.XXXXXX)"
-  prompt_file4="$(mktemp -t codex-launchpad-prompt4.XXXXXX)"
+  pane1_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BUILDER")"
+  pane2_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "DEBUGGER")"
+  pane3_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BACKEND")"
+  pane4_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "CRITIC")"
 
-  printf '%s' "$prompt1" > "$prompt_file1"
-  printf '%s' "$prompt2" > "$prompt_file2"
-  printf '%s' "$prompt3" > "$prompt_file3"
-  printf '%s' "$prompt4" > "$prompt_file4"
-
-  pane1_command="codex \"\$(cat $(shell_single_quote "$prompt_file1"))\""
-  pane2_command="codex \"\$(cat $(shell_single_quote "$prompt_file3"))\""
-  pane3_command="codex \"\$(cat $(shell_single_quote "$prompt_file2"))\""
-  pane4_command="codex \"\$(cat $(shell_single_quote "$prompt_file4"))\""
+  pane1_command="$(pane_command_with_title "$pane1_title" "$prompt1")"
+  pane2_command="$(pane_command_with_title "$pane2_title" "$prompt3")"
+  pane3_command="$(pane_command_with_title "$pane3_title" "$prompt2")"
+  pane4_command="$(pane_command_with_title "$pane4_title" "$prompt4")"
 
   if ! osascript <<EOF
 tell application "Ghostty"
@@ -1159,7 +1332,7 @@ tell application "Ghostty"
   set launcherWindow to front window
   set cfg to new surface configuration
   set initial working directory of cfg to $(applescript_string "$project_dir")
-  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true"}
+  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true", $(applescript_string "GIT_REMOTE_PATH=$git_remote_path"), $(applescript_string "GITHUB_REPO_SLUG=$github_repo_slug")}
   set win to new window with configuration cfg
   set pane1 to terminal 1 of selected tab of win
   set pane2 to split pane1 direction right with configuration cfg
@@ -1189,18 +1362,169 @@ tell application "Ghostty"
 end tell
 EOF
   then
-    rm -f "$prompt_file1" "$prompt_file2" "$prompt_file3" "$prompt_file4"
+    return 1
+  fi
+}
+
+launch_ghostty_watch_window() {
+  local project_name=$1
+  local project_dir=$2
+  local session_file=$3
+  local watch_command=$4
+  local watch_title watch_file watch_shell_command
+
+  watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
+  watch_file="$(mktemp -t codex-launchpad-watch.XXXXXX)"
+  printf '%s' "$watch_command" > "$watch_file"
+  watch_shell_command="printf '\\033]0;%s\\a' $(shell_single_quote "$watch_title"); bash -lc \"\$(cat $(shell_single_quote "$watch_file"))\""
+
+  if ! osascript <<EOF
+tell application "Ghostty"
+  activate
+
+  set cfg to new surface configuration
+  set initial working directory of cfg to $(applescript_string "$project_dir")
+  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true"}
+  set win to new window with configuration cfg
+  set pane1 to terminal 1 of selected tab of win
+
+  delay ${SHELL_STARTUP_DELAY_SECONDS}
+
+  input text $(applescript_string "$watch_shell_command") to pane1
+  send key "enter" to pane1
+end tell
+EOF
+  then
+    rm -f "$watch_file"
     return 1
   fi
 
-  rm -f "$prompt_file1" "$prompt_file2" "$prompt_file3" "$prompt_file4"
+  rm -f "$watch_file"
 }
 
 main() {
   local project_name project_dir session_file project_name_compact target_file requested_file
   local resolved_project_slug
+  local git_remote_path github_repo_slug
+  local launch_mode="launch"
+  local watch_requested=0
+  local watch_command=""
+  local last_project_name last_project_dir last_target_file last_session_file
   local -a roles prompts
   local role
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --resume-last|--resume)
+        launch_mode="resume"
+        ;;
+      --status-last|--what-was-i-doing|--last)
+        launch_mode="status"
+        ;;
+      --watch)
+        watch_requested=1
+        ;;
+      --watch-command)
+        watch_requested=1
+        shift
+        [[ $# -gt 0 ]] || { echo "Missing watch command." >&2; exit 1; }
+        watch_command="$1"
+        ;;
+      -h|--help)
+        cat <<'EOF'
+Usage:
+  bash git-ghostty-codex-launchpad.sh
+  bash git-ghostty-codex-launchpad.sh --resume-last
+  bash git-ghostty-codex-launchpad.sh --status-last
+  bash git-ghostty-codex-launchpad.sh --watch
+  bash git-ghostty-codex-launchpad.sh --watch-command "npm test -- --watch"
+
+Modes:
+  - Default: launch the four-pane Ghostty Codex session.
+  - --resume-last: reopen the last saved project session state.
+  - --status-last: print the last saved session summary and exit.
+  - --watch: open a live status watcher for the launched project.
+  - --watch-command: open a live watcher window with the supplied shell command.
+EOF
+        return 0
+        ;;
+      *)
+        echo "Unknown argument: $1" >&2
+        return 1
+        ;;
+    esac
+    shift
+  done
+
+  if [[ "$launch_mode" == "status" ]]; then
+    print_last_launch_state
+    return 0
+  fi
+
+  if [[ "$launch_mode" == "resume" ]]; then
+    if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
+      echo "No saved launch state has been recorded yet." >&2
+      return 1
+    fi
+
+    last_project_name="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project name")"
+    last_project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
+    last_target_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Target file")"
+    last_session_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Shared context file")"
+
+    if [[ -z "$last_project_name" || -z "$last_project_dir" || -z "$last_target_file" ]]; then
+      echo "Saved launch state is incomplete." >&2
+      return 1
+    fi
+
+    project_name="$last_project_name"
+    project_dir="$last_project_dir"
+    target_file="$last_target_file"
+
+    if [[ ! -d "$project_dir" ]]; then
+      echo "Saved project directory no longer exists: $project_dir" >&2
+      return 1
+    fi
+
+    make_shared_context "$project_name" "$project_dir" "$target_file" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
+    session_file="$SHARED_CONTEXT_FILE"
+    git_remote_path="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")"
+    github_repo_slug="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
+
+    if [[ -z "$git_remote_path" || -z "$github_repo_slug" ]]; then
+      printf 'Saved launch state does not include remote metadata yet.\n' >&2
+      return 1
+    fi
+
+    store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
+
+    roles=(BUILDER BACKEND DEBUGGER CRITIC)
+    for role in "${roles[@]}"; do
+      prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")")
+    done
+
+    launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
+
+    printf 'Resumed Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
+    printf 'Session ID: %s\nTask label: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
+      "$(shared_context_session_id "$session_file")" \
+      "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
+      "$project_dir/docs/queue.md" \
+      "$project_dir/docs/knowledge.md" \
+      "$(project_git_branch "$project_dir")" \
+      "$(project_git_status "$project_dir")" \
+      "$git_remote_path" \
+      "$github_repo_slug"
+    if [[ $watch_requested -eq 1 ]]; then
+      watch_command="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
+      if [[ -z "$watch_command" ]]; then
+        watch_command="$(build_default_watch_command "$project_dir")"
+      fi
+      launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command"
+      printf 'Started live watcher window for %s\n' "$project_name"
+    fi
+    return 0
+  fi
 
   prompt_project_name
   project_name="$PROJECT_NAME"
@@ -1242,23 +1566,45 @@ main() {
     fi
   fi
 
-  make_shared_context "$project_name" "$project_dir" "$target_file"
+  prompt_git_remote_path
+  git_remote_path="$GIT_REMOTE_PATH"
+  prompt_github_repo_slug
+  github_repo_slug="$GITHUB_REPO_SLUG"
+
+  if [[ -z "$git_remote_path" || -z "$github_repo_slug" ]]; then
+    printf 'Remote path and GitHub repo are required to launch this session.\n' >&2
+    exit 1
+  fi
+
+  make_shared_context "$project_name" "$project_dir" "$target_file" "$git_remote_path" "$github_repo_slug"
   session_file="$SHARED_CONTEXT_FILE"
+  store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$watch_command"
 
   roles=(BUILDER BACKEND DEBUGGER CRITIC)
   for role in "${roles[@]}"; do
-    prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file")")
+    prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")")
   done
 
-  launch_ghostty_session "$project_dir" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
+  launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
-  printf 'Session ID: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\n' \
+  printf 'Session ID: %s\nTask label: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
     "$(shared_context_session_id "$session_file")" \
+    "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
     "$project_dir/docs/queue.md" \
     "$project_dir/docs/knowledge.md" \
     "$(project_git_branch "$project_dir")" \
-    "$(project_git_status "$project_dir")"
+    "$(project_git_status "$project_dir")" \
+    "$git_remote_path" \
+    "$github_repo_slug"
+
+  if [[ $watch_requested -eq 1 ]]; then
+    if [[ -z "$watch_command" ]]; then
+      watch_command="$(build_default_watch_command "$project_dir")"
+    fi
+    launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command"
+    printf 'Started live watcher window for %s\n' "$project_name"
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
