@@ -298,6 +298,8 @@ Must:
 - Keep scope tight and executable.
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 - Stop after artifact setup if implementation belongs to another role.
+- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
 
 Must not:
 - Invent unrelated product requirements.
@@ -365,6 +367,8 @@ Must:
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
+- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
 
 Must not:
 - Invent broad new scope.
@@ -390,6 +394,8 @@ Must:
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
+- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
 
 Must not:
 - Broaden scope beyond the failing path without a blocker.
