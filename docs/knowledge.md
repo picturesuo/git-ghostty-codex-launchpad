@@ -12,6 +12,7 @@
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
 - `repo`: Canonical prompt source lives in `prompts/prompt-source.sh`, and generated prompt docs live in `docs/generated-prompts.md`.
 - `repo`: Wrapper-level prompt text should stay minimal and should not duplicate response-format or fallback behavior already owned by `AGENTS.md` or the shared artifact.
+- `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 
 ## Retrieval Hints
 - Search this file, the shared context file, and nearby repo docs with `rg` before broader search.

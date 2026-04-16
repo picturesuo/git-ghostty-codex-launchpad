@@ -20,7 +20,10 @@ Current repo-local structure:
 - `docs/generated-prompts.md`: generated prompt documentation derived from the canonical prompt source.
 - `docs/queue.md`: lightweight work queue and follow-up memory.
 - `docs/knowledge.md`: durable reusable user guidance and project facts.
+- `docs/role-selection.md`: short role-selection rubric.
+- `docs/context-budget.md`: context-budget rules for prompt layering.
 - `scripts/render-prompt-docs.sh`: helper that regenerates prompt docs from the canonical prompt source.
+- `scripts/check-prompt-drift.sh`: helper that checks launcher prompts against the canonical prompt source and generated docs.
 - `scripts/codex-commit.sh`: helper for staging intended files and committing small atomic changes.
 - `git-ghostty-codex-launchpad.sh`: main Ghostty launcher.
 - `start-git-ghostty-codex-launchpad.sh`: thin shell wrapper.
@@ -140,25 +143,11 @@ Responsibilities:
 - If validation fails or remains incomplete, do not publish.
 
 ## Commit Policy
-- Commit after each coherent repo-visible non-private change, even when the change is small.
-- Do not leave coherent repo-visible non-private file edits uncommitted at end of turn.
-- Push verified completed work by default when the selected project repo has a usable remote and branch context.
-- If a GitHub remote and upstream are configured, publish repo-visible non-private commits in the same turn by default.
-- Before asking about publish destination, first try to discover it automatically from existing git remotes, branch upstream, repo docs, nearby canonical repos, and the authenticated GitHub account.
-- If exactly one GitHub destination is a confident match, configure or reuse it and push without asking.
-- Ask only when there is no confident match or more than one plausible destination, and explain the ambiguity concretely.
-- Keep commits atomic and easy to understand.
-- Default to `main` unless the user says otherwise.
-- Do not stage unrelated files.
-- Treat any code, config, docs, script, or workflow file change inside the repo as commit-worthy by default unless it is explicitly personal or local-only.
-- When the artifact is complete, all success criteria pass, critical invariants hold, and no unresolved high-severity risk remains, publish the intended files with the shared helper at `scripts/codex-commit.sh` for this repo or the launcher-provided helper path in selected projects.
-- Do not auto-push partial, failing, or unverified work.
-- Do not ask for commit approval when the publish bar is met.
-- Do not include commit message or commit request text in normal role responses.
-- If nothing changed, do not commit.
-- If no upstream is configured, still make the local commit with `--no-push` instead of skipping the commit.
-- If no GitHub remote or upstream is configured, report that limitation explicitly and do not claim the work is published.
-- Do not push to a merely similar or guessed GitHub repo when the repo identity is ambiguous.
+- Commit every coherent repo-visible non-private change in the same turn. Do not leave those edits uncommitted.
+- Publish verified completed work in the same turn when a confident GitHub destination exists. If it does not, still commit locally and report the limitation explicitly.
+- Infer publish destination before asking: check remotes, upstream, repo docs, nearby canonical repos, and the authenticated GitHub account. Ask only when the destination is still genuinely ambiguous.
+- Treat repo-visible code, config, docs, scripts, and workflow files as commit-worthy by default. Never commit personal, secret, machine-specific, scratch, cache, or other local-only files unless explicitly requested.
+- Keep commits atomic, avoid unrelated staging, default to `main`, and do not auto-push partial, failing, or unverified work.
 
 ### Commit Helper
 Use the repo-local helper after each meaningful unit:

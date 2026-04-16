@@ -192,6 +192,46 @@ infer_github_owner() {
   gh api user --jq '.login' 2>/dev/null || return 1
 }
 
+read_doc_mapped_repo() {
+  local file match repo_slug
+  local -a files=()
+
+  for file in "$project_root/README.md" "$project_root/AGENTS.md" "$project_root/docs/knowledge.md" "$repo_root/README.md" "$repo_root/AGENTS.md" "$repo_root/docs/knowledge.md"; do
+    [ -f "$file" ] && files+=("$file")
+  done
+
+  [ "${#files[@]}" -gt 0 ] || return 1
+
+  match="$(
+    rg -h -o -N '(github\.com[:/]|https://github\.com/)[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+' "${files[@]}" 2>/dev/null | \
+      sed -E 's#(https://github\.com/|github\.com[:/])##; s/\.git$//' | \
+      head -n1
+  )"
+
+  if [ -z "$match" ]; then
+    match="$(
+      rg -h -o -N 'publishes to GitHub repo `[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+`' "${files[@]}" 2>/dev/null | \
+        sed -E 's/.*`([^`]+)`.*/\1/' | \
+        head -n1
+    )"
+  fi
+
+  repo_slug="$(printf '%s' "$match" | sed 's/^ //; s/ $//')"
+  [ -n "$repo_slug" ] || return 1
+
+  printf '%s\n' "$repo_slug"
+}
+
+repo_slug_to_ssh_url() {
+  local repo_slug=$1
+
+  if command -v gh >/dev/null 2>&1; then
+    gh repo view "$repo_slug" --json sshUrl --jq '.sshUrl' 2>/dev/null && return 0
+  fi
+
+  printf 'git@github.com:%s.git\n' "$repo_slug"
+}
+
 resolve_existing_remote() {
   local upstream remote
   local -a remotes=()
@@ -230,10 +270,16 @@ resolve_existing_remote() {
 
 find_matching_github_repo() {
   local owner package_name readme_title repo_name project_name line name url normalized_name candidate score best_score ambiguous
+  local mapped_repo
   local best_url=""
   local best_name=""
   local -a repo_rows=()
   candidate_repo_names=()
+
+  if mapped_repo="$(read_doc_mapped_repo 2>/dev/null)"; then
+    repo_slug_to_ssh_url "$mapped_repo"
+    return 0
+  fi
 
   owner="$(infer_github_owner)" || return 1
 
