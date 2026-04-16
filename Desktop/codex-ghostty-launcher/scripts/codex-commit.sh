@@ -177,6 +177,8 @@ describe_generic_path() {
 
 collect_doc_repo_candidates() {
   local source line slug login filtered
+  local unique_value_count=0
+  local login_match_count=0
   local -a sources=()
   local -a doc_candidates=()
   local -a unique_values=()
@@ -204,9 +206,10 @@ collect_doc_repo_candidates() {
   done
 
   doc_candidates=("${unique_values[@]}")
-  [ "${#doc_candidates[@]}" -gt 0 ] || return 1
+  unique_value_count=${#doc_candidates[@]}
+  [ "$unique_value_count" -gt 0 ] || return 1
 
-  if [ "${#doc_candidates[@]}" -eq 1 ]; then
+  if [ "$unique_value_count" -eq 1 ]; then
     printf '%s\n' "${doc_candidates[0]}"
     return 0
   fi
@@ -223,21 +226,28 @@ collect_doc_repo_candidates() {
     done
   fi
 
-  if [ "${#login_matches[@]}" -eq 1 ]; then
+  login_match_count=${#login_matches[@]}
+
+  if [ "$login_match_count" -eq 1 ]; then
     printf '%s\n' "${login_matches[0]}"
     return 0
   fi
 
   printf 'Ambiguous GitHub repo mapping in repo docs:' >&2
-  for slug in "${doc_candidates[@]}"; do
-    printf ' %s' "$slug" >&2
-  done
+  if [ "$unique_value_count" -gt 0 ]; then
+    for slug in "${doc_candidates[@]}"; do
+      printf ' %s' "$slug" >&2
+    done
+  fi
   printf '\n' >&2
   return 1
 }
 
 resolve_remote_for_push() {
   local remote_name remote_url remote_slug branch_name inferred_slug candidate_branch
+  local remote_count=0
+  local github_remote_count=0
+  local matching_remote_count=0
   local -a remotes=()
   local -a github_remotes=()
   local -a matching_remotes=()
@@ -264,39 +274,44 @@ resolve_remote_for_push() {
     [ -n "$remote_name" ] || continue
     remote_url="$(git remote get-url --push "$remote_name" 2>/dev/null || git remote get-url "$remote_name" 2>/dev/null || true)"
     remotes+=("$remote_name")
+    remote_count=$((remote_count + 1))
 
     if remote_slug="$(github_slug_from_url "$remote_url")"; then
       github_remotes+=("$remote_name:$remote_slug")
+      github_remote_count=$((github_remote_count + 1))
     fi
   done < <(git remote)
 
-  if [ "${#remotes[@]}" -eq 1 ]; then
+  if [ "$remote_count" -eq 1 ]; then
     upstream_remote="${remotes[0]}"
     upstream_branch="$branch_name"
     return 0
   fi
 
-  if [ "${#github_remotes[@]}" -eq 1 ]; then
+  if [ "$github_remote_count" -eq 1 ]; then
     upstream_remote="${github_remotes[0]%%:*}"
     upstream_branch="$branch_name"
     return 0
   fi
 
   if inferred_slug="$(collect_doc_repo_candidates)"; then
-    for remote_name in "${github_remotes[@]}"; do
-      remote_slug="${remote_name#*:}"
-      if [ "$remote_slug" = "$inferred_slug" ]; then
-        matching_remotes+=("${remote_name%%:*}")
-      fi
-    done
+    if [ "$github_remote_count" -gt 0 ]; then
+      for remote_name in "${github_remotes[@]}"; do
+        remote_slug="${remote_name#*:}"
+        if [ "$remote_slug" = "$inferred_slug" ]; then
+          matching_remotes+=("${remote_name%%:*}")
+          matching_remote_count=$((matching_remote_count + 1))
+        fi
+      done
+    fi
 
-    if [ "${#matching_remotes[@]}" -eq 1 ]; then
+    if [ "$matching_remote_count" -eq 1 ]; then
       upstream_remote="${matching_remotes[0]}"
       upstream_branch="$branch_name"
       return 0
     fi
 
-    if [ "${#matching_remotes[@]}" -gt 1 ]; then
+    if [ "$matching_remote_count" -gt 1 ]; then
       echo "Cannot push: multiple remotes match inferred GitHub repo $inferred_slug." >&2
       return 1
     fi
