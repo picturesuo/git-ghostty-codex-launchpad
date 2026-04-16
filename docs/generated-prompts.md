@@ -78,6 +78,8 @@ Must:
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
 - Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
 - Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
+- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
+- Auto-commit verified changes by default instead of waiting for approval.
 - Refine only the minimum artifact sections needed to implement.
 
 Commit helper:
