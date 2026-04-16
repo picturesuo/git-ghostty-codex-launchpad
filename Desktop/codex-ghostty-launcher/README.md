@@ -36,9 +36,11 @@ For this repo, the default is to commit every non-private repo-visible file chan
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, first try to discover the correct GitHub destination automatically from existing remotes, repo docs, nearby canonical repos, and the authenticated GitHub account. If there is one confident match, configure it and push. If not, still make the local commit with `--no-push` and report the ambiguity instead of guessing.
+If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, do not pretend the work was published: configure the remote and upstream first, or make the local commit with `--no-push`.
 
-Automatic publishing should be aggressive about discovery and conservative about identity: search first, ask rarely, and do not push to a merely similar repo name when the destination is not clearly the same project.
+Current helper behavior is narrower than the long-term publish policy. [scripts/codex-commit.sh](/Users/bensuo/Desktop/codex-ghostty-launcher/scripts/codex-commit.sh) only pushes when the current branch already has an upstream. It does not yet infer a destination from repo docs, canonical repo mapping, nearby repos, or GitHub account state, and it does not auto-configure remotes or upstreams.
+
+Treat smarter destination discovery as follow-up work, not current behavior. Until that lands, automatic publishing here means "commit, then push the existing upstream if one is already configured."
 
 ## Prompt Source
 

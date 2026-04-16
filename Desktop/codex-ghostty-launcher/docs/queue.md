@@ -1,15 +1,15 @@
 # Queue
 
 ## Now
-- [ ] Validate default commit-and-push behavior once this repo has a configured GitHub remote and branch upstream.
+- [ ] Decide whether `scripts/codex-commit.sh` should stay upstream-only or grow explicit destination-discovery logic.
 
 ## Next
+- [ ] If smarter auto-publish stays in scope, define one concrete discovery order the helper can implement without guessing.
+- [ ] Validate default commit-and-push behavior once this repo has a configured GitHub remote and branch upstream.
 - [ ] Compare actual launcher prompt output against the README prompt blocks and remove any remaining duplicated lines.
 - [ ] Decide whether the shared artifact should own the bootstrap fallback so the base prompt can stay shorter.
 - [ ] Split prompt source blocks out of `README.md` if the launcher starts consuming them directly.
 - [ ] Add one concrete example showing how to use `scripts/codex-commit.sh` for a meaningful multi-file workflow change.
-- [ ] Add a short note clarifying when queue-only maintenance changes are too low-signal to commit alone.
-- [ ] Decide whether the README should mention that docs collaborators need are commit-worthy even when no code changed.
 
 ## Later
 - [ ] Expand subsystem docs only when the project has real subsystems.
@@ -18,6 +18,9 @@
 - [ ] Waiting on concrete launcher wrapper output or prompt-file samples from the canonical repo.
 
 ## Discovered While Working
+- [ ] Edge case: decide whether missing-upstream runs should stay hard failures on the default path even when repo docs name a canonical GitHub destination.
+- [ ] Edge case: verify helper messaging stays clear when a remote exists but the branch upstream does not.
+- [ ] Cleanup: trim duplicate commit-policy wording between README.md and AGENTS.md once the helper contract settles.
 - [ ] Edge case: confirm the default commit rule still excludes external shared-context files even when they are updated during local task execution.
 - [ ] Edge case: improve generated messages when staged paths mix one named workflow file with several unrelated files.
 - [ ] Edge case: verify `scripts/codex-commit.sh --push` fails cleanly when the current branch has no upstream.
@@ -27,5 +30,3 @@
 - [ ] Edge case: verify long absolute paths in the shared wrapper remain readable in launched Codex panes.
 - [ ] Edge case: verify the restored `QUEUE-MANAGER` role block stays in sync with the actual launcher role list.
 - [ ] Edge case: verify the shorter base prompt still preserves auto-commit behavior and shared-artifact ownership across all roles.
-- [ ] Cleanup: reduce prompt drift by generating README prompt blocks from the canonical launcher source if this duplication changes again.
-- [ ] Cleanup: move prompt source blocks into a dedicated generated file if README starts accumulating prompt-maintenance churn again.

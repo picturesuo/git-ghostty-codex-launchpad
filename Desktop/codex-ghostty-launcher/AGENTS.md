@@ -123,9 +123,9 @@ When reporting completion, separate:
 - Do not leave non-private repo-visible file edits uncommitted at end of turn when they are coherent enough to save.
 - Push each meaningful repo-visible commit to GitHub by default when the repo has a configured remote and branch upstream.
 - If a GitHub remote and branch upstream are configured, publish repo-visible non-private commits to GitHub in the same turn by default.
-- Before asking about publish destination, first try to discover it automatically from existing git remotes, branch upstream, repo docs, nearby canonical repos, and the authenticated GitHub account.
-- If exactly one GitHub destination is a confident match, configure or reuse it and push without asking.
-- Ask only when there is no confident match or more than one plausible destination, and explain the ambiguity concretely.
+- The current repo-local helper only pushes when the current branch already has an upstream.
+- Do not claim the helper can infer a GitHub destination from repo docs, nearby canonical repos, or GitHub account state until that logic exists in `scripts/codex-commit.sh`.
+- If no upstream is configured, either configure the remote and upstream first or use `--no-push` for an intentional local-only commit.
 - Commit every meaningful repo-visible change by default, not just at the end of a session.
 - Treat any code, config, docs, script, or workflow file change inside the repo as commit-worthy by default unless it is explicitly personal or local-only.
 - Treat code, config, behavior, workflow, and collaborator-facing docs changes as commit-worthy when someone reviewing or using the project would need to see them.
@@ -182,7 +182,7 @@ Rules:
 - Prefer a short sentence that says what changed, not a placeholder like `add 3 files`.
 - Target roughly 3 to 8 words.
 - Avoid random or empty phrasing.
-- Default to commit-and-push; use `--no-push` only when a push is impossible or intentionally undesired.
+- Default to commit-and-push when an upstream already exists; use `--no-push` when a push is impossible or intentionally undesired.
 
 Examples:
 - `add auth callback handler`
