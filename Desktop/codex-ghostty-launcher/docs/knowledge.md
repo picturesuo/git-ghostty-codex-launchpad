@@ -12,6 +12,7 @@
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
 - `repo`: This repository is a duplicate documentation/workflow copy; `/Users/bensuo/ghostty-codex-launchpad` is the canonical implementation repo.
+- `repo`: This duplicate workspace publishes to GitHub repo `picturesuo/git-ghostty-codex-launchpad` when automatic destination resolution is needed.
 - `repo`: Even in this duplicate repo, artifact-scoped workflow behavior should stay in repo-local files unless the shared artifact is revised first.
 - `repo`: Prompt source blocks should live in `docs/prompt-source.md`, with generated prompt docs in `docs/generated-prompts.md`, not inline in `README.md`.
 

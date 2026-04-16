@@ -5,6 +5,7 @@
 This workspace is a duplicate documentation copy, not the canonical project repo.
 
 Use `/Users/bensuo/ghostty-codex-launchpad` for future code changes, validation, and publishing. That repo already contains the real launcher implementation and is the correct repo to reuse instead of treating this folder as a separate project.
+For GitHub publishing, treat this duplicate workspace as mapped to `picturesuo/git-ghostty-codex-launchpad`.
 
 This repo currently documents the Codex operating workflow for the project. Keep the durable repo rules in [AGENTS.md](/Users/bensuo/Desktop/codex-ghostty-launcher/AGENTS.md) and keep the current task state in `/Users/bensuo/.codex/codex-ghostty-launcher-shared-context.md`.
 
