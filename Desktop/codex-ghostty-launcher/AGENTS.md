@@ -122,6 +122,7 @@ When reporting completion, separate:
 - Commit after each repo-visible non-private change, even when the change is small.
 - Do not leave non-private repo-visible file edits uncommitted at end of turn when they are coherent enough to save.
 - Push each meaningful repo-visible commit to GitHub by default when the repo has a configured remote and branch upstream.
+- If a GitHub remote and branch upstream are configured, publish repo-visible non-private commits to GitHub in the same turn by default.
 - Commit every meaningful repo-visible change by default, not just at the end of a session.
 - Treat any code, config, docs, script, or workflow file change inside the repo as commit-worthy by default unless it is explicitly personal or local-only.
 - Treat code, config, behavior, workflow, and collaborator-facing docs changes as commit-worthy when someone reviewing or using the project would need to see them.
@@ -131,6 +132,7 @@ When reporting completion, separate:
 - Do not stage unrelated files.
 - Do not commit private, machine-specific, secret, scratch, cache, log, editor-metadata, or other local-only files unless the user explicitly asks for them.
 - If no upstream is configured, still make the local commit with `--no-push` instead of skipping the commit.
+- If no GitHub remote or upstream is configured, report that limitation explicitly and do not claim the work is published.
 - Before any push, state exactly which files changed and exactly which files are being published if the publish set is not already obvious from the task.
 
 ## Publish Policy

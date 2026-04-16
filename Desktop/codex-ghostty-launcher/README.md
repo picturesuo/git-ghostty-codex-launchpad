@@ -35,7 +35,7 @@ For this repo, the default is to commit every non-private repo-visible file chan
 
 Do not commit private or local-only material by default, including external shared-context files, scratch notes, caches, logs, secrets, editor metadata, and machine-specific config.
 
-If the repo has a configured remote and branch upstream, push after the commit by default. If it does not, still make the local commit with `--no-push`.
+If the repo has a configured GitHub remote and branch upstream, push after the commit in the same turn by default. If it does not, still make the local commit with `--no-push` and report that the work is not yet published.
 
 ## Prompt Source
 
