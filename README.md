@@ -104,4 +104,4 @@ Useful command-line modes:
 
 ## Verify
 
-Run `shellcheck git-ghostty-codex-launchpad.sh` from the project directory for a quick shell sanity check.
+Run `bash scripts/check-shell.sh` for shell sanity checks and `bash scripts/check-prompt-drift.sh` to verify prompt docs stay in sync.

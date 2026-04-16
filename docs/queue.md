@@ -9,7 +9,7 @@
 - [ ] Verify `--status-last` prints the last saved project, phase, and remote fields.
 - [ ] Verify `--watch-command` still opens a live watcher window in a fresh Ghostty window.
 - [ ] Decide whether the confirmation dialog should show the candidate path, the folder name, or both.
-- [ ] Document one or two real validation commands beyond `bash -n` if more checks become standard.
+- [ ] Verify `scripts/check-shell.sh` runs cleanly once `shellcheck` is available in the environment.
 
 ## Later
 - [ ] Expand subsystem docs only when the project grows beyond a few scripts.
