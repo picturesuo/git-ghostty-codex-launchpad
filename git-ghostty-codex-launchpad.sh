@@ -175,8 +175,16 @@ generate_session_id() {
 
 ensure_shared_context_session_id() {
   local session_file=$1 session_id tmp_file
+  local target_file artifact_id
 
   session_id="$(shared_context_header_value "$session_file" "Session ID" || true)"
+  target_file="$(shared_context_header_value "$session_file" "Target file" || true)"
+  if [[ -n "$target_file" ]]; then
+    artifact_id="$(basename "$target_file")"
+  else
+    artifact_id="n/a"
+  fi
+
   if [[ -n "$session_id" ]]; then
     SHARED_CONTEXT_SESSION_ID="$session_id"
     return 0
@@ -185,24 +193,57 @@ ensure_shared_context_session_id() {
   session_id="$(generate_session_id)"
   tmp_file="$(mktemp)"
 
-  awk -v session_id="$session_id" '
+  awk -v session_id="$session_id" -v artifact_id="$artifact_id" '
     BEGIN { inserted = 0 }
+    /^- Active task artifact ID: / { next }
     /^- Session ID: / { next }
     {
       print
       if (!inserted && /^- Target file: /) {
+        print "- Active task artifact ID: " artifact_id
         print "- Session ID: " session_id
         inserted = 1
       }
     }
     END {
       if (!inserted) {
+        print "- Active task artifact ID: " artifact_id
         print "- Session ID: " session_id
       }
     }
   ' "$session_file" > "$tmp_file" && mv "$tmp_file" "$session_file"
 
   SHARED_CONTEXT_SESSION_ID="$session_id"
+}
+
+ensure_shared_context_active_artifact_id() {
+  local session_file=$1 artifact_id target_file tmp_file
+
+  target_file="$(shared_context_header_value "$session_file" "Target file" || true)"
+  if [[ -n "$target_file" ]]; then
+    artifact_id="$(basename "$target_file")"
+  else
+    artifact_id="n/a"
+  fi
+
+  tmp_file="$(mktemp)"
+
+  awk -v artifact_id="$artifact_id" '
+    BEGIN { inserted = 0 }
+    /^- Active task artifact ID: / { next }
+    {
+      print
+      if (!inserted && /^- Target file: /) {
+        print "- Active task artifact ID: " artifact_id
+        inserted = 1
+      }
+    }
+    END {
+      if (!inserted) {
+        print "- Active task artifact ID: " artifact_id
+      }
+    }
+  ' "$session_file" > "$tmp_file" && mv "$tmp_file" "$session_file"
 }
 
 store_last_launch_state() {
@@ -213,16 +254,23 @@ store_last_launch_state() {
   local git_remote_path=$5
   local github_repo_slug=$6
   local watch_command=$7
-  local queue_now branch git_status session_id timestamp
+  local queue_now branch git_status session_id artifact_id phase budget timestamp context_bar
   local state_dir
 
   state_dir="$(dirname "$LAUNCHPAD_LAST_SESSION_FILE")"
   mkdir -p "$state_dir"
 
   session_id="$(shared_context_session_id "$session_file")"
+  artifact_id="$(shared_context_header_value "$session_file" "Active task artifact ID" || true)"
+  if [[ -z "$artifact_id" ]]; then
+    artifact_id="$(basename "$target_file")"
+  fi
   branch="$(project_git_branch "$project_dir")"
   git_status="$(project_git_status "$project_dir")"
   queue_now="$(queue_now_item "$project_dir/docs/queue.md")"
+  phase="build"
+  budget="$(context_budget_indicator "$session_file")"
+  context_bar="$(launcher_context_bar "BACKEND" "$project_name" "$project_dir" "$target_file" "$session_file")"
   timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
   cat > "$LAUNCHPAD_LAST_SESSION_FILE" <<EOF
@@ -232,7 +280,11 @@ store_last_launch_state() {
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
+- Active task artifact ID: $artifact_id
 - Session ID: $session_id
+- Session phase: $phase
+- Context budget: $budget
+- Context bar: $context_bar
 - Shared context file: $session_file
 - Git remote path: $git_remote_path
 - GitHub repo: $github_repo_slug
@@ -257,6 +309,10 @@ print_last_launch_state() {
   project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
   target_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Target file")"
   session_id="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Session ID")"
+  artifact_id="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Active task artifact ID")"
+  phase="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Session phase")"
+  context_budget="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Context budget")"
+  context_bar="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Context bar")"
   session_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Shared context file")"
   queue_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Queue file")"
   knowledge_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Knowledge file")"
@@ -274,7 +330,11 @@ Last saved launch state
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
+- Active task artifact ID: $artifact_id
 - Session ID: $session_id
+- Session phase: $phase
+- Context budget: $context_budget
+- Context bar: $context_bar
 - Shared context file: $session_file
 - Git remote path: $git_remote_path
 - GitHub repo: $github_repo_slug
@@ -309,44 +369,9 @@ done
 EOF
 }
 
-sanitize_title_text() {
-  local value=$1 max_len=${2:-0}
-
-  value="$(printf '%s' "$value" | tr '\r\n\t' '   ' | sed 's/[|]/ /g; s/[[:space:]]\+/ /g; s/^ //; s/ $//')"
-
-  if [[ "$max_len" -gt 0 && "${#value}" -gt "$max_len" ]]; then
-    value="${value:0:max_len}"
-    value="${value%"${value##*[![:space:]]}"}"
-  fi
-
-  printf '%s' "$value"
-}
-
 build_session_title() {
   local project_name=$1 project_dir=$2 target_file=$3 session_file=$4 role=$5
-  local branch task_label session_id fallback_label
-
-  project_name="$(sanitize_title_text "$project_name" 24)"
-  branch="$(sanitize_title_text "$(project_git_branch "$project_dir")" 24)"
-  task_label="$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)"
-  role="$(sanitize_title_text "$role" 12)"
-  session_id="$(sanitize_title_text "$(shared_context_session_id "$session_file")" 8)"
-
-  if [[ -z "$task_label" || "$task_label" == "n/a" ]]; then
-    fallback_label="$(basename "$target_file" 2>/dev/null || true)"
-    if [[ -z "$fallback_label" ]]; then
-      fallback_label="$project_name"
-    fi
-    task_label="$(sanitize_title_text "$fallback_label" 28)"
-  fi
-  if [[ -z "$branch" || "$branch" == "n/a" ]]; then
-    branch="no-git"
-  fi
-  if [[ -z "$session_id" ]]; then
-    session_id="session"
-  fi
-
-  printf '%s | %s | %s | %s | %s' "$project_name" "$branch" "$task_label" "$role" "$session_id"
+  launcher_context_bar "$role" "$project_name" "$project_dir" "$target_file" "$session_file"
 }
 
 build_watch_title() {
@@ -443,6 +468,29 @@ EOF
   fi
 
   GITHUB_REPO_SLUG="$dialog_result"
+}
+
+confirm_project_match() {
+  local requested_project_name=$1
+  local candidate_project_dir=$2
+  local dialog_result requested_text candidate_text
+
+  requested_text="$(applescript_string "Project name: $requested_project_name")"
+  candidate_text="$(applescript_string "Matched project: $candidate_project_dir")"
+
+  if ! dialog_result="$(
+    osascript <<EOF
+try
+  button returned of (display dialog ${requested_text} & "\n\n" & ${candidate_text} & "\n\nUse this project?" buttons {"Pick Again", "Use This Project"} default button "Use This Project" cancel button "Pick Again")
+on error number -128
+  return "Pick Again"
+end try
+EOF
+  )"; then
+    dialog_result="Pick Again"
+  fi
+
+  [[ "$dialog_result" == "Use This Project" ]]
 }
 
 derive_project_name_from_file() {
@@ -648,6 +696,39 @@ search_shared_context_for_project() {
   return 1
 }
 
+search_shared_context_for_project_exact() {
+  local project_name=$1
+  local project_slug candidate_dir candidate_name candidate_label candidate_slug
+  local session_dir="$HOME/.codex"
+  local session_file
+
+  [[ -d "$session_dir" ]] || return 1
+
+  project_slug="$(slugify "$project_name")"
+
+  while IFS= read -r session_file; do
+    [[ -f "$session_file" ]] || continue
+
+    candidate_dir="$(shared_context_header_value "$session_file" "Project directory")"
+    [[ -n "$candidate_dir" && -d "$candidate_dir" ]] || continue
+    [[ "$candidate_dir" != "$HOME" ]] || continue
+    if [[ ! -d "$candidate_dir/.git" && ! -f "$candidate_dir/package.json" && ! -f "$candidate_dir/README.md" && ! -f "$candidate_dir/README.mdx" ]]; then
+      continue
+    fi
+
+    candidate_name="$(shared_context_header_value "$session_file" "Project name")"
+    candidate_label="$(basename "$candidate_dir")"
+    candidate_slug="$(slugify "$candidate_label")"
+
+    if [[ "$candidate_slug" == "$project_slug" || "$(slugify "$candidate_name")" == "$project_slug" ]]; then
+      printf '%s' "$candidate_dir"
+      return 0
+    fi
+  done < <(find "$session_dir" -maxdepth 1 -type f -name '*-shared-context.md' -print | sort)
+
+  return 1
+}
+
 search_project_dir() {
   local project_name=$1
   local search_root candidate pattern
@@ -726,6 +807,51 @@ search_project_dir() {
   done
 
   printf '%s' ""
+}
+
+search_project_dir_exact() {
+  local project_name=$1
+  local search_root candidate pattern
+  local lowered normalized
+  local exact_roots likely_roots
+  lowered="$(printf '%s' "$project_name" | tr '[:upper:]' '[:lower:]')"
+  normalized="$(slugify "$project_name")"
+  exact_roots=("$HOME/Desktop" "$HOME/Documents" "$HOME/Downloads" "$HOME/Projects")
+  likely_roots=(
+    "$HOME/Code"
+    "$HOME/src"
+    "$HOME/dev"
+    "$HOME/work"
+    "$HOME/workspace"
+    "$HOME/workspaces"
+    "$HOME/repos"
+    "$HOME/repo"
+  )
+
+  if candidate="$(search_shared_context_for_project_exact "$project_name")"; then
+    printf '%s' "$candidate"
+    return
+  fi
+
+  for search_root in "${exact_roots[@]}"; do
+    for pattern in "$(find_glob_escape "$project_name")" "$(find_glob_escape "$normalized")"; do
+      if candidate="$(search_root_for_project "$search_root" "$pattern" 5)"; then
+        printf '%s' "$candidate"
+        return
+      fi
+    done
+  done
+
+  for search_root in "${likely_roots[@]}"; do
+    for pattern in "$(find_glob_escape "$project_name")" "$(find_glob_escape "$lowered")" "$(find_glob_escape "$normalized")"; do
+      if candidate="$(search_root_for_project "$search_root" "$pattern" 4)"; then
+        printf '%s' "$candidate"
+        return
+      fi
+    done
+  done
+
+  return 1
 }
 
 find_shared_context_by_project_dir() {
@@ -1186,6 +1312,7 @@ make_shared_context() {
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
+- Active task artifact ID: $(basename "$target_file")
 - Git remote path: $git_remote_path
 - GitHub repo: $github_repo_slug
 - Session ID: $(generate_session_id)
@@ -1197,6 +1324,7 @@ $(task_artifact_template)
 EOF
 
   ensure_shared_context_session_id "$session_file"
+  ensure_shared_context_active_artifact_id "$session_file"
   SHARED_CONTEXT_FILE="$session_file"
 }
 
@@ -1423,10 +1551,13 @@ EOF
 
     launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
-    printf 'Resumed Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
-    printf 'Session ID: %s\nTask label: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
+  printf 'Resumed Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
+  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
       "$(shared_context_session_id "$session_file")" \
       "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
+      "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
+      "$(session_phase_for_role "BACKEND")" \
+      "$(context_budget_indicator "$session_file")" \
       "$project_dir/docs/queue.md" \
       "$project_dir/docs/knowledge.md" \
       "$(project_git_branch "$project_dir")" \
@@ -1444,45 +1575,57 @@ EOF
     return 0
   fi
 
-  prompt_project_name
-  project_name="$PROJECT_NAME"
-  project_name_compact="$(printf '%s' "$project_name" | tr -d '[:space:]')"
-
-  if [[ -n "$project_name_compact" ]]; then
-    project_dir="$(search_project_dir "$project_name")"
-  else
+  while :; do
+    prompt_project_name
+    project_name="$PROJECT_NAME"
+    project_name_compact="$(printf '%s' "$project_name" | tr -d '[:space:]')"
     project_dir=""
-  fi
+    target_file=""
 
-  if [[ -z "$project_dir" ]]; then
-    prompt_new_file_name
-    requested_file="$NEW_FILE_NAME"
-    if [[ -z "$project_name_compact" ]]; then
-      project_name="$(derive_project_name_from_file "$requested_file")"
-    fi
-    create_new_project "$project_name" "$requested_file"
-    project_dir="$CREATED_PROJECT_DIR"
-    target_file="$CREATED_TARGET_FILE"
-  else
-    resolved_project_slug="$(slugify "$(basename "$project_dir")")"
-    if [[ -n "$resolved_project_slug" ]]; then
-      project_name="$(display_name_from_slug "$resolved_project_slug")"
-    fi
-
-    if [[ ! -f "$project_dir/AGENTS.md" ]]; then
-      seed_project_workflow_files "$project_name" "$project_dir"
-      target_file="AGENTS.md"
-    else
-      seed_project_workflow_files "$project_name" "$project_dir"
-      target_file="$(choose_target_file "$project_dir")"
-      if [[ -z "$target_file" ]]; then
-        target_file="README.md"
-        if [[ ! -e "$project_dir/$target_file" ]]; then
-          : > "$project_dir/$target_file"
+    if [[ -n "$project_name_compact" ]]; then
+      if candidate_project_dir="$(search_project_dir_exact "$project_name")"; then
+        project_dir="$candidate_project_dir"
+      elif candidate_project_dir="$(search_project_dir "$project_name")"; then
+        if confirm_project_match "$project_name" "$candidate_project_dir"; then
+          project_dir="$candidate_project_dir"
+        else
+          continue
         fi
       fi
     fi
-  fi
+
+    if [[ -z "$project_dir" ]]; then
+      prompt_new_file_name
+      requested_file="$NEW_FILE_NAME"
+      if [[ -z "$project_name_compact" ]]; then
+        project_name="$(derive_project_name_from_file "$requested_file")"
+      fi
+      create_new_project "$project_name" "$requested_file"
+      project_dir="$CREATED_PROJECT_DIR"
+      target_file="$CREATED_TARGET_FILE"
+    else
+      resolved_project_slug="$(slugify "$(basename "$project_dir")")"
+      if [[ -n "$resolved_project_slug" ]]; then
+        project_name="$(display_name_from_slug "$resolved_project_slug")"
+      fi
+
+      if [[ ! -f "$project_dir/AGENTS.md" ]]; then
+        seed_project_workflow_files "$project_name" "$project_dir"
+        target_file="AGENTS.md"
+      else
+        seed_project_workflow_files "$project_name" "$project_dir"
+        target_file="$(choose_target_file "$project_dir")"
+        if [[ -z "$target_file" ]]; then
+          target_file="README.md"
+          if [[ ! -e "$project_dir/$target_file" ]]; then
+            : > "$project_dir/$target_file"
+          fi
+        fi
+      fi
+    fi
+
+    break
+  done
 
   prompt_git_remote_path
   git_remote_path="$GIT_REMOTE_PATH"
@@ -1506,9 +1649,12 @@ EOF
   launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
 
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
-  printf 'Session ID: %s\nTask label: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
+  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
     "$(shared_context_session_id "$session_file")" \
     "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
+    "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
+    "$(session_phase_for_role "BACKEND")" \
+    "$(context_budget_indicator "$session_file")" \
     "$project_dir/docs/queue.md" \
     "$project_dir/docs/knowledge.md" \
     "$(project_git_branch "$project_dir")" \

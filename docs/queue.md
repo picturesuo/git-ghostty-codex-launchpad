@@ -1,15 +1,18 @@
 # Queue
 
 ## Now
-- [ ] Validate the `--resume-last`, `--status-last`, and `--watch-command` launcher paths against the current shared-context format.
+- [ ] Add confirmation prompts for fuzzy project-name matches before launching Ghostty.
 
 ## Next
-- [ ] Regenerate the prompt docs after the prompt-source wording change.
-- [ ] Verify `scripts/check-prompt-drift.sh` still passes after the commit-discipline prompt change.
-- [ ] Check that the launcher prints and stores the last launch state on startup.
+- [ ] Verify exact project-name matches still launch without confirmation.
+- [ ] Verify close matches prompt before launch and can be rejected safely.
+- [ ] Decide whether the confirmation dialog should show the candidate path, the folder name, or both.
 - [ ] Confirm `--resume-last` restores the saved shared context without prompting for the project again.
-- [ ] Confirm `--status-last` prints the last saved project, branch, queue, and watch-command summary.
+- [ ] Confirm `--status-last` prints the last saved project, branch, queue, artifact, and watch-command summary.
 - [ ] Confirm `--watch-command` opens a live watcher window in a fresh Ghostty window.
+- [ ] Verify `scripts/check-prompt-drift.sh` still passes after the prompt-source control-surface change.
+- [ ] Check that the launcher prints and stores the last launch state on startup.
+- [ ] Regenerate the prompt docs after the prompt-source wording change.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
 - [ ] Document real validation commands beyond `bash -n` if more checks become standard.

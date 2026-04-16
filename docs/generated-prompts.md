@@ -12,12 +12,9 @@ Shared project context:
 - Project name: {PROJECT_NAME}
 - Project directory: {PROJECT_DIR}
 - Target file: {TARGET_FILE}
-- Git remote path: {GIT_REMOTE_PATH}
-- GitHub repo: {GITHUB_REPO_SLUG}
+- Active task artifact ID: {TARGET_FILE}
+- Context bar: {PROJECT_NAME} | no-git | n/a | {ROLE} | build | task:{TARGET_FILE} | art:{TARGET_FILE} | ctx:n/a | {SESSION
 - Session ID: {SESSION_ID}
-- Git branch: n/a
-- Git status: n/a
-- Queue now: n/a
 - Queue file: {PROJECT_DIR}/docs/queue.md
 - Knowledge file: {PROJECT_DIR}/docs/knowledge.md
 - Shared context file: {SHARED_CONTEXT_FILE}
@@ -72,6 +69,9 @@ Owns:
 - Status
 
 Must:
+- Classify the task as `tiny`, `medium`, or `broad` before editing.
+- Tiny tasks go straight to implementation.
+- Broad tasks must first produce a file list and rollback plan.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
@@ -79,6 +79,20 @@ Must:
 - Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
 - Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
 - Refine only the minimum artifact sections needed to implement.
+
+Commit helper:
+Purpose:
+- Stage and publish only the intended project files after a coherent change.
+
+Must:
+- Use `scripts/codex-commit.sh` with explicit path arguments.
+- Keep commit subjects short, human-readable, and descriptive.
+- Use `--no-push` only when a local-only commit is intentional.
+- Do not publish partial, failing, or unverified work.
+
+Notes:
+- The helper auto-discovers the project root and the best matching GitHub remote when possible.
+- If the helper refuses to publish, fix the issue first instead of bypassing it.
 
 Must not:
 - Redefine scope without a blocker.

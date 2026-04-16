@@ -83,34 +83,172 @@ queue_now_item() {
   fi
 }
 
+sanitize_title_text() {
+  local value=$1 max_len=${2:-0}
+
+  value="$(printf '%s' "$value" | tr '\r\n\t' '   ' | sed 's/[|]/ /g; s/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+
+  if [[ "$max_len" -gt 0 && "${#value}" -gt "$max_len" ]]; then
+    value="${value:0:max_len}"
+    value="${value%"${value##*[![:space:]]}"}"
+  fi
+
+  printf '%s' "$value"
+}
+
+shared_context_active_artifact_id() {
+  local session_file=$1
+  local target_file=$2
+  local artifact_id
+
+  if [[ -f "$session_file" ]]; then
+    artifact_id="$(sed -n 's/^- Active task artifact ID: //p' "$session_file" | head -n 1)"
+    if [[ -n "$artifact_id" ]]; then
+      printf '%s' "$artifact_id"
+      return
+    fi
+  fi
+
+  artifact_id="$(basename "$target_file")"
+  if [[ -n "$artifact_id" ]]; then
+    printf '%s' "$artifact_id"
+  else
+    printf '%s' "n/a"
+  fi
+}
+
+context_budget_indicator() {
+  local session_file=$1
+  local line_count
+
+  [[ -f "$session_file" ]] || {
+    printf '%s' "ctx:n/a"
+    return
+  }
+
+  line_count="$(wc -l < "$session_file" 2>/dev/null | tr -d '[:space:]')"
+  if [[ -z "$line_count" ]]; then
+    printf '%s' "ctx:n/a"
+    return
+  fi
+
+  if (( line_count >= 260 )); then
+    printf 'ctx:%sL!' "$line_count"
+    return
+  fi
+
+  printf 'ctx:%sL' "$line_count"
+}
+
+session_phase_for_role() {
+  local role=$1
+
+  case "$role" in
+    BUILDER)
+      printf '%s' "plan"
+      ;;
+    BACKEND|DEBUGGER)
+      printf '%s' "build"
+      ;;
+    CRITIC)
+      printf '%s' "verify"
+      ;;
+    *)
+      printf '%s' "build"
+      ;;
+  esac
+}
+
+launcher_context_bar() {
+  local role=$1
+  local project_name=$2
+  local project_dir=$3
+  local target_file=$4
+  local session_file=$5
+  local branch dirty_state task_label artifact_id phase session_id budget
+
+  project_name="$(sanitize_title_text "$project_name" 20)"
+  branch="$(sanitize_title_text "$(project_git_branch "$project_dir")" 16)"
+  dirty_state="$(project_git_status "$project_dir")"
+  task_label="$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 24)"
+  artifact_id="$(sanitize_title_text "$(shared_context_active_artifact_id "$session_file" "$target_file")" 20)"
+  phase="$(session_phase_for_role "$role")"
+  session_id="$(sanitize_title_text "$(shared_context_session_id "$session_file")" 8)"
+  budget="$(sanitize_title_text "$(context_budget_indicator "$session_file")" 10)"
+
+  if [[ -z "$branch" || "$branch" == "n/a" ]]; then
+    branch="no-git"
+  fi
+  if [[ -z "$dirty_state" || "$dirty_state" == "n/a" ]]; then
+    dirty_state="n/a"
+  fi
+  if [[ -z "$task_label" || "$task_label" == "n/a" ]]; then
+    task_label="$(sanitize_title_text "$artifact_id" 24)"
+  fi
+  if [[ -z "$artifact_id" || "$artifact_id" == "n/a" ]]; then
+    artifact_id="$(sanitize_title_text "$(basename "$target_file")" 20)"
+  fi
+  if [[ -z "$phase" ]]; then
+    phase="build"
+  fi
+  if [[ -z "$session_id" ]]; then
+    session_id="session"
+  fi
+  if [[ -z "$budget" ]]; then
+    budget="ctx:n/a"
+  fi
+
+  printf '%s | %s | %s | %s | %s | task:%s | art:%s | %s | %s' \
+    "$project_name" \
+    "$branch" \
+    "$dirty_state" \
+    "$role" \
+    "$phase" \
+    "$task_label" \
+    "$artifact_id" \
+    "$budget" \
+    "$session_id"
+}
+
+commit_helper_instructions() {
+  cat <<'EOF'
+Purpose:
+- Stage and publish only the intended project files after a coherent change.
+
+Must:
+- Use `scripts/codex-commit.sh` with explicit path arguments.
+- Keep commit subjects short, human-readable, and descriptive.
+- Use `--no-push` only when a local-only commit is intentional.
+- Do not publish partial, failing, or unverified work.
+
+Notes:
+- The helper auto-discovers the project root and the best matching GitHub remote when possible.
+- If the helper refuses to publish, fix the issue first instead of bypassing it.
+EOF
+}
+
 base_wrapper_prompt() {
   local role=$1
   local project_name=$2
   local project_dir=$3
   local target_file=$4
   local session_file=$5
-  local git_remote_path=${6:-"{GIT_REMOTE_PATH}"}
-  local github_repo_slug=${7:-"{GITHUB_REPO_SLUG}"}
-  local session_id queue_file knowledge_file git_branch git_state queue_now
+  local context_bar session_id queue_file knowledge_file active_artifact
 
+  context_bar="$(launcher_context_bar "$role" "$project_name" "$project_dir" "$target_file" "$session_file")"
   session_id="$(shared_context_session_id "$session_file")"
   queue_file="$project_dir/docs/queue.md"
   knowledge_file="$project_dir/docs/knowledge.md"
-  git_branch="$(project_git_branch "$project_dir")"
-  git_state="$(project_git_status "$project_dir")"
-  queue_now="$(queue_now_item "$queue_file")"
+  active_artifact="$(shared_context_active_artifact_id "$session_file" "$target_file")"
 
   cat <<EOF
 Shared project context:
 - Project name: $project_name
 - Project directory: $project_dir
 - Target file: $target_file
-- Git remote path: $git_remote_path
-- GitHub repo: $github_repo_slug
+- Active task artifact ID: $active_artifact
+- Context bar: $context_bar
 - Session ID: $session_id
-- Git branch: $git_branch
-- Git status: $git_state
-- Queue now: $queue_now
 - Queue file: $queue_file
 - Knowledge file: $knowledge_file
 - Shared context file: $session_file
@@ -168,6 +306,9 @@ Owns:
 - Status
 
 Must:
+- Classify the task as `tiny`, `medium`, or `broad` before editing.
+- Tiny tasks go straight to implementation.
+- Broad tasks must first produce a file list and rollback plan.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
@@ -175,6 +316,11 @@ Must:
 - Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
 - Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
 - Refine only the minimum artifact sections needed to implement.
+
+Commit helper:
+EOF
+      commit_helper_instructions
+      cat <<'EOF'
 
 Must not:
 - Redefine scope without a blocker.
