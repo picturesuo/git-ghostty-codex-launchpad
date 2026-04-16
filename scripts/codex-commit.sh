@@ -10,7 +10,7 @@ Usage:
 Behavior:
   - Stages only the paths you pass.
   - Uses the supplied message when provided.
-  - Otherwise generates a short message from the staged paths.
+  - Otherwise generates a readable message from the staged paths.
   - Pushes the current branch after a successful commit by default.
   - With --no-push, commits locally without pushing.
   - Uses the current working directory as the project root unless --project-root is provided.
@@ -404,24 +404,24 @@ generate_message() {
   if [ "${#rel_paths[@]}" -eq 1 ]; then
     case "$first" in
       */AGENTS.md|AGENTS.md)
-        printf '%s\n' "$action repo workflow rules"
+        printf '%s repo workflow rules in AGENTS.md\n' "$action"
         return
         ;;
       */README.md|README.md)
-        printf '%s\n' "$action project documentation"
+        printf '%s project documentation in README.md\n' "$action"
         return
         ;;
       */docs/queue.md|docs/queue.md)
-        printf '%s\n' "$action work queue"
+        printf '%s work queue in docs/queue.md\n' "$action"
         return
         ;;
       */scripts/codex-commit.sh|scripts/codex-commit.sh)
-        printf '%s\n' "$action commit helper"
+        printf '%s commit helper in scripts/codex-commit.sh\n' "$action"
         return
         ;;
     esac
 
-    printf '%s\n' "$action $stem"
+    printf '%s %s in project\n' "$action" "$stem"
     return
   fi
 
@@ -503,13 +503,13 @@ generate_message() {
   done
 
   if [ "${#topics[@]}" -eq 0 ]; then
-    printf '%s\n' "$action ${#rel_paths[@]} files"
+    printf '%s %s files in project\n' "$action" "${#rel_paths[@]}"
   elif [ "${#topics[@]}" -eq 1 ]; then
-    printf '%s\n' "$action ${topics[0]}"
+    printf '%s %s in project\n' "$action" "${topics[0]}"
   elif [ "${#topics[@]}" -eq 2 ]; then
-    printf '%s\n' "$action ${topics[0]} and ${topics[1]}"
+    printf '%s %s and %s in project\n' "$action" "${topics[0]}" "${topics[1]}"
   else
-    printf '%s\n' "$action ${topics[0]}, ${topics[1]}, and related files"
+    printf '%s %s, %s, and related files in project\n' "$action" "${topics[0]}" "${topics[1]}"
   fi
 }
 
