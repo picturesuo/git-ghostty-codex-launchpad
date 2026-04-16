@@ -19,4 +19,5 @@
 ## Discovered While Working
 - [ ] Edge case: verify smart push still picks the correct remote when one GitHub remote exists under a non-`origin` name.
 - [ ] Edge case: verify repo-doc mapping stays unambiguous if multiple GitHub repo slugs appear in docs.
+- [ ] Edge case: verify the helper fails clearly when the configured upstream has unrelated history.
 - [ ] Cleanup: keep the documented role list aligned with the actual launcher role list.

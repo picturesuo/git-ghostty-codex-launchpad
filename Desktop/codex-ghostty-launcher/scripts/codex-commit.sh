@@ -252,22 +252,10 @@ resolve_remote_for_push() {
     upstream_remote="${upstream_ref%%/*}"
     upstream_branch="${upstream_ref#*/}"
 
-    case "$upstream_branch" in
-      *sync*)
-        candidate_branch=""
-
-        for candidate_branch in main master; do
-          if git ls-remote --exit-code --heads "$upstream_remote" "$candidate_branch" >/dev/null 2>&1; then
-            upstream_branch="$candidate_branch"
-            upstream_ref="$upstream_remote/$upstream_branch"
-            return 0
-          fi
-        done
-
-        echo "Cannot push: current upstream $upstream_ref looks like a sync branch and no safe publish branch was found on $upstream_remote." >&2
-        return 1
-        ;;
-    esac
+    if ! git merge-base HEAD "$upstream_ref" >/dev/null 2>&1; then
+      echo "Cannot push: configured upstream $upstream_ref has no merge base with the current branch. Reconfigure the upstream or rerun with --no-push." >&2
+      return 1
+    fi
 
     return 0
   fi
