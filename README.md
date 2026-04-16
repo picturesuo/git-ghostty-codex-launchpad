@@ -1,6 +1,6 @@
 # git-ghostty-codex-launchpad
 
-A macOS Ghostty launcher that opens a ready-to-work Codex setup with multiple panes, role-based prompts, and a built-in Git commit/push handoff.
+A macOS Ghostty launcher that opens a ready-to-work Codex setup with multiple panes, role-based prompts, and a built-in Git push handoff.
 
 ## Why This Matters
 
@@ -18,12 +18,12 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Surfaces a compact session snapshot in the launcher title and prompt with the project, branch, dirty state, task artifact, phase, queue, and knowledge-path context so the panes can resume faster
 - Sets each pane title with the project, branch, dirty state, active role, active task artifact, phase, queue-now task, context budget, and session ID so interrupted sessions are easier to resume
-- Keeps the prompt source as the canonical control surface for the launcher wrapper, role prompts, and commit-helper guidance, while the launcher injects only the minimum live context
+- Keeps the prompt source as the canonical control surface for the launcher wrapper, role prompts, and push-helper guidance, while the launcher injects only the minimum live context
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, then threads those values into all four panes and the shared session context
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
-- Prompts the roles to auto-commit coherent repo-visible changes through one shared Git helper
+- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper
 - Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
@@ -46,7 +46,7 @@ Prompt source is no longer documented inline in `README.md`.
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
 Use the generated [docs/role-selection.md](/Users/bensuo/ghostty-codex-launchpad/docs/role-selection.md) for the short role rubric and [docs/context-budget.md](/Users/bensuo/ghostty-codex-launchpad/docs/context-budget.md) for the context-budget rules.
 Use [scripts/check-prompt-drift.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-prompt-drift.sh) to detect drift between the launcher, prompt source, and generated prompt docs.
-Use [scripts/check-commit-helper-doc-map.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-commit-helper-doc-map.sh) to verify the repo-doc GitHub mapping that commit-helper auto-discovery relies on.
+Use [scripts/check-commit-helper-doc-map.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-commit-helper-doc-map.sh) to verify the repo-doc GitHub mapping that helper auto-discovery relies on.
 
 The workflow rules are:
 
@@ -73,7 +73,7 @@ Bootstrap behavior:
 
 ## Publishing Defaults
 
-This repo should auto-commit coherent non-private repo-visible file changes by default.
+This repo should auto-push coherent non-private repo-visible file changes by default.
 
 Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.

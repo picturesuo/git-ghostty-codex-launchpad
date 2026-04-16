@@ -20,7 +20,7 @@ Keep `AGENTS.md` short and stable. Launch-time behavior belongs in `prompts/prom
 - `scripts/check-prompt-drift.sh`: check the launcher and generated docs against the prompt source.
 - `scripts/check-shell.sh`: shell sanity checks for repo shell entry points and helpers.
 - `scripts/check-commit-helper-doc-map.sh`: verify commit-helper GitHub repo mapping.
-- `scripts/codex-commit.sh`: stage intended files and commit small atomic changes.
+- `scripts/codex-commit.sh`: stage intended files and push small atomic changes.
 - `git-ghostty-codex-launchpad.sh`: main Ghostty launcher.
 - `start-git-ghostty-codex-launchpad.sh`: thin shell wrapper.
 - `open-git-ghostty-codex-launchpad.command`: macOS launcher.
@@ -59,7 +59,7 @@ Rules:
 - If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
 
 ## Commit Policy
-- Auto-commit coherent repo-visible non-private changes by default.
+- Auto-push coherent repo-visible non-private changes by default.
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Keep commits atomic and avoid unrelated staging.
 - Default to `main` unless told otherwise.

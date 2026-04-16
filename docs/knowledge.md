@@ -4,9 +4,9 @@
 - Capture durable user guidance, preferences, and constraints that should survive past a single task.
 - `user`: Keep agent prompts token-efficient and role-specific. Do not give every role shared context it does not need.
 - `user`: Use four roles only in this repo's prompt docs and launcher prompts: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
-- `user`: Auto-commit coherent repo-visible non-private changes by default.
-- `user`: Apply the automatic commit rule to all four launcher panes, not just the implementation role.
-- `user`: When a GitHub remote and upstream are configured, publish non-private repo-visible commits in the same turn by default.
+- `user`: Auto-push coherent repo-visible non-private changes by default.
+- `user`: Apply the automatic push rule to all four launcher panes, not just the implementation role.
+- `user`: When a GitHub remote and upstream are configured, publish non-private repo-visible work in the same turn by default.
 - `user`: Before asking where to push, try to infer the GitHub destination automatically from remotes, repo docs, nearby canonical repos, and the authenticated GitHub account.
 - `user`: When a typed project name is close to an existing project, reopen the existing project and shared-context file instead of creating a new near-duplicate project or `.codex` session file.
 - `user`: Ask for the git remote path and GitHub repo name up front so all four launcher panes share the same publish target.
@@ -22,7 +22,7 @@
 - `repo`: Canonical prompt source lives in `prompts/prompt-source.sh`, and generated prompt docs live in `docs/generated-prompts.md`.
 - `repo`: The generated role summary lives in `docs/role-selection.md` and is rendered from the same prompt source.
 - `repo`: Wrapper-level prompt text should stay minimal and should not duplicate response-format or fallback behavior already owned by `AGENTS.md` or the shared artifact.
-- `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the commit-helper guidance in one place.
+- `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the push-helper guidance in one place.
 - `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the generated role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
 - `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.

@@ -265,12 +265,12 @@ role_selection_summary() {
 EOF
 }
 
-commit_helper_instructions() {
+push_helper_instructions() {
   cat <<'EOF'
 - Use `scripts/codex-commit.sh` with explicit path arguments.
-- Keep commit subjects short, human-readable, and descriptive.
+- Keep push messages short, human-readable, and descriptive.
 - Use `--no-push` only when a local-only commit is intentional.
-- Do not publish partial, failing, or unverified work.
+- Do not push partial, failing, or unverified work.
 EOF
 }
 
@@ -298,8 +298,8 @@ Must:
 - Keep scope tight and executable.
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 - Stop after artifact setup if implementation belongs to another role.
-- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
-- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
+- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
 - Invent unrelated product requirements.
@@ -327,15 +327,15 @@ Must:
 - Keep changes localized and reversible.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
-- Finish coherent change sets with an atomic commit that stages only intended project paths and uses the shared helper.
-- Keep commit messages short and human-readable; default to commit-and-push when the selected project has a safe existing remote.
-- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
-- Auto-commit verified changes by default instead of waiting for approval.
+- Finish coherent change sets with an atomic push that stages only intended project paths and uses the shared helper.
+- Keep push messages short and human-readable; default to push when the selected project has a safe existing remote.
+- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- Auto-push verified changes by default instead of waiting for approval.
 - Refine only the minimum artifact sections needed to implement.
 
-Commit helper:
+Push helper:
 EOF
-      commit_helper_instructions
+      push_helper_instructions
       cat <<'EOF'
 
 Notes:
@@ -367,8 +367,8 @@ Must:
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
-- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
-- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
+- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
 - Invent broad new scope.
@@ -394,8 +394,8 @@ Must:
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
-- Auto-commit coherent repo-visible changes by default instead of waiting for approval.
-- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
+- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
 - Broaden scope beyond the failing path without a blocker.

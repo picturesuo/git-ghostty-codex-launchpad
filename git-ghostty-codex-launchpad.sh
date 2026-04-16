@@ -1110,9 +1110,9 @@ Keep it current.
 - Keep scope tight.
 - Prefer small, reversible changes.
 - State assumptions explicitly when needed.
-- Auto-commit coherent repo-visible changes by default.
-- Do not ask the user for permission before committing or pushing a coherent repo-visible change set.
-- Auto-commit coherent repo-visible changes by default with `bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>`.
+- Auto-push coherent repo-visible changes by default.
+- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- Auto-push coherent repo-visible changes by default with `bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>`.
 - Use `--no-push` only when a local-only commit is intentional.
 - Do not auto-publish partial, failing, or unverified work.
 EOF
