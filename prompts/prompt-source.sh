@@ -216,71 +216,7 @@ launcher_context_bar() {
   local project_dir=$3
   local target_file=$4
   local session_file=$5
-  local snapshot saved_at snapshot_role snapshot_project_name snapshot_project_dir snapshot_target_file artifact_id session_id phase budget context_bar snapshot_session_file snapshot_git_remote_path snapshot_github_repo_slug queue_file knowledge_file queue_now branch git_status watch_command
-
-  IFS=$'\t' read -r \
-    saved_at \
-    snapshot_role \
-    snapshot_project_name \
-    snapshot_project_dir \
-    snapshot_target_file \
-    artifact_id \
-    session_id \
-    phase \
-    budget \
-    context_bar \
-    snapshot_session_file \
-    snapshot_git_remote_path \
-    snapshot_github_repo_slug \
-    queue_file \
-    knowledge_file \
-    queue_now \
-    branch \
-    git_status \
-    watch_command \
-    <<< "$(launch_state_snapshot_fields "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "{GIT_REMOTE_PATH}" "{GITHUB_REPO_SLUG}" "{WATCH_COMMAND}")"
-
-  project_name="$(sanitize_title_text "$snapshot_project_name" 20)"
-  branch="$(sanitize_title_text "$branch" 16)"
-  git_status="$(sanitize_title_text "$git_status" 12)"
-  queue_now="$(sanitize_title_text "$queue_now" 24)"
-  artifact_id="$(sanitize_title_text "$artifact_id" 20)"
-  phase="$(sanitize_title_text "$phase" 8)"
-  budget="$(sanitize_title_text "$budget" 10)"
-  session_id="$(sanitize_title_text "$session_id" 8)"
-
-  if [[ -z "$branch" || "$branch" == "n/a" ]]; then
-    branch="no-git"
-  fi
-  if [[ -z "$git_status" || "$git_status" == "n/a" ]]; then
-    git_status="n/a"
-  fi
-  if [[ -z "$queue_now" || "$queue_now" == "n/a" ]]; then
-    queue_now="$(sanitize_title_text "$artifact_id" 24)"
-  fi
-  if [[ -z "$artifact_id" || "$artifact_id" == "n/a" ]]; then
-    artifact_id="$(sanitize_title_text "$(basename "$target_file")" 20)"
-  fi
-  if [[ -z "$phase" ]]; then
-    phase="build"
-  fi
-  if [[ -z "$session_id" ]]; then
-    session_id="session"
-  fi
-  if [[ -z "$budget" ]]; then
-    budget="ctx:n/a"
-  fi
-
-  printf '%s | %s | %s | %s | %s | task:%s | art:%s | %s | %s' \
-    "$project_name" \
-    "$branch" \
-    "$git_status" \
-    "$snapshot_role" \
-    "$phase" \
-    "$queue_now" \
-    "$artifact_id" \
-    "$budget" \
-    "$session_id"
+  launcher_context_bar_core "$role" "$project_name" "$project_dir" "$target_file" "$session_file"
 }
 
 base_wrapper_prompt() {
@@ -315,6 +251,15 @@ Update the shared context file directly as part of your work, but only in the se
 Work inside \`$project_dir\`.
 Use the queue and knowledge files as the first local context after the shared artifact.
 ROLE: $role
+EOF
+}
+
+commit_helper_instructions() {
+  cat <<'EOF'
+- Use `scripts/codex-commit.sh` with explicit path arguments.
+- Keep commit subjects short, human-readable, and descriptive.
+- Use `--no-push` only when a local-only commit is intentional.
+- Do not publish partial, failing, or unverified work.
 EOF
 }
 
@@ -375,15 +320,8 @@ Must:
 
 Commit helper:
 EOF
+      commit_helper_instructions
       cat <<'EOF'
-Purpose:
-- Stage and publish only the intended project files after a coherent change.
-
-Must:
-- Use `scripts/codex-commit.sh` with explicit path arguments.
-- Keep commit subjects short, human-readable, and descriptive.
-- Use `--no-push` only when a local-only commit is intentional.
-- Do not publish partial, failing, or unverified work.
 
 Notes:
 - The helper auto-discovers the project root and the best matching GitHub remote when possible.

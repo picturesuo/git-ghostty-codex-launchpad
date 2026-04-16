@@ -81,10 +81,6 @@ Must:
 - Refine only the minimum artifact sections needed to implement.
 
 Commit helper:
-Purpose:
-- Stage and publish only the intended project files after a coherent change.
-
-Must:
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Keep commit subjects short, human-readable, and descriptive.
 - Use `--no-push` only when a local-only commit is intentional.

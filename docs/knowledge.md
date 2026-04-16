@@ -21,6 +21,7 @@
 - `repo`: Canonical prompt source lives in `prompts/prompt-source.sh`, and generated prompt docs live in `docs/generated-prompts.md`.
 - `repo`: Wrapper-level prompt text should stay minimal and should not duplicate response-format or fallback behavior already owned by `AGENTS.md` or the shared artifact.
 - `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the commit-helper guidance in one place.
+- `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the human role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
 - `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.
 - `repo`: Launcher prompts and the launch summary now surface a compact session snapshot with the session ID, git branch/status, queue head, task artifact ID, phase, and a lightweight context-budget indicator.

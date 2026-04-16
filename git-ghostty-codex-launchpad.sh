@@ -386,7 +386,33 @@ launch_state_snapshot_fields() {
 
 build_session_title() {
   local project_name=$1 project_dir=$2 target_file=$3 session_file=$4 role=$5
-  launcher_context_bar "$role" "$project_name" "$project_dir" "$target_file" "$session_file"
+  local snapshot context_bar
+
+  snapshot="$(launch_state_snapshot_fields "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "{GIT_REMOTE_PATH}" "{GITHUB_REPO_SLUG}" "{WATCH_COMMAND}")"
+
+  IFS=$'\t' read -r \
+    _saved_at \
+    _snapshot_role \
+    _snapshot_project_name \
+    _snapshot_project_dir \
+    _snapshot_target_file \
+    _artifact_id \
+    _session_id \
+    _phase \
+    _budget \
+    context_bar \
+    _snapshot_session_file \
+    _snapshot_git_remote_path \
+    _snapshot_github_repo_slug \
+    _queue_file \
+    _knowledge_file \
+    _queue_now \
+    _branch \
+    _git_status \
+    _watch_command \
+    <<< "$snapshot"
+
+  printf '%s' "$context_bar"
 }
 
 build_watch_title() {
