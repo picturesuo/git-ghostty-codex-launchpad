@@ -27,6 +27,8 @@ The visible left-to-right pane order is:
 3. `DEBUGGER` - maps failures back to specific criteria or invariants and applies the minimum fix
 4. `CRITIC` - pressure-tests the artifact, adds risk and failure coverage, acts as the verification gate, and records targeted coaching guidance from recurring weak spots
 
+The documented role set is only `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
+
 ## Workflow
 
 All four panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`, and existing task state should survive relaunches.
@@ -34,6 +36,7 @@ Durable repo policy belongs in `AGENTS.md`; the shared context should carry the 
 
 Prompt source is no longer documented inline in `README.md`.
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
+Use [docs/role-selection.md](/Users/bensuo/ghostty-codex-launchpad/docs/role-selection.md) for the short role rubric and [docs/context-budget.md](/Users/bensuo/ghostty-codex-launchpad/docs/context-budget.md) for the context-budget rules.
 
 The workflow rules are:
 
