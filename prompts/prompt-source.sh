@@ -210,23 +210,6 @@ launcher_context_bar() {
     "$session_id"
 }
 
-commit_helper_instructions() {
-  cat <<'EOF'
-Purpose:
-- Stage and publish only the intended project files after a coherent change.
-
-Must:
-- Use `scripts/codex-commit.sh` with explicit path arguments.
-- Keep commit subjects short, human-readable, and descriptive.
-- Use `--no-push` only when a local-only commit is intentional.
-- Do not publish partial, failing, or unverified work.
-
-Notes:
-- The helper auto-discovers the project root and the best matching GitHub remote when possible.
-- If the helper refuses to publish, fix the issue first instead of bypassing it.
-EOF
-}
-
 base_wrapper_prompt() {
   local role=$1
   local project_name=$2
@@ -319,7 +302,20 @@ Must:
 
 Commit helper:
 EOF
-      commit_helper_instructions
+      cat <<'EOF'
+Purpose:
+- Stage and publish only the intended project files after a coherent change.
+
+Must:
+- Use `scripts/codex-commit.sh` with explicit path arguments.
+- Keep commit subjects short, human-readable, and descriptive.
+- Use `--no-push` only when a local-only commit is intentional.
+- Do not publish partial, failing, or unverified work.
+
+Notes:
+- The helper auto-discovers the project root and the best matching GitHub remote when possible.
+- If the helper refuses to publish, fix the issue first instead of bypassing it.
+EOF
       cat <<'EOF'
 
 Must not:
