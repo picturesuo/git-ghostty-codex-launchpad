@@ -24,6 +24,7 @@ Current repo-local structure:
 - `docs/context-budget.md`: context-budget rules for prompt layering.
 - `scripts/render-prompt-docs.sh`: helper that regenerates prompt docs from the canonical prompt source.
 - `scripts/check-prompt-drift.sh`: helper that checks launcher prompts against the canonical prompt source and generated docs.
+- `scripts/check-commit-helper-doc-map.sh`: helper that checks the documented GitHub repo mapping used by commit-helper auto-discovery.
 - `scripts/codex-commit.sh`: helper for staging intended files and committing small atomic changes.
 - `git-ghostty-codex-launchpad.sh`: main Ghostty launcher.
 - `start-git-ghostty-codex-launchpad.sh`: thin shell wrapper.

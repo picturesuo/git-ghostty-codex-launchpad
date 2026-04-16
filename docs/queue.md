@@ -5,7 +5,6 @@
 
 ## Next
 - [ ] Verify one live Ghostty launch against an existing repo with the canonical prompt source now wired into launcher output.
-- [ ] Add one helper test case for doc-mapped GitHub destination inference.
 - [ ] Decide whether migrated shared-context sections should stay as lightweight `###` headings or be normalized into numbered artifact sections in a later slice.
 - [ ] Decide whether migrated shared-context files should be backfilled with starter content from `docs/knowledge.md` or stay empty until roles record reusable knowledge.
 - [ ] Decide whether the launcher should compact or rewrite repeated migrated knowledge/coaching sections if older artifacts are relaunched many times.
@@ -26,6 +25,7 @@
 - [ ] Edge case: define how auto-publish should behave on a detached HEAD or on branches without an upstream remote.
 - [ ] Edge case: decide whether auto-publish should push ahead commits even when the requested path list has no fresh changes.
 - [ ] Edge case: verify the shared helper still refuses paths outside the selected project root when called by absolute path from another repo.
+- [ ] Edge case: verify helper doc-mapped auto-discovery still behaves correctly when multiple repo docs mention different GitHub repos.
 - [ ] Small improvement: consider a dedicated `codex-publish.sh` wrapper if `codex-commit.sh --push` becomes awkward to explain.
 - [ ] Edge case: verify the bootstrap path does not overwrite an existing project `AGENTS.md` or `docs/queue.md`.
 - [ ] Edge case: keep canonical-repo wording durable and avoid machine-specific local paths in user-facing docs.
