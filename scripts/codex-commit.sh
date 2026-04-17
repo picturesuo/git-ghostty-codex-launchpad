@@ -6,6 +6,7 @@ usage() {
 Usage:
   bash /path/to/codex-commit.sh -m "commit message" [--no-push] [--remote auto|<name>] [--project-root /path/to/project] <path> [<path> ...]
   bash /path/to/codex-commit.sh [--no-push] [--remote auto|<name>] [--project-root /path/to/project] <path> [<path> ...]
+  bash /path/to/codex-commit.sh --each-path [--no-push] [--remote auto|<name>] [--project-root /path/to/project] <path> [<path> ...]
 
 Behavior:
   - Stages only the paths you pass.
@@ -16,6 +17,7 @@ Behavior:
   - Uses the current working directory as the project root unless --project-root is provided.
   - With --remote auto (default), prefers the repo's existing push remote and otherwise
     fails if the selected project has no safe existing remote context.
+  - With --each-path, commits and pushes each staged path separately with a short message.
 EOF
 }
 
@@ -37,6 +39,7 @@ message=""
 push_after_commit=1
 remote_name="auto"
 explicit_project_root=""
+split_each_path=0
 declare -a paths=()
 
 while [ "$#" -gt 0 ]; do
@@ -56,6 +59,9 @@ while [ "$#" -gt 0 ]; do
       shift
       [ "$#" -gt 0 ] || { echo "Missing remote name." >&2; exit 1; }
       remote_name="$1"
+      ;;
+    --each-path)
+      split_each_path=1
       ;;
     --project-root)
       shift
@@ -482,22 +488,65 @@ generate_message() {
   fi
 }
 
+commit_staged_path() {
+  local rel_path=$1 commit_message
+  local -a rel_paths=("$rel_path")
+
+  if git diff --cached --quiet -- "$rel_path"; then
+    return 1
+  fi
+
+  if [ -z "$message" ]; then
+    commit_message="$(generate_message)"
+  else
+    commit_message="$message"
+  fi
+
+  commit_message="$(printf '%s' "$commit_message" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+  [ -n "$commit_message" ] || { echo "Commit message is empty." >&2; exit 1; }
+
+  git commit -m "$commit_message" -- "$rel_path"
+  printf 'Committed: %s\n' "$commit_message"
+
+  if [ "$push_after_commit" -eq 1 ]; then
+    push_current_branch "$(current_branch)"
+    printf 'Pushed current branch.\n'
+  fi
+
+  return 0
+}
+
 if git diff --cached --quiet -- "${rel_paths[@]}"; then
   echo "No staged changes for the requested paths."
   exit 0
 fi
 
-if [ -z "$message" ]; then
-  message="$(generate_message)"
-fi
+if [ "$split_each_path" -eq 1 ] && [ "${#rel_paths[@]}" -gt 1 ]; then
+  committed_any=0
 
-message="$(printf '%s' "$message" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
-[ -n "$message" ] || { echo "Commit message is empty." >&2; exit 1; }
+  for rel_path in "${rel_paths[@]}"; do
+    if commit_staged_path "$rel_path"; then
+      committed_any=1
+    fi
+  done
 
-git commit -m "$message" -- "${rel_paths[@]}"
-printf 'Committed: %s\n' "$message"
+  if [ "$committed_any" -eq 0 ]; then
+    echo "No staged changes for the requested paths."
+    exit 0
+  fi
+else
+  if [ -z "$message" ]; then
+    message="$(generate_message)"
+  fi
 
-if [ "$push_after_commit" -eq 1 ]; then
-  push_current_branch "$(current_branch)"
-  printf 'Pushed current branch.\n'
+  message="$(printf '%s' "$message" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+  [ -n "$message" ] || { echo "Commit message is empty." >&2; exit 1; }
+
+  git commit -m "$message" -- "${rel_paths[@]}"
+  printf 'Committed: %s\n' "$message"
+
+  if [ "$push_after_commit" -eq 1 ]; then
+    push_current_branch "$(current_branch)"
+    printf 'Pushed current branch.\n'
+  fi
 fi
