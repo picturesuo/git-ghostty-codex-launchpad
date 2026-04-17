@@ -41,6 +41,7 @@ Do not invent build, test, or runtime commands that are not present in the repo.
 - Keep scope tight and changes reversible.
 - Prefer targeted validation over whole-repo validation.
 - Be explicit about what was verified versus not verified.
+- When the user gives multiple tasks in one prompt, commit and push each completed task separately before starting the next one.
 - If the task grows too large, stop and present options before continuing.
 
 ## Queue

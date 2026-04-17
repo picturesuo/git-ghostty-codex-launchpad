@@ -1,22 +1,21 @@
 # Queue
 
 ## Now
-- [ ] Decide whether `docs/role-selection.md` should stay separate now that it is generated from the prompt source.
+- [ ] Update the prompt source and launcher docs so each task in a multi-task prompt gets its own commit and push.
 
 ## Next
-- [ ] Verify the generated role-selection page and prompt docs stay in sync after the next regeneration.
-- [ ] Confirm the launcher still builds the same title/status snapshot fields after the prompt-doc refresh.
-- [ ] Run the repo shell checks that are available locally once `shellcheck` is installed.
+- [ ] Regenerate the prompt docs and verify the per-task publish rule is present in the generated output.
+- [ ] Update the README and durable knowledge notes so they match the new publish boundary wording.
+- [ ] Run the available shell syntax and prompt-drift checks after the wording update.
 
 ## Later
-- [ ] Trim any remaining workflow duplication in user-facing docs if it starts to drift again.
+- [ ] Revisit the commit helper docs if any additional guidance is needed for task-sized publish batches.
 
 ## Blocked
-- [ ] Waiting on a concrete follow-up for launch-time behavior or publish-flow changes.
+- [ ] Waiting on validation of the updated prompt source and generated docs.
 
 ## Discovered While Working
-- [ ] Edge case: verify the role-selection generator stays stable if the role list changes order.
-- [ ] Edge case: verify the prompt-source helper output stays stable when the BACKEND block is regenerated.
-- [ ] Edge case: verify the launch-state snapshot still handles detached `HEAD` and non-git projects cleanly.
-- [ ] Cleanup: remove any now-unnecessary role-summary prose from hand-maintained docs if it becomes redundant.
-- [ ] Cleanup: remove any now-redundant launcher indirection if the snapshot/title path stays stable.
+- [ ] Edge case: verify the publish wording still says to skip private or personal files even when a prompt mixes doc and code work.
+- [ ] Edge case: verify repeated task batches still produce separate commit messages instead of one merged message.
+- [ ] Edge case: verify the generated docs stay in sync if the role prompt bodies are regenerated after the wording change.
+- [ ] Cleanup: remove any now-redundant hand-written phrasing once the prompt source becomes the single source of truth.
