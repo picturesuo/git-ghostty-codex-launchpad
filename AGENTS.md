@@ -41,7 +41,8 @@ Do not invent build, test, or runtime commands that are not present in the repo.
 - Keep scope tight and changes reversible.
 - Prefer targeted validation over whole-repo validation.
 - Be explicit about what was verified versus not verified.
-- When the user gives multiple tasks in one prompt, commit and push each completed task separately before starting the next one.
+- When the work moves from one file to another, commit and push the finished file before starting the next one.
+- Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push.
 - If the task grows too large, stop and present options before continuing.
 
 ## Queue
