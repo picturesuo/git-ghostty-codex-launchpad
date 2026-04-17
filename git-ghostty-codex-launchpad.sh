@@ -1111,9 +1111,10 @@ Keep it current.
 - Prefer small, reversible changes.
 - State assumptions explicitly when needed.
 - Auto-push coherent repo-visible changes by default.
-- When the user gives multiple tasks in one prompt, commit and push each completed task separately before starting the next one.
+- When the work moves from one file to another, commit and push the finished file before starting the next one.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 - Auto-push coherent repo-visible changes by default with `bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>`.
+- Use `bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>` when changing more than one file so each file gets its own short commit message and push.
 - Use `--no-push` only when a local-only commit is intentional.
 - Do not auto-publish partial, failing, or unverified work.
 EOF
