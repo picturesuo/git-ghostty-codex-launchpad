@@ -24,7 +24,7 @@ Read the shared context file second and use it as the task artifact for the curr
 Update the shared context file directly as part of your work, but only in the sections owned by your role.
 Work inside `{PROJECT_DIR}`.
 Use the queue and knowledge files as the first local context after the shared artifact.
-If the user's prompt includes multiple tasks, complete and publish each task separately before starting the next one.
+If the work moves from one file to another, publish the finished file before starting the next one.
 ROLE: {ROLE}
 ```
 
@@ -48,7 +48,7 @@ Owns:
 Must:
 - Keep scope tight and executable.
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
-- If the user's prompt includes multiple tasks, publish the current task before starting the next one.
+- If the work moves from one file to another, publish the finished file before starting the next one.
 - Stop after artifact setup if implementation belongs to another role.
 - Auto-push coherent repo-visible changes by default instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
@@ -78,10 +78,10 @@ Must:
 - Broad tasks must first produce a file list and rollback plan.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
-- If the user's prompt includes multiple tasks, finish and publish each task separately before moving on.
+- If the work moves from one file to another, finish and publish the current file before moving on.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
-- Finish coherent change sets with an atomic push that stages only intended project paths and uses the shared helper.
+- Finish coherent change sets with `scripts/codex-commit.sh --each-path` when moving across files so each file gets a short commit message and push.
 - Keep push messages short and human-readable; default to push when the selected project has a safe existing remote.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 - Auto-push verified changes by default instead of waiting for approval.
@@ -89,8 +89,8 @@ Must:
 
 Push helper:
 - Use `scripts/codex-commit.sh` with explicit path arguments.
+- Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push.
 - Keep push messages short, human-readable, and descriptive.
-- When the user gives multiple tasks in one prompt, use one commit and push per completed task, with a distinct message for each task.
 - Use `--no-push` only when a local-only commit is intentional.
 - Do not push partial, failing, or unverified work.
 
@@ -121,7 +121,7 @@ Must:
 - Record explicit `PASS`, `FAIL`, or `NOT VERIFIED` per relevant criterion.
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
-- If the user's prompt includes multiple tasks, publish each verified task separately before moving to the next one.
+- If the work moves from one file to another, publish the verified file before moving to the next one.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
 - Auto-push coherent repo-visible changes by default instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
@@ -151,7 +151,7 @@ Must:
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
-- If the user's prompt includes multiple tasks, fix and publish one task at a time instead of batching them.
+- If the work moves from one file to another, fix and publish one file at a time instead of batching them.
 - Auto-push coherent repo-visible changes by default instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 
