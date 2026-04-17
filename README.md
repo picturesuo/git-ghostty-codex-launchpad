@@ -23,7 +23,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, then threads those values into all four panes and the shared session context
 - Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
-- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper, one task at a time when a prompt contains multiple tasks
+- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper, one file at a time when work moves across files
 - Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
@@ -53,7 +53,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default. If one prompt includes multiple tasks, each task gets its own commit and push before the next task starts.
+- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default. If the work moves from one file to another, each file gets its own commit and push before the next file starts.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
@@ -74,7 +74,8 @@ Bootstrap behavior:
 ## Publishing Defaults
 
 This repo should auto-push coherent non-private repo-visible file changes by default.
-When a prompt includes multiple tasks, publish each completed task separately with its own commit message and push.
+When the work moves from one file to another, publish each completed file separately with its own commit message and push.
+Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
 
 Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
