@@ -53,7 +53,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes by default. If the work moves from one file to another, each file gets its own commit and push before the next file starts.
+- Once a task meets that completion bar, the workflow is expected to publish the intended files with the launcher-provided shared helper, which commits first and then pushes. If the work moves from one file to another, each file gets its own commit and push before the next file starts.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
@@ -73,16 +73,16 @@ Bootstrap behavior:
 
 ## Publishing Defaults
 
-This repo should auto-push coherent non-private repo-visible file changes by default.
+This repo should auto-push coherent non-private repo-visible file changes.
 When the work moves from one file to another, publish each completed file separately with its own commit message and push.
 Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
 
-Verified completed work should be published in the same turn by default with the shared helper in `scripts/codex-commit.sh`.
+Verified completed work should be published in the same turn with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
-The helper commits first, then pushes by default, prefers an existing upstream when available, and fails clearly if the selected project has no safe existing remote context.
-If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; use `--no-push` only for an intentional local-only commit.
+The helper commits first, then pushes, prefers an existing upstream when available, and fails clearly if the selected project has no safe existing remote context.
+If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; the launcher should stop there and fix the remote or branch setup before any further file work.
 
-When destination is unclear, the workflow should first check git remotes and existing upstreams. If no safe destination exists, it should fail clearly and ask for a remote or `--no-push` instead of inventing one.
+When destination is unclear, the workflow should first check git remotes and existing upstreams. If no safe destination exists, it should fail clearly and fix the repository setup instead of inventing a local-only path.
 ## Files
 
 - `git-ghostty-codex-launchpad.sh` - main launcher

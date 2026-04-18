@@ -61,9 +61,9 @@ Rules:
 - If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
 
 ## Commit Policy
-- Auto-push coherent repo-visible non-private changes by default.
+- Auto-push coherent repo-visible non-private changes.
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Keep commits atomic and avoid unrelated staging.
 - Default to `main` unless told otherwise.
 - Never commit personal, secret, machine-specific, scratch, cache, or other local-only files unless explicitly requested.
-- Use `--no-push` only when a local-only commit is intentional or a safe push destination is unavailable.
+- Do not use `--no-push` in the normal launcher workflow; if push cannot happen, fix the remote or branch setup first.

@@ -271,7 +271,8 @@ push_helper_instructions() {
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push.
 - Keep push messages short, human-readable, and descriptive.
-- Use `--no-push` only when a local-only commit is intentional or no safe push destination exists.
+- Do not use `--no-push` in the normal launcher workflow.
+- If push cannot happen, treat that as a blocker and fix the remote/branch setup first.
 - Do not push partial, failing, or unverified work.
 EOF
 }
@@ -301,7 +302,7 @@ Must:
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
 - If the work moves from one file to another, commit and push the finished file before starting the next one.
 - Stop after artifact setup if implementation belongs to another role.
-- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Auto-commit and auto-push coherent repo-visible changes instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
@@ -334,7 +335,7 @@ Must:
 - Finish coherent change sets with `scripts/codex-commit.sh --each-path` when moving across files so each file gets a short commit message and push.
 - Keep push messages short and human-readable; default to push when the selected project has a safe existing remote.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
-- Auto-commit and auto-push verified changes by default instead of waiting for approval.
+- Auto-commit and auto-push verified changes instead of waiting for approval.
 - Refine only the minimum artifact sections needed to implement.
 
 Push helper:
@@ -372,7 +373,7 @@ Must:
 - Focus on bugs, regressions, ambiguity, and validation gaps.
 - If the work moves from one file to another, commit and push the verified file before moving to the next one.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
-- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Auto-push coherent repo-visible changes instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
@@ -400,7 +401,7 @@ Must:
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
 - If the work moves from one file to another, fix and push one file at a time instead of batching them.
-- Auto-push coherent repo-visible changes by default instead of waiting for approval.
+- Auto-push coherent repo-visible changes instead of waiting for approval.
 - Do not ask the user for permission before pushing a coherent repo-visible change set.
 
 Must not:
