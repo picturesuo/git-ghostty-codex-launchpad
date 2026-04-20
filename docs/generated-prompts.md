@@ -1,3 +1,10 @@
+---
+summary: Generated reference for the launcher base wrapper and role prompt bodies.
+read_when:
+  - You are changing prompts/prompt-source.sh.
+  - You need to inspect the rendered prompt output without reading shell source first.
+---
+
 # Generated Prompts
 
 Source: `prompts/prompt-source.sh`
