@@ -1,3 +1,10 @@
+---
+summary: Generated quick reference for when to use each launcher role.
+read_when:
+  - You need the shortest current role-selection rubric.
+  - You are checking whether role guidance drifted from prompts/prompt-source.sh.
+---
+
 # Role Selection
 
 - `BUILDER`: use when the task artifact is missing, vague, or needs tighter success criteria before implementation.
