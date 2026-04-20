@@ -14,6 +14,16 @@ bash scripts/codex-commit.sh --no-push AGENTS.md
 bash scripts/codex-commit.sh --each-path --no-push AGENTS.md tools.md
 ```
 
+### `gh`
+- Purpose: inspect pull requests, review comments, and CI runs from GitHub without guessing at repo state.
+- Location: system CLI
+- Notes: use this only when GitHub review or Actions state is relevant to the task.
+- Safe examples:
+```bash
+gh pr view --comments
+gh run list --limit 10
+```
+
 ## Prompt Docs
 
 ### `scripts/render-prompt-docs.sh`
