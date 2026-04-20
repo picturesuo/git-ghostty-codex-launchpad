@@ -14,6 +14,13 @@ tmp_actual="$(mktemp -t codex-prompt-actual.XXXXXX)"
 trap 'rm -f "$tmp_generated" "$tmp_role_selection" "$tmp_expected" "$tmp_actual"' EXIT
 
 cat > "$tmp_generated" <<'EOF'
+---
+summary: Generated reference for the launcher base wrapper and role prompt bodies.
+read_when:
+  - You are changing prompts/prompt-source.sh.
+  - You need to inspect the rendered prompt output without reading shell source first.
+---
+
 # Generated Prompts
 
 Source: `prompts/prompt-source.sh`
@@ -72,7 +79,18 @@ cat >> "$tmp_generated" <<'EOF'
 ```
 EOF
 
-role_selection_summary > "$tmp_role_selection"
+{
+  cat <<'EOF'
+---
+summary: Generated quick reference for when to use each launcher role.
+read_when:
+  - You need the shortest current role-selection rubric.
+  - You are checking whether role guidance drifted from prompts/prompt-source.sh.
+---
+
+EOF
+  role_selection_summary
+} > "$tmp_role_selection"
 
 if ! diff -u "$project_root/docs/role-selection.md" "$tmp_role_selection" >/dev/null; then
   echo "Role selection doc is out of date. Re-run scripts/render-prompt-docs.sh." >&2
