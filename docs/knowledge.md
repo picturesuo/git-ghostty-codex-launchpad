@@ -1,3 +1,10 @@
+---
+summary: Durable user guidance and stable project facts worth reusing across tasks.
+read_when:
+  - You need repo facts or user preferences before making workflow or policy changes.
+  - You want to check whether a rule should be treated as durable guidance instead of task-local state.
+---
+
 # Knowledge
 
 ## User-Provided Knowledge
@@ -27,6 +34,7 @@
 - `repo`: When the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
 - `repo`: `scripts/codex-commit.sh --each-path` is the per-file publish mode for file-by-file commits and pushes.
 - `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the generated role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
+- `repo`: Docs under `docs/` should carry short `summary` and `read_when` front matter, and `scripts/docs-list.sh` is the read-first index for docs-heavy work.
 - `repo`: Pointer-style repo layering is the preferred pattern for cross-repo policy reuse: keep shared guardrails in one canonical source, keep each repo `AGENTS.md` tiny, and add only repo-local rules underneath.
 - `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.
