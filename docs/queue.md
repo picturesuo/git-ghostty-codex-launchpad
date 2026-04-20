@@ -1,18 +1,18 @@
 # Queue
 
 ## Now
-- [ ] Update the commit helper and launcher docs so each file change gets its own commit and push.
+- [ ] Enforce automatic per-file commit and push wording across the launcher docs.
 
 ## Next
-- [ ] Regenerate the prompt docs and verify the per-file publish rule is present in the generated output.
-- [ ] Update the README and durable knowledge notes so they match the new publish boundary wording.
-- [ ] Run the available shell syntax and prompt-drift checks after the implementation update.
+- [ ] Regenerate the prompt docs so the generated output matches the source wording.
+- [ ] Update the README and durable knowledge notes so they match the automatic per-file publish rule.
+- [ ] Review the launcher wrapper text for any remaining manual-approval phrasing.
 
 ## Later
 - [ ] Revisit the commit helper docs if any additional guidance is needed for file-sized publish batches.
 
 ## Blocked
-- [ ] Waiting on validation of the updated helper behavior and generated docs.
+- [ ] Waiting on the prompt-source and generated-docs sync pass.
 
 ## Discovered While Working
 - [ ] Edge case: verify the publish wording still says to skip private or personal files even when a prompt mixes doc and code work.
