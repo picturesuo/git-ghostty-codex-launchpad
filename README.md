@@ -53,7 +53,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow is expected to publish the intended non-private files with the launcher-provided shared helper, which commits first and then pushes. If the work moves from one file to another, each file gets its own short commit message and push before the next file starts.
+- Once a task meets that completion bar, the workflow automatically publishes the intended non-private files with the launcher-provided shared helper, which commits first and then pushes. If the work moves from one file to another, each file gets its own short commit message and push before the next file starts.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
@@ -77,7 +77,7 @@ This repo should auto-push coherent non-private repo-visible file changes.
 When the work moves from one file to another, publish each completed file separately with its own short commit message and push before starting the next file.
 Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
 
-Verified completed work should be published in the same turn with the shared helper in `scripts/codex-commit.sh`.
+Completed work should be published in the same turn with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
 The helper commits first, then pushes, prefers an existing upstream when available, and fails clearly if the selected project has no safe existing remote context.
 If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; the launcher should stop there and fix the remote or branch setup before any further file work.
@@ -106,4 +106,4 @@ Useful command-line modes:
 
 ## Verify
 
-Run `bash scripts/check-shell.sh` for shell sanity checks and `bash scripts/check-prompt-drift.sh` to verify prompt docs stay in sync.
+If you want a quick sanity check, run `bash scripts/check-shell.sh` and `bash scripts/check-prompt-drift.sh` to confirm prompt docs stay in sync.
