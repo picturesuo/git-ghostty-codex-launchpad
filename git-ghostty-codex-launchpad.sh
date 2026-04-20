@@ -433,10 +433,55 @@ build_watch_title() {
   printf '%s | %s | watch | %s' "$project_name" "$branch" "$session_id"
 }
 
-pane_command_with_title() {
-  local title=$1 prompt_text=$2
+pane_command() {
+  local prompt_text=$1
 
-  printf "printf '\\033]0;%%s\\a' %s; codex %s" "$(shell_single_quote "$title")" "$(shell_single_quote "$prompt_text")"
+  printf "codex %s" "$(shell_single_quote "$prompt_text")"
+}
+
+retitle_matching_open_project_terminals() {
+  local project_dir=$1
+  local builder_title=$2
+  local debugger_title=$3
+  local backend_title=$4
+  local critic_title=$5
+  local watch_title=$6
+
+  osascript <<EOF >/dev/null
+tell application "Ghostty"
+  if not running then
+    return
+  end if
+
+  set projectDir to $(applescript_string "$project_dir")
+  set projectDirPrefix to projectDir & "/"
+  set builderTitle to $(applescript_string "$builder_title")
+  set debuggerTitle to $(applescript_string "$debugger_title")
+  set backendTitle to $(applescript_string "$backend_title")
+  set criticTitle to $(applescript_string "$critic_title")
+  set watchTitle to $(applescript_string "$watch_title")
+
+  repeat with targetTerminal in terminals
+    try
+      set terminalWorkingDirectory to working directory of targetTerminal
+      if terminalWorkingDirectory is projectDir or terminalWorkingDirectory starts with projectDirPrefix then
+        set currentName to name of targetTerminal
+        if currentName contains " | BUILDER | " then
+          perform action "set_surface_title:" & builderTitle on targetTerminal
+        else if currentName contains " | DEBUGGER | " then
+          perform action "set_surface_title:" & debuggerTitle on targetTerminal
+        else if currentName contains " | BACKEND | " then
+          perform action "set_surface_title:" & backendTitle on targetTerminal
+        else if currentName contains " | CRITIC | " then
+          perform action "set_surface_title:" & criticTitle on targetTerminal
+        else if currentName contains " | watch | " then
+          perform action "set_surface_title:" & watchTitle on targetTerminal
+        end if
+      end if
+    end try
+  end repeat
+end tell
+EOF
 }
 
 prompt_project_name() {
@@ -1487,18 +1532,19 @@ launch_ghostty_session() {
   local prompt2=$8
   local prompt3=$9
   local prompt4=${10}
-  local pane1_title pane2_title pane3_title pane4_title
+  local pane1_title pane2_title pane3_title pane4_title watch_title
   local pane1_command pane2_command pane3_command pane4_command
 
   pane1_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BUILDER")"
   pane2_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "DEBUGGER")"
   pane3_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BACKEND")"
   pane4_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "CRITIC")"
+  watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
 
-  pane1_command="$(pane_command_with_title "$pane1_title" "$prompt1")"
-  pane2_command="$(pane_command_with_title "$pane2_title" "$prompt3")"
-  pane3_command="$(pane_command_with_title "$pane3_title" "$prompt2")"
-  pane4_command="$(pane_command_with_title "$pane4_title" "$prompt4")"
+  pane1_command="$(pane_command "$prompt1")"
+  pane2_command="$(pane_command "$prompt3")"
+  pane3_command="$(pane_command "$prompt2")"
+  pane4_command="$(pane_command "$prompt4")"
 
   if ! osascript <<EOF
 tell application "Ghostty"
@@ -1513,6 +1559,11 @@ tell application "Ghostty"
   set pane2 to split pane1 direction right with configuration cfg
   set pane3 to split pane1 direction right with configuration cfg
   set pane4 to split pane2 direction right with configuration cfg
+
+  perform action $(applescript_string "set_surface_title:$pane1_title") on pane1
+  perform action $(applescript_string "set_surface_title:$pane2_title") on pane2
+  perform action $(applescript_string "set_surface_title:$pane3_title") on pane3
+  perform action $(applescript_string "set_surface_title:$pane4_title") on pane4
 
   delay ${SHELL_STARTUP_DELAY_SECONDS}
 
@@ -1539,6 +1590,8 @@ EOF
   then
     return 1
   fi
+
+  retitle_matching_open_project_terminals "$project_dir" "$pane1_title" "$pane2_title" "$pane3_title" "$pane4_title" "$watch_title"
 }
 
 launch_ghostty_watch_window() {
@@ -1546,10 +1599,12 @@ launch_ghostty_watch_window() {
   local project_dir=$2
   local session_file=$3
   local watch_command=$4
-  local watch_title watch_shell_command
+  local session_target_file watch_title watch_shell_command
+
+  session_target_file="$(shared_context_header_value "$session_file" "Target file" || true)"
 
   watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
-  watch_shell_command="printf '\\033]0;%s\\a' $(shell_single_quote "$watch_title"); bash -lc $(shell_single_quote "$watch_command")"
+  watch_shell_command="bash -lc $(shell_single_quote "$watch_command")"
 
   if ! osascript <<EOF
 tell application "Ghostty"
@@ -1561,6 +1616,8 @@ tell application "Ghostty"
   set win to new window with configuration cfg
   set pane1 to terminal 1 of selected tab of win
 
+  perform action $(applescript_string "set_surface_title:$watch_title") on pane1
+
   delay ${SHELL_STARTUP_DELAY_SECONDS}
 
   input text $(applescript_string "$watch_shell_command") to pane1
@@ -1570,6 +1627,8 @@ EOF
   then
     return 1
   fi
+
+  retitle_matching_open_project_terminals "$project_dir" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "BUILDER")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "DEBUGGER")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "BACKEND")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "CRITIC")" "$watch_title"
 }
 
 main() {
