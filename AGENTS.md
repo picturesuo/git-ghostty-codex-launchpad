@@ -1,69 +1,70 @@
 # AGENTS.md
 
-## Purpose
-This file is the durable repo policy for Codex in `ghostty-codex-launchpad`.
-The shared context file at `~/.codex/ghostty-codex-launchpad-shared-context.md`, when present, is the current-task record.
+Be concise and direct. Prefer small, safe, reviewable changes.
 
-Keep `AGENTS.md` short and stable. Launch-time behavior belongs in `prompts/prompt-source.sh`; the generated role summary belongs in `docs/role-selection.md`; current task memory belongs in the shared context file.
+## Portable Defaults
+- Read relevant docs and nearby code before editing.
+- Search exact error text when debugging external or unfamiliar failures.
+- Follow existing patterns before introducing new ones.
+- Prefer minimal diffs over broad rewrites.
+- Fix root causes when practical.
+- If behavior changes, update docs or comments where appropriate.
+- If blocked, say what is missing and propose the next step.
 
-## Repo Layout
-- `README.md`: user-facing project overview.
-- `AGENTS.md`: durable repo policy.
-- `prompts/prompt-source.sh`: canonical launcher and pane prompt source.
-- `docs/generated-prompts.md`: generated documentation for the prompt source.
-- `docs/prompt-source.md`: prompt ownership overview.
-- `docs/role-selection.md`: generated role summary.
-- `docs/context-budget.md`: context-budget rules.
-- `docs/queue.md`: working queue.
-- `docs/knowledge.md`: durable user guidance and project facts.
-- `scripts/render-prompt-docs.sh`: regenerate prompt docs from the prompt source.
-- `scripts/check-prompt-drift.sh`: check the launcher and generated docs against the prompt source.
-- `scripts/check-shell.sh`: shell sanity checks for repo shell entry points and helpers.
-- `scripts/check-commit-helper-doc-map.sh`: verify commit-helper GitHub repo mapping.
-- `scripts/codex-commit.sh`: stage intended files and push small atomic changes.
-- `git-ghostty-codex-launchpad.sh`: main Ghostty launcher.
-- `start-git-ghostty-codex-launchpad.sh`: thin shell wrapper.
-- `open-git-ghostty-codex-launchpad.command`: macOS launcher.
+## Safety
+- Safe git by default: `status`, `diff`, and `log` are always okay.
+- Never run destructive commands without explicit approval.
+- Do not delete or rename unexpected files unless asked.
+- Do not change package manager, framework, runtime, or build tooling unless asked.
+- Do not push unless explicitly asked.
 
-Do not invent build, test, or runtime commands that are not present in the repo.
+## Verification
+- Before handoff, run relevant checks when feasible:
+  - `lint`
+  - `typecheck`
+  - `tests`
+  - `build`
+- Prefer the most end-to-end verification the repo already supports when practical.
+- If you cannot run something, say exactly why.
 
-## Startup Checklist
-1. Read `AGENTS.md`.
-2. Read the shared context file if it exists.
-3. Read `docs/queue.md`.
-4. Inspect the current repo-local files before editing.
-5. Check scoped git status for the files you plan to touch.
+## Code Quality
+- Keep edits small and reviewable.
+- Keep files reasonably maintainable; split large files when it clearly helps.
+- Add or update tests when fixing bugs or changing logic, when tests exist or fit naturally.
+- Prefer readability over cleverness.
+- Avoid repo-wide search-and-replace or bulk rewrite scripts unless explicitly asked.
 
-## Working Rules
-- Keep launch-time behavior in the prompt source, not in repo policy.
-- Keep prompts short, concrete, and role-specific.
-- Use docs as working memory.
-- Keep scope tight and changes reversible.
-- Prefer targeted validation over whole-repo validation.
-- Be explicit about what was verified versus not verified.
-- When the work moves from one file to another, commit and push the finished file before starting the next one.
-- Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push.
-- If the task grows too large, stop and present options before continuing.
+## Docs
+- If a `docs/` directory exists, inspect relevant docs before coding.
+- If docs link to other relevant docs, follow those links until the local workflow or domain is clear.
+- Update docs when behavior, commands, or workflows change.
+- Respect any project-specific "read this first" guidance.
 
-## Queue
-`docs/queue.md` is the working queue.
+## Git
+- Check `git status` and `git diff` before editing and before handoff.
+- Make local commits at meaningful subtask boundaries when the work is substantial enough to benefit from a checkpoint.
+- If a task spans multiple files, prefer one commit per finished file or one commit per logical change, whichever is cleaner.
+- Do not push unless explicitly asked.
+- Push after each completed chunk only when the user clearly wants that chunk published to GitHub.
+- Do not assume a local commit should be pushed; pushing is separate and requires explicit user intent.
+- Do not change branches unless asked.
+- Do not amend commits unless asked.
+- Keep commits scoped and understandable.
+- Keep commit messages short, consistent, human, and understandable; use conventional-style messages when they fit naturally.
 
-Use these sections:
-- `Now`
-- `Next`
-- `Later`
-- `Blocked`
-- `Discovered While Working`
+## Runtime / Tooling
+- If `tools.md` exists, read the relevant sections before using repo-local commands or helper scripts.
+- If `skills/` exists, read the matching skill before doing specialized repeated workflows.
+- If multiple agents are working at once, read `docs/multi-agent-workflow.md` before splitting the work.
+- Use the repo's existing package manager and runtime.
+- Do not swap tools or introduce new dependencies without a clear reason.
+- If you must add a dependency, prefer maintained and established options, and note why it was needed.
+- If you edit reusable helper scripts, keep them portable and avoid unnecessary repo-specific coupling.
 
-Rules:
-- Keep `Now` to one small executable task.
-- After each meaningful unit of work, add 3 next small tasks, 2 edge cases, and 1 cleanup or simplification item.
-- If there is no obvious feature task, improve docs, validation, naming, error handling, or workflow clarity.
-
-## Commit Policy
-- Auto-push coherent repo-visible non-private changes.
-- Use `scripts/codex-commit.sh` with explicit path arguments.
-- Keep commits atomic and avoid unrelated staging.
-- Default to `main` unless told otherwise.
-- Never commit personal, secret, machine-specific, scratch, cache, or other local-only files unless explicitly requested.
-- Do not use `--no-push` in the normal launcher workflow; if push cannot happen, fix the remote or branch setup first.
+## Optional Local Tools
+- If `scripts/committer` exists, prefer it for scoped commits.
+- It stages only explicitly listed files, refuses `.`, creates a local commit only, does not push, and should clear a stale git index lock only when run with `--force`.
+- If `scripts/codex-commit.sh` exists, use `--no-push` when you want the same scoped local-commit behavior without publishing.
+- If `docs/` exists and a repo-local docs listing helper is available, run it before editing docs-heavy parts of the codebase.
+- Use the docs helper output, including `summary` and `read_when` hints when available, to identify which docs to read before coding.
+- Do not assume custom local tools exist unless they are present in this repo or on this machine.
