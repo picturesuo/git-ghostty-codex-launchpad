@@ -32,6 +32,17 @@ bash scripts/render-prompt-docs.sh
 bash scripts/check-prompt-drift.sh
 ```
 
+## Docs Index
+
+### `scripts/docs-list.sh`
+- Purpose: scan `docs/` for markdown files, extract `summary` and `read_when` front matter, and show which docs to read first.
+- Location: `scripts/docs-list.sh`
+- Notes: use this before docs-heavy, policy-heavy, or workflow-heavy edits.
+- Safe examples:
+```bash
+bash scripts/docs-list.sh
+```
+
 ## Verification
 
 ### `scripts/check-shell.sh`
@@ -66,5 +77,4 @@ bash git-ghostty-codex-launchpad.sh --resume-last
 ## Notes
 
 - No `scripts/committer` helper is currently present in this repo.
-- No dedicated docs listing helper is currently present in this repo.
 - If a future helper is added, list it here with its purpose, location, and one or two safe example commands.
