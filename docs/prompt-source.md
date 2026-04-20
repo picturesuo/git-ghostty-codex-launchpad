@@ -1,3 +1,10 @@
+---
+summary: Ownership guide for the canonical prompt source and its generated prompt docs.
+read_when:
+  - You are editing prompts/prompt-source.sh or the generated prompt docs.
+  - You need to know where wrapper text and role guidance should live.
+---
+
 # Prompt Source
 
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh).
