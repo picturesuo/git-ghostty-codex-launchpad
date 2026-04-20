@@ -1,21 +1,20 @@
 # Queue
 
 ## Now
-- [ ] Enforce automatic per-file commit and push wording across the launcher docs.
+- [ ] Tighten `README.md` so its workflow and publishing text matches the automatic per-file commit-and-push policy.
 
 ## Next
-- [ ] Regenerate the prompt docs so the generated output matches the source wording.
-- [ ] Update the README and durable knowledge notes so they match the automatic per-file publish rule.
-- [ ] Review the launcher wrapper text for any remaining manual-approval phrasing.
+- [ ] Compare the README workflow wording against `AGENTS.md` and `docs/knowledge.md` so the README does not drift from current repo policy.
+- [ ] Update the README sections that describe per-file publishing so each finished file clearly gets its own short commit message and push before the next file starts.
+- [ ] Read the final README wording once for overclaims about remotes, automation, or private-file publishing before publishing it.
 
 ## Later
-- [ ] Revisit the commit helper docs if any additional guidance is needed for file-sized publish batches.
+- [ ] Revisit the generated docs only if the README wording reveals a policy mismatch that is not actually README-only.
 
 ## Blocked
-- [ ] Waiting on the prompt-source and generated-docs sync pass.
+- [ ] No current blockers.
 
 ## Discovered While Working
-- [ ] Edge case: verify the publish wording still says to skip private or personal files even when a prompt mixes doc and code work.
-- [ ] Edge case: verify repeated file batches still produce separate commit messages instead of one merged message.
-- [ ] Edge case: verify the generated docs stay in sync if the role prompt bodies are regenerated after the wording change.
-- [ ] Cleanup: remove any now-redundant hand-written phrasing once the helper behavior becomes the single source of truth.
+- [ ] Edge case: avoid README wording that implies private, personal, scratch, or local-only files are part of the default publish path.
+- [ ] Edge case: avoid README wording that still reads as if multiple changed files can be bundled into one commit or one push.
+- [ ] Cleanup: trim duplicated per-file publish wording if both the workflow and publishing sections end up saying the same thing twice.
