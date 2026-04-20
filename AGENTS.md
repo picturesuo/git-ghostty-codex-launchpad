@@ -38,6 +38,7 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 - If a `docs/` directory exists, inspect relevant docs before coding.
 - If `scripts/docs-list.sh` exists, run it before editing docs-heavy, policy-heavy, or workflow-heavy parts of the repo.
 - If docs link to other relevant docs, follow those links until the local workflow or domain is clear.
+- If `docs/pr-feedback.md` exists, use it when reviewing PR comments or preparing review replies.
 - If `docs/repo-layering.md` exists, use it when editing or bootstrapping `AGENTS.md` across multiple repos.
 - Update docs when behavior, commands, or workflows change.
 - Respect any project-specific "read this first" guidance.
