@@ -563,7 +563,7 @@ prompt_git_remote_path() {
   if ! dialog_result="$(
     osascript <<EOF
 try
-  text returned of (display dialog "What git remote path should this project push to?" default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
+  text returned of (display dialog "What git remote path should this project push to? Leave blank for a brand-new local project." default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
 on error number -128
   return ""
 end try
@@ -583,7 +583,7 @@ prompt_github_repo_slug() {
   if ! dialog_result="$(
     osascript <<EOF
 try
-  text returned of (display dialog "What GitHub repo should this project commit to?" default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
+  text returned of (display dialog "What GitHub repo should this project commit to? Leave blank for a brand-new local project." default answer $default_answer buttons {"Cancel", "Continue"} default button "Continue")
 on error number -128
   return ""
 end try
@@ -1661,11 +1661,6 @@ EOF
     git_remote_path="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")"
     github_repo_slug="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
 
-    if [[ -z "$git_remote_path" || -z "$github_repo_slug" ]]; then
-      printf 'Saved launch state does not include remote metadata yet.\n' >&2
-      return 1
-    fi
-
     store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
 
     roles=(BUILDER BACKEND DEBUGGER CRITIC)
@@ -1757,11 +1752,6 @@ EOF
   git_remote_path="$GIT_REMOTE_PATH"
   prompt_github_repo_slug "$GITHUB_REPO_SLUG_DEFAULT"
   github_repo_slug="$GITHUB_REPO_SLUG"
-
-  if [[ -z "$git_remote_path" || -z "$github_repo_slug" ]]; then
-    printf 'Remote path and GitHub repo are required to launch this session.\n' >&2
-    exit 1
-  fi
 
   make_shared_context "$project_name" "$project_dir" "$target_file" "$git_remote_path" "$github_repo_slug"
   session_file="$SHARED_CONTEXT_FILE"
