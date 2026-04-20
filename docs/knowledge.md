@@ -27,6 +27,7 @@
 - `repo`: When the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
 - `repo`: `scripts/codex-commit.sh --each-path` is the per-file publish mode for file-by-file commits and pushes.
 - `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the generated role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
+- `repo`: Pointer-style repo layering is the preferred pattern for cross-repo policy reuse: keep shared guardrails in one canonical source, keep each repo `AGENTS.md` tiny, and add only repo-local rules underneath.
 - `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.
 - `repo`: Launcher prompts and the launch summary now surface a compact session snapshot with the session ID, git branch/status, queue head, task artifact ID, phase, and a lightweight context-budget indicator.
