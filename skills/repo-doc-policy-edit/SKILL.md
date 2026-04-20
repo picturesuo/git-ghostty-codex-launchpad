@@ -10,6 +10,7 @@ Use this skill when the task is changing repo policy, workflow wording, or opera
 ## Read First
 
 Read only the docs that control the behavior you are editing:
+- Run `bash scripts/docs-list.sh` first when it exists so the current `summary` and `read_when` hints narrow what to read.
 - `AGENTS.md` for durable repo policy
 - `README.md` for user-facing workflow description
 - `docs/knowledge.md` for durable project facts and user guidance
@@ -29,4 +30,3 @@ Read only the docs that control the behavior you are editing:
 - Keep policy operational, not stylistic.
 - Do not invent repo behavior that is not implemented or documented elsewhere.
 - Prefer short sections and direct rules over long narrative explanation.
-
