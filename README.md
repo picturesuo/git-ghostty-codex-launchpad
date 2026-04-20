@@ -17,7 +17,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
 - Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Surfaces a compact session snapshot in the launcher title and prompt with the project, branch, dirty state, task artifact, phase, queue, and knowledge-path context so the panes can resume faster
-- Sets each pane title with the project, branch, dirty state, active role, active task artifact, phase, queue-now task, context budget, and session ID so interrupted sessions are easier to resume
+- Sets each pane title directly through Ghostty actions with the project, branch, dirty state, active role, active task artifact, phase, queue-now task, context budget, and session ID, and refreshes matching open launcher terminals for the same project when a session or watcher opens
 - Keeps the prompt source as the canonical control surface for the launcher wrapper, role prompts, and push-helper guidance, while the launcher injects only the minimum live context
 - Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, and lets brand-new local projects continue with those fields blank until a remote exists
