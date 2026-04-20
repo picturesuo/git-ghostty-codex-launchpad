@@ -1,3 +1,10 @@
+---
+summary: Pointer-style pattern for keeping shared guardrails centralized while repo AGENTS files stay small.
+read_when:
+  - You are bootstrapping AGENTS.md across multiple repos.
+  - You need to decide what belongs in shared policy versus repo-local additions.
+---
+
 # Repo Layering
 
 Use this pattern when you manage more than one repo and want shared agent rules without duplicating a large `AGENTS.md` everywhere.
