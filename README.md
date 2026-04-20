@@ -73,6 +73,137 @@ Bootstrap behavior:
 - `BACKEND` owns the first slice of knowledge ingest and retrieval, while `CRITIC` keeps the existing pressure-testing role and adds targeted coaching notes from observed weak points.
 - The launcher prompt wrapper stays intentionally short and relies on `AGENTS.md` plus the shared artifact for the rest of the durable workflow context.
 
+## Repo Guidance Layers
+
+The repo now splits guidance by purpose instead of keeping everything in one file:
+
+- [AGENTS.md](/Users/bensuo/ghostty-codex-launchpad/AGENTS.md) holds durable repo policy.
+- [tools.md](/Users/bensuo/ghostty-codex-launchpad/tools.md) lists repo-local commands and safe examples.
+- [skills/](/Users/bensuo/ghostty-codex-launchpad/skills) holds specialist workflows for repeated tasks.
+- [docs/](/Users/bensuo/ghostty-codex-launchpad/docs) holds workflow docs, durable notes, and generated references.
+- The shared context file in `~/.codex/` still carries current task state and role-owned handoff notes.
+
+Use the smallest layer that fits the task: durable policy in `AGENTS.md`, real commands in `tools.md`, repeatable procedures in `skills/`, and task-local state in the shared artifact.
+
+## Common Use Cases
+
+### Index Docs Before Editing Policy Or Workflow Text
+
+Run:
+
+```bash
+bash scripts/docs-list.sh
+```
+
+Use this when:
+- editing `AGENTS.md`, `README.md`, `docs/knowledge.md`, `docs/queue.md`, or other docs-heavy workflow text
+- deciding which docs to read first from their `summary` and `read_when` front matter
+
+Docs under `docs/` now use short front matter like:
+
+```yaml
+---
+summary: One-line description of the document.
+read_when:
+  - Situations where this doc should be read first.
+---
+```
+
+### Look Up Real Repo Commands
+
+Read [tools.md](/Users/bensuo/ghostty-codex-launchpad/tools.md) when you need an existing command instead of guessing.
+
+Typical commands:
+
+```bash
+bash scripts/docs-list.sh
+bash scripts/render-prompt-docs.sh
+bash scripts/codex-commit.sh --no-push README.md
+gh pr view --comments
+```
+
+Use this when:
+- finding the right helper for docs, prompt generation, verification, commits, launcher state, or GitHub review work
+
+### Use Specialist Skills For Repeated Work
+
+The repo now has small specialist guides under [skills/](/Users/bensuo/ghostty-codex-launchpad/skills):
+
+- [skills/prompt-doc-sync/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/prompt-doc-sync/SKILL.md) for prompt-source edits and generated prompt docs
+- [skills/scoped-commit-flow/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/scoped-commit-flow/SKILL.md) for small scoped commits and optional pushes
+- [skills/repo-doc-policy-edit/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/repo-doc-policy-edit/SKILL.md) for coordinated repo-policy edits
+- [skills/pr-feedback/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/pr-feedback/SKILL.md) for pull-request comment workflows
+
+Use this when:
+- a task repeats often enough that the same read/check/edit flow would otherwise be reinvented each time
+
+### Sync Prompt Docs After Prompt Changes
+
+Run:
+
+```bash
+bash scripts/render-prompt-docs.sh
+bash scripts/check-prompt-drift.sh
+```
+
+Use this when:
+- editing `prompts/prompt-source.sh`
+- changing role prompts, wrapper text, or generated role-selection guidance
+
+### Make Small Scoped Commits
+
+For a local-only checkpoint:
+
+```bash
+bash scripts/codex-commit.sh --no-push README.md
+```
+
+For one commit per file:
+
+```bash
+bash scripts/codex-commit.sh --each-path --no-push AGENTS.md tools.md
+```
+
+Use this when:
+- you want one commit per meaningful subtask
+- you want one commit per finished file
+- you want one commit per logical change spanning a few files
+
+If you want the finished chunk published to GitHub, drop `--no-push`.
+
+### Handle GitHub PR Feedback
+
+Read [docs/pr-feedback.md](/Users/bensuo/ghostty-codex-launchpad/docs/pr-feedback.md) when review comments drive the task.
+
+Typical commands:
+
+```bash
+gh pr view --comments
+gh pr diff
+gh run list --limit 10
+```
+
+Use this when:
+- summarizing reviewer requests
+- grouping actionable fixes
+- preparing replies that say what changed, where it changed, and what was verified
+
+### Coordinate Multiple Agents
+
+Read [docs/multi-agent-workflow.md](/Users/bensuo/ghostty-codex-launchpad/docs/multi-agent-workflow.md) before splitting work across panes, agents, or persistent terminals.
+
+Use this when:
+- one agent can implement while another validates or updates docs
+- you want long-running watchers, logs, or debugging sessions to stay visible in a dedicated pane or `tmux`
+
+### Reuse Policy Across Repos
+
+Read [docs/repo-layering.md](/Users/bensuo/ghostty-codex-launchpad/docs/repo-layering.md) when bootstrapping `AGENTS.md` in other repos.
+
+Use this when:
+- you want one canonical/shared guardrail source
+- you want tiny repo-local `AGENTS.md` files with only local additions
+
 ## Publishing Defaults
 
 This repo should auto-push coherent repo-visible file changes while keeping private, personal, scratch, and other local-only files out of the default publish path.
