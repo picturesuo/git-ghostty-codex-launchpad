@@ -1,3 +1,10 @@
+---
+summary: Working queue for the next small task, follow-ups, edge cases, and cleanup items.
+read_when:
+  - You are starting work and need the current Now item.
+  - You finished a meaningful chunk and need to update follow-up tasks.
+---
+
 # Queue
 
 ## Now
