@@ -45,6 +45,7 @@ Durable repo policy belongs in `AGENTS.md`; the shared context should carry the 
 Prompt source is no longer documented inline in `README.md`.
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
 Use the generated [docs/role-selection.md](/Users/bensuo/ghostty-codex-launchpad/docs/role-selection.md) for the short role rubric and [docs/context-budget.md](/Users/bensuo/ghostty-codex-launchpad/docs/context-budget.md) for the context-budget rules.
+Use [scripts/docs-list.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/docs-list.sh) before docs-heavy or workflow-heavy edits so the repo can surface `summary` and `read_when` hints for the current docs set.
 Use [scripts/check-prompt-drift.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-prompt-drift.sh) to detect drift between the launcher, prompt source, and generated prompt docs.
 Use [scripts/check-commit-helper-doc-map.sh](/Users/bensuo/ghostty-codex-launchpad/scripts/check-commit-helper-doc-map.sh) to verify the repo-doc GitHub mapping that helper auto-discovery relies on.
 
@@ -60,6 +61,7 @@ The workflow rules are:
 - Durable reusable knowledge belongs in `docs/knowledge.md`, while the shared context file carries current-task state and active handoff notes.
 - `--resume-last` reopens the last saved project session, `--status-last` prints the last saved launch summary, and `--watch` opens a live state watcher for the current project.
 - The workflow should search `docs/knowledge.md`, the shared context, and nearby repo docs first; use broader search only when local context is insufficient.
+- Docs under `docs/` should keep short `summary` and `read_when` front matter so the docs index can point the next agent at the right references quickly.
 - Use stable IDs like `SC1`, `INV1`, `FM1`, `R1`, `Q1`, and `F1` so handoffs stay traceable.
 
 Bootstrap behavior:
