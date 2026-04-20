@@ -36,6 +36,7 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 
 ## Docs
 - If a `docs/` directory exists, inspect relevant docs before coding.
+- If `scripts/docs-list.sh` exists, run it before editing docs-heavy, policy-heavy, or workflow-heavy parts of the repo.
 - If docs link to other relevant docs, follow those links until the local workflow or domain is clear.
 - If `docs/repo-layering.md` exists, use it when editing or bootstrapping `AGENTS.md` across multiple repos.
 - Update docs when behavior, commands, or workflows change.
@@ -66,6 +67,6 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 - If `scripts/committer` exists, prefer it for scoped commits.
 - It stages only explicitly listed files, refuses `.`, creates a local commit only, does not push, and should clear a stale git index lock only when run with `--force`.
 - If `scripts/codex-commit.sh` exists, use `--no-push` when you want the same scoped local-commit behavior without publishing.
-- If `docs/` exists and a repo-local docs listing helper is available, run it before editing docs-heavy parts of the codebase.
-- Use the docs helper output, including `summary` and `read_when` hints when available, to identify which docs to read before coding.
+- If `scripts/docs-list.sh` exists, use it to index `docs/` before editing docs-heavy parts of the codebase.
+- Use the docs index output, including `summary` and `read_when`, to decide which docs to read before coding.
 - Do not assume custom local tools exist unless they are present in this repo or on this machine.
