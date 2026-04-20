@@ -53,7 +53,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow automatically publishes the intended non-private files with the launcher-provided shared helper, which commits first and then pushes. If the work moves from one file to another, each file gets its own short commit message and push before the next file starts.
+- Once a task meets that completion bar, the workflow automatically publishes the intended repo-visible files with the launcher-provided shared helper, which commits first and then pushes. Private, personal, scratch, and other local-only files stay out of that default path. If the work moves from one file to another, each completed repo-visible file gets its own short commit message and push before the next file starts.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
@@ -73,7 +73,7 @@ Bootstrap behavior:
 
 ## Publishing Defaults
 
-This repo should auto-push coherent non-private repo-visible file changes.
+This repo should auto-push coherent repo-visible file changes while keeping private, personal, scratch, and other local-only files out of the default publish path.
 When the work moves from one file to another, publish each completed file separately with its own short commit message and push before starting the next file.
 Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
 
