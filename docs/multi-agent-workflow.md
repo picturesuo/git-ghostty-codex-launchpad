@@ -1,3 +1,10 @@
+---
+summary: Lightweight coordination rules for splitting work across multiple agents or persistent panes.
+read_when:
+  - You plan to run multiple agents on the same task.
+  - You need explicit ownership, handoff, or persistent-session guidance.
+---
+
 # Multi-Agent Workflow
 
 Use this playbook only when multiple agents materially help the task. Keep coordination explicit and keep ownership narrow.
