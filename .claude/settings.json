@@ -1,0 +1,16 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(gh pr view:*)",
+      "Bash(bash scripts/docs-list.sh:*)",
+      "Bash(bash scripts/test-launcher.sh:*)",
+      "Bash(bash scripts/check-prompt-drift.sh:*)",
+      "Bash(bash scripts/codex-commit.sh:*)"
+    ],
+    "deny": []
+  }
+}
