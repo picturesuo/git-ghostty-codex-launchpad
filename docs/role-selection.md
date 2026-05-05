@@ -11,3 +11,4 @@ read_when:
 - `BACKEND`: use when the artifact is concrete enough to implement the next scoped change.
 - `CRITIC`: use when implementation exists and needs pass/fail judgment, missing risks, or stronger criteria.
 - `DEBUGGER`: use when a criterion failed, an invariant broke, or a critic finding needs a minimal confirmed fix.
+- Extra panes repeat these base roles with numeric suffixes. Pane five is `BACKEND-2`.
