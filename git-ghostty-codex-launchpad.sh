@@ -9,6 +9,14 @@ CODEX_PROMPT_STAGGER_SECONDS=2
 LAUNCHPAD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_COMMIT_HELPER="$LAUNCHPAD_ROOT/scripts/codex-commit.sh"
 LAUNCHPAD_LAST_SESSION_FILE="$HOME/.codex/ghostty-codex-launchpad-last-session.md"
+DEFAULT_AGENT_PROFILE="codex"
+DEFAULT_PANE_COUNT=4
+MAX_PANE_COUNT=8
+DEFAULT_PUBLISH_MODE="auto"
+CONTEXT_RESET_THRESHOLD_PERCENT=80
+
+declare -a SESSION_ROLES=()
+declare -a SESSION_TITLES=()
 
 applescript_string() {
   local value=$1
@@ -38,6 +46,76 @@ display_name_from_slug() {
   value="${value#"${value%%[![:space:]]*}"}"
   value="${value%"${value##*[![:space:]]}"}"
   printf '%s' "$value"
+}
+
+base_role_name() {
+  local role=$1
+  role="${role%%-*}"
+
+  case "$role" in
+    BUILDER|BACKEND|DEBUGGER|CRITIC)
+      printf '%s' "$role"
+      ;;
+    *)
+      printf '%s' "BACKEND"
+      ;;
+  esac
+}
+
+validate_agent_profile() {
+  case "$1" in
+    codex|claude|mixed)
+      return 0
+      ;;
+    *)
+      echo "Unsupported agent profile: $1. Use codex, claude, or mixed." >&2
+      return 1
+      ;;
+  esac
+}
+
+validate_publish_mode() {
+  case "$1" in
+    auto|off)
+      return 0
+      ;;
+    *)
+      echo "Unsupported publish mode: $1. Use auto or off." >&2
+      return 1
+      ;;
+  esac
+}
+
+normalize_pane_count() {
+  local value=$1
+
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    echo "Pane count must be a number from 1 to $MAX_PANE_COUNT." >&2
+    return 1
+  fi
+
+  if (( value < 1 || value > MAX_PANE_COUNT )); then
+    echo "Pane count must be from 1 to $MAX_PANE_COUNT." >&2
+    return 1
+  fi
+
+  printf '%s' "$value"
+}
+
+last_launch_header_value_or_default() {
+  local field_name=$1
+  local default_value=$2
+  local value=""
+
+  if [[ -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
+    value="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "$field_name" || true)"
+  fi
+
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' "$default_value"
+  fi
 }
 
 shared_prefix_length() {
@@ -254,57 +332,53 @@ store_last_launch_state() {
   local git_remote_path=$5
   local github_repo_slug=$6
   local watch_command=$7
-  local state_dir snapshot
+  local agent_profile=${8:-$DEFAULT_AGENT_PROFILE}
+  local pane_count=${9:-$DEFAULT_PANE_COUNT}
+  local publish_mode=${10:-$DEFAULT_PUBLISH_MODE}
+  local state_dir
   local summary_role=BUILDER
+  local saved_at artifact_id session_id phase context_budget context_bar queue_file knowledge_file queue_now branch git_status
 
   state_dir="$(dirname "$LAUNCHPAD_LAST_SESSION_FILE")"
   mkdir -p "$state_dir"
-  snapshot="$(launch_state_snapshot_fields "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$watch_command")"
 
-  IFS=$'\t' read -r \
-    saved_at \
-    snapshot_role \
-    snapshot_project_name \
-    snapshot_project_dir \
-    snapshot_target_file \
-    artifact_id \
-    session_id \
-    phase \
-    context_budget \
-    context_bar \
-    snapshot_session_file \
-    snapshot_git_remote_path \
-    snapshot_github_repo_slug \
-    queue_file \
-    knowledge_file \
-    queue_now \
-    branch \
-    git_status \
-    snapshot_watch_command \
-    <<< "$snapshot"
+  saved_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  artifact_id="$(shared_context_active_artifact_id "$session_file" "$target_file")"
+  session_id="$(shared_context_session_id "$session_file")"
+  phase="$(session_phase_for_role "$summary_role")"
+  context_budget="$(context_budget_indicator "$session_file")"
+  context_bar="$(launcher_context_bar_core "$summary_role" "$project_name" "$project_dir" "$target_file" "$session_file")"
+  queue_file="$project_dir/docs/queue.md"
+  knowledge_file="$project_dir/docs/knowledge.md"
+  queue_now="$(queue_now_item "$queue_file")"
+  branch="$(project_git_branch "$project_dir")"
+  git_status="$(project_git_status "$project_dir")"
 
   cat > "$LAUNCHPAD_LAST_SESSION_FILE" <<EOF
 # Ghostty Codex Launchpad Last Session
 
 - Saved at: $saved_at
-- Snapshot role: $snapshot_role
-- Project name: $snapshot_project_name
-- Project directory: $snapshot_project_dir
-- Target file: $snapshot_target_file
+- Snapshot role: $summary_role
+- Project name: $project_name
+- Project directory: $project_dir
+- Target file: $target_file
 - Active task artifact ID: $artifact_id
 - Session ID: $session_id
 - Session phase: $phase
 - Context budget: $context_budget
 - Context bar: $context_bar
-- Shared context file: $snapshot_session_file
-- Git remote path: $snapshot_git_remote_path
-- GitHub repo: $snapshot_github_repo_slug
+- Shared context file: $session_file
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
 - Queue file: $queue_file
 - Knowledge file: $knowledge_file
 - Queue now: $queue_now
 - Git branch: $branch
 - Git status: $git_status
-- Watch command: $snapshot_watch_command
+- Watch command: $watch_command
+- Agent profile: $agent_profile
+- Pane count: $pane_count
+- Publish mode: $publish_mode
 EOF
 }
 
@@ -386,33 +460,8 @@ launch_state_snapshot_fields() {
 
 build_session_title() {
   local project_name=$1 project_dir=$2 target_file=$3 session_file=$4 role=$5
-  local snapshot context_bar
 
-  snapshot="$(launch_state_snapshot_fields "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "{GIT_REMOTE_PATH}" "{GITHUB_REPO_SLUG}" "{WATCH_COMMAND}")"
-
-  IFS=$'\t' read -r \
-    _saved_at \
-    _snapshot_role \
-    _snapshot_project_name \
-    _snapshot_project_dir \
-    _snapshot_target_file \
-    _artifact_id \
-    _session_id \
-    _phase \
-    _budget \
-    context_bar \
-    _snapshot_session_file \
-    _snapshot_git_remote_path \
-    _snapshot_github_repo_slug \
-    _queue_file \
-    _knowledge_file \
-    _queue_now \
-    _branch \
-    _git_status \
-    _watch_command \
-    <<< "$snapshot"
-
-  printf '%s' "$context_bar"
+  launcher_context_bar_core "$role" "$project_name" "$project_dir" "$target_file" "$session_file"
 }
 
 build_watch_title() {
@@ -433,21 +482,102 @@ build_watch_title() {
   printf '%s | %s | watch | %s' "$project_name" "$branch" "$session_id"
 }
 
-pane_command() {
-  local prompt_text=$1
+role_for_pane_index() {
+  local pane_index=$1
+  local base_role occurrence i prior_role
+  local -a base_cycle=(BUILDER BACKEND DEBUGGER CRITIC BACKEND CRITIC DEBUGGER BUILDER)
 
-  printf "codex %s" "$(shell_single_quote "$prompt_text")"
+  base_role="${base_cycle[$(((pane_index - 1) % ${#base_cycle[@]}))]}"
+  occurrence=0
+
+  for ((i = 1; i <= pane_index; i++)); do
+    prior_role="${base_cycle[$(((i - 1) % ${#base_cycle[@]}))]}"
+    if [[ "$prior_role" == "$base_role" ]]; then
+      occurrence=$((occurrence + 1))
+    fi
+  done
+
+  if (( occurrence > 1 )); then
+    printf '%s-%s' "$base_role" "$occurrence"
+  else
+    printf '%s' "$base_role"
+  fi
+}
+
+build_session_roles() {
+  local pane_count=$1 i
+
+  SESSION_ROLES=()
+  for ((i = 1; i <= pane_count; i++)); do
+    SESSION_ROLES+=("$(role_for_pane_index "$i")")
+  done
+}
+
+prepare_session_titles() {
+  local project_name=$1
+  local project_dir=$2
+  local target_file=$3
+  local session_file=$4
+  local pane_count=$5
+  local role
+
+  build_session_roles "$pane_count"
+  SESSION_TITLES=()
+
+  for role in "${SESSION_ROLES[@]}"; do
+    SESSION_TITLES+=("$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "$role")")
+  done
+}
+
+agent_for_role() {
+  local agent_profile=$1
+  local role=$2
+  local base_role
+
+  validate_agent_profile "$agent_profile" || return 1
+  base_role="$(base_role_name "$role")"
+
+  case "$agent_profile" in
+    codex|claude)
+      printf '%s' "$agent_profile"
+      ;;
+    mixed)
+      case "$base_role" in
+        CRITIC|DEBUGGER)
+          printf '%s' "claude"
+          ;;
+        *)
+          printf '%s' "codex"
+          ;;
+      esac
+      ;;
+  esac
+}
+
+pane_command() {
+  local agent_profile=$1
+  local role=$2
+  local prompt_text=$3
+  local agent
+
+  agent="$(agent_for_role "$agent_profile" "$role")"
+
+  case "$agent" in
+    codex)
+      printf "codex %s" "$(shell_single_quote "$prompt_text")"
+      ;;
+    claude)
+      printf "claude %s" "$(shell_single_quote "$prompt_text")"
+      ;;
+  esac
 }
 
 retitle_matching_open_project_terminals() {
   local project_dir=$1
-  local builder_title=$2
-  local debugger_title=$3
-  local backend_title=$4
-  local critic_title=$5
-  local watch_title=$6
+  local watch_title=$2
+  local applescript role title i
 
-  osascript <<EOF >/dev/null
+  applescript="$(cat <<EOF
 tell application "Ghostty"
   if not running then
     return
@@ -455,10 +585,6 @@ tell application "Ghostty"
 
   set projectDir to $(applescript_string "$project_dir")
   set projectDirPrefix to projectDir & "/"
-  set builderTitle to $(applescript_string "$builder_title")
-  set debuggerTitle to $(applescript_string "$debugger_title")
-  set backendTitle to $(applescript_string "$backend_title")
-  set criticTitle to $(applescript_string "$critic_title")
   set watchTitle to $(applescript_string "$watch_title")
 
   repeat with targetTerminal in terminals
@@ -466,22 +592,25 @@ tell application "Ghostty"
       set terminalWorkingDirectory to working directory of targetTerminal
       if terminalWorkingDirectory is projectDir or terminalWorkingDirectory starts with projectDirPrefix then
         set currentName to name of targetTerminal
-        if currentName contains " | BUILDER | " then
-          perform action "set_surface_title:" & builderTitle on targetTerminal
-        else if currentName contains " | DEBUGGER | " then
-          perform action "set_surface_title:" & debuggerTitle on targetTerminal
-        else if currentName contains " | BACKEND | " then
-          perform action "set_surface_title:" & backendTitle on targetTerminal
-        else if currentName contains " | CRITIC | " then
-          perform action "set_surface_title:" & criticTitle on targetTerminal
-        else if currentName contains " | watch | " then
+        if currentName contains " | watch | " then
           perform action "set_surface_title:" & watchTitle on targetTerminal
-        end if
-      end if
-    end try
-  end repeat
-end tell
 EOF
+)"
+
+  for ((i = 0; i < ${#SESSION_ROLES[@]}; i++)); do
+    role="${SESSION_ROLES[$i]}"
+    title="${SESSION_TITLES[$i]}"
+    applescript+=$'\n'"        else if currentName contains $(applescript_string " | $role | ") then"
+    applescript+=$'\n'"          perform action $(applescript_string "set_surface_title:$title") on targetTerminal"
+  done
+
+  applescript+=$'\n'"        end if"
+  applescript+=$'\n'"      end if"
+  applescript+=$'\n'"    end try"
+  applescript+=$'\n'"  end repeat"
+  applescript+=$'\n'"end tell"
+
+  osascript <<< "$applescript" >/dev/null
 }
 
 prompt_project_name() {
@@ -638,6 +767,32 @@ EOF
   fi
 
   GITHUB_REPO_SLUG="$dialog_result"
+}
+
+prompt_pane_count() {
+  local default_answer=${1:-$DEFAULT_PANE_COUNT}
+  local dialog_result normalized
+
+  default_answer="$(normalize_pane_count "$default_answer" 2>/dev/null || printf '%s' "$DEFAULT_PANE_COUNT")"
+
+  if ! dialog_result="$(
+    osascript <<EOF
+try
+  text returned of (display dialog "How many agent panes should I open? Use 3-8 for parallel work. The fifth pane is BACKEND-2." default answer "$(printf '%s' "$default_answer")" buttons {"Cancel", "Continue"} default button "Continue")
+on error number -128
+  return ""
+end try
+EOF
+  )"; then
+    dialog_result=""
+  fi
+
+  if [[ -z "$dialog_result" ]]; then
+    dialog_result="$default_answer"
+  fi
+
+  normalized="$(normalize_pane_count "$dialog_result")"
+  PANE_COUNT="$normalized"
 }
 
 confirm_project_match() {
@@ -1128,11 +1283,140 @@ sanitize_relative_file_path() {
   printf '%s' "$value"
 }
 
+json_escape() {
+  local value=$1
+  value=${value//\\/\\\\}
+  value=${value//\"/\\\"}
+  value=${value//$'\n'/\\n}
+  printf '%s' "$value"
+}
+
+detect_formatter_command() {
+  local project_dir=$1
+  local runner="npm run"
+
+  [[ -f "$project_dir/package.json" ]] || return 1
+  rg -q '"format"[[:space:]]*:' "$project_dir/package.json" 2>/dev/null || return 1
+
+  if [[ -f "$project_dir/pnpm-lock.yaml" ]]; then
+    runner="pnpm"
+  elif [[ -f "$project_dir/yarn.lock" ]]; then
+    runner="yarn"
+  elif [[ -f "$project_dir/bun.lock" || -f "$project_dir/bun.lockb" ]]; then
+    runner="bun run"
+  fi
+
+  printf 'cd "$CLAUDE_PROJECT_DIR" && %s format || true' "$runner"
+}
+
+seed_claude_project_extras() {
+  local project_dir=$1
+  local formatter_command escaped_formatter
+
+  mkdir -p "$project_dir/.claude/commands"
+
+  if [[ ! -e "$project_dir/.claude/commands/commit-push-pr.md" ]]; then
+    cat > "$project_dir/.claude/commands/commit-push-pr.md" <<EOF
+# Commit, Push, And PR Check
+
+1. Run \`git status --short --branch\`.
+2. Verify the changed paths are intentional and repo-visible.
+3. Commit and push finished files with \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>\`.
+4. If a pull request exists, inspect it with \`gh pr view --comments\` and note any unresolved feedback.
+EOF
+  fi
+
+  if [[ ! -e "$project_dir/.claude/settings.json" ]]; then
+    formatter_command="$(detect_formatter_command "$project_dir" 2>/dev/null || true)"
+
+    if [[ -n "$formatter_command" ]]; then
+      escaped_formatter="$(json_escape "$formatter_command")"
+      cat > "$project_dir/.claude/settings.json" <<EOF
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(gh pr view:*)",
+      "Bash(bash scripts/codex-commit.sh:*)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$escaped_formatter"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+    else
+      cat > "$project_dir/.claude/settings.json" <<'EOF'
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(gh pr view:*)",
+      "Bash(bash scripts/codex-commit.sh:*)"
+    ],
+    "deny": []
+  }
+}
+EOF
+    fi
+  fi
+}
+
 seed_project_workflow_files() {
   local project_name=$1
   local project_dir=$2
 
   mkdir -p "$project_dir/docs"
+
+  if [[ ! -e "$project_dir/docs/agent-workflow.md" ]]; then
+    cat > "$project_dir/docs/agent-workflow.md" <<EOF
+# Agent Workflow
+
+This file is the shared workflow source for Codex and Claude sessions in "$project_name".
+
+## Shared Context
+- If a shared context file exists, use it as the durable task artifact for the current task.
+- Update only the sections or artifact IDs owned by your role.
+- Do not rewrite the whole shared context file.
+- Keep durable reusable knowledge in \`docs/knowledge.md\`; keep current-task state in the shared context file.
+
+## Context Reset
+- Treat ${CONTEXT_RESET_THRESHOLD_PERCENT}% context used as the reset point.
+- Before compacting, write current status, decisions, changed files, verification, and next action to the shared context file.
+- Prefer the agent-native reset: Codex should compact or start a fresh launched pane; Claude should use \`/compact\`.
+- Do not continue deep into the final 20% of context unless the user explicitly asks you to finish a tiny active command first.
+
+## Publish Policy
+- If publish mode is \`auto\`, auto-commit and auto-push coherent repo-visible changes with \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>\`.
+- When work moves from one file to another, finish, verify, commit, and push the current file before starting the next file.
+- Use \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>\` when several finished files are ready.
+- Use \`--no-push\` only when a local-only commit is intentional.
+- Do not publish private, personal, scratch, partial, failing, or unverified work.
+
+## Work Rules
+- Keep scope tight and reversible.
+- State assumptions when they affect implementation.
+- Read local instructions and nearby code before editing.
+- Verify with the most direct local command that fits the change.
+EOF
+  fi
 
   if [[ ! -e "$project_dir/AGENTS.md" ]]; then
     cat > "$project_dir/AGENTS.md" <<EOF
@@ -1145,23 +1429,22 @@ Read it at the start of each session.
 Follow it unless the user explicitly overrides it.
 Keep it current.
 
-## Shared Context
-- If a shared context file exists, use it as the durable task artifact for the current task.
-- Update only the sections or artifact IDs owned by your role.
-- Do not rewrite the whole shared context file.
-- Keep durable reusable knowledge in `docs/knowledge.md`; keep current-task state in the shared context file.
+## Shared Workflow
+- Read \`docs/agent-workflow.md\` after this file.
+- Codex-specific rule: follow the shared workflow, then use Codex's native compact or fresh-session path when context reaches ${CONTEXT_RESET_THRESHOLD_PERCENT}% used.
+EOF
+  fi
 
-## Working Rules
-- Keep scope tight.
-- Prefer small, reversible changes.
-- State assumptions explicitly when needed.
-- Auto-push coherent repo-visible changes by default.
-- When the work moves from one file to another, automatically commit and push the finished file before starting the next one.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
-- Auto-push coherent repo-visible changes by default with `bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>`.
-- Use `bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>` when changing more than one file so each file gets its own short commit message and push before the next file starts.
-- Use `--no-push` only when a local-only commit is intentional.
-- Do not auto-publish partial, failing, or unverified work.
+  if [[ ! -e "$project_dir/CLAUDE.md" ]]; then
+    cat > "$project_dir/CLAUDE.md" <<EOF
+# CLAUDE.md
+
+Read \`docs/agent-workflow.md\` first. It is the shared workflow source for this project.
+
+Claude-specific notes:
+- Use \`/compact\` when context reaches about ${CONTEXT_RESET_THRESHOLD_PERCENT}% used, after updating the shared context file.
+- Prefer the launcher-provided commit helper for repo-visible publish work.
+- Keep any Claude-only command or hook details under \`.claude/\`.
 EOF
   fi
 
@@ -1203,6 +1486,8 @@ EOF
 - Label each note by source when useful: `user`, `repo`, or `external`.
 EOF
   fi
+
+  seed_claude_project_extras "$project_dir"
 }
 
 create_new_project() {
@@ -1510,12 +1795,14 @@ role_prompt() {
   local session_file=$5
   local git_remote_path=${6:-"{GIT_REMOTE_PATH}"}
   local github_repo_slug=${7:-"{GITHUB_REPO_SLUG}"}
-  local prompt_body
+  local publish_mode=${8:-$DEFAULT_PUBLISH_MODE}
+  local base_role prompt_body
 
-  prompt_body="$(role_prompt_body "$role")"
+  base_role="$(base_role_name "$role")"
+  prompt_body="$(role_prompt_body "$base_role")"
 
   cat <<EOF
-$(base_wrapper_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")
+$(base_wrapper_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$publish_mode")
 
 $prompt_body
 EOF
@@ -1528,70 +1815,66 @@ launch_ghostty_session() {
   local session_file=$4
   local git_remote_path=$5
   local github_repo_slug=$6
-  local prompt1=$7
-  local prompt2=$8
-  local prompt3=$9
-  local prompt4=${10}
-  local pane1_title pane2_title pane3_title pane4_title watch_title
-  local pane1_command pane2_command pane3_command pane4_command
+  local agent_profile=$7
+  local pane_count=$8
+  local publish_mode=$9
+  local watch_title applescript role prompt command i split_source
+  local -a pane_commands=()
 
-  pane1_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BUILDER")"
-  pane2_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "DEBUGGER")"
-  pane3_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "BACKEND")"
-  pane4_title="$(build_session_title "$project_name" "$project_dir" "$target_file" "$session_file" "CRITIC")"
+  prepare_session_titles "$project_name" "$project_dir" "$target_file" "$session_file" "$pane_count"
   watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
 
-  pane1_command="$(pane_command "$prompt1")"
-  pane2_command="$(pane_command "$prompt3")"
-  pane3_command="$(pane_command "$prompt2")"
-  pane4_command="$(pane_command "$prompt4")"
+  for role in "${SESSION_ROLES[@]}"; do
+    prompt="$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$publish_mode")"
+    command="$(pane_command "$agent_profile" "$role" "$prompt")"
+    pane_commands+=("$command")
+  done
 
-  if ! osascript <<EOF
+  applescript="$(cat <<EOF
 tell application "Ghostty"
   activate
 
   set launcherWindow to front window
   set cfg to new surface configuration
   set initial working directory of cfg to $(applescript_string "$project_dir")
-  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true", $(applescript_string "GIT_REMOTE_PATH=$git_remote_path"), $(applescript_string "GITHUB_REPO_SLUG=$github_repo_slug")}
+  set environment variables of cfg to {"GHOSTTY_LAUNCHPAD_SESSION=1", "DISABLE_AUTO_UPDATE=true", "DISABLE_UPDATE_PROMPT=true", $(applescript_string "GIT_REMOTE_PATH=$git_remote_path"), $(applescript_string "GITHUB_REPO_SLUG=$github_repo_slug"), $(applescript_string "CODEX_COMMIT_HELPER=$CODEX_COMMIT_HELPER"), $(applescript_string "LAUNCHPAD_AGENT_PROFILE=$agent_profile"), $(applescript_string "LAUNCHPAD_PANE_COUNT=$pane_count"), $(applescript_string "LAUNCHPAD_PUBLISH_MODE=$publish_mode"), $(applescript_string "LAUNCHPAD_CONTEXT_RESET_PERCENT=$CONTEXT_RESET_THRESHOLD_PERCENT")}
   set win to new window with configuration cfg
   set pane1 to terminal 1 of selected tab of win
-  set pane2 to split pane1 direction right with configuration cfg
-  set pane3 to split pane1 direction right with configuration cfg
-  set pane4 to split pane2 direction right with configuration cfg
-
-  perform action $(applescript_string "set_surface_title:$pane1_title") on pane1
-  perform action $(applescript_string "set_surface_title:$pane2_title") on pane2
-  perform action $(applescript_string "set_surface_title:$pane3_title") on pane3
-  perform action $(applescript_string "set_surface_title:$pane4_title") on pane4
-
-  delay ${SHELL_STARTUP_DELAY_SECONDS}
-
-  input text $(applescript_string "$pane1_command") to pane1
-  send key "enter" to pane1
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$pane2_command") to pane2
-  send key "enter" to pane2
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$pane3_command") to pane3
-  send key "enter" to pane3
-  delay ${CODEX_PROMPT_STAGGER_SECONDS}
-
-  input text $(applescript_string "$pane4_command") to pane4
-  send key "enter" to pane4
-
-  try
-    close window launcherWindow
-  end try
-end tell
 EOF
-  then
+)"
+
+  for ((i = 2; i <= pane_count; i++)); do
+    split_source="pane$((i - 1))"
+    applescript+=$'\n'"  set pane$i to split $split_source direction right with configuration cfg"
+  done
+
+  for ((i = 1; i <= pane_count; i++)); do
+    applescript+=$'\n'"  perform action $(applescript_string "set_surface_title:${SESSION_TITLES[$((i - 1))]}") on pane$i"
+  done
+
+  applescript+=$'\n'
+  applescript+="  delay ${SHELL_STARTUP_DELAY_SECONDS}"
+
+  for ((i = 1; i <= pane_count; i++)); do
+    applescript+=$'\n'
+    applescript+=$'\n'"  input text $(applescript_string "${pane_commands[$((i - 1))]}") to pane$i"
+    applescript+=$'\n'"  send key \"enter\" to pane$i"
+    if (( i < pane_count )); then
+      applescript+=$'\n'"  delay ${CODEX_PROMPT_STAGGER_SECONDS}"
+    fi
+  done
+
+  applescript+=$'\n'
+  applescript+=$'\n'"  try"
+  applescript+=$'\n'"    close window launcherWindow"
+  applescript+=$'\n'"  end try"
+  applescript+=$'\n'"end tell"
+
+  if ! osascript <<< "$applescript"; then
     return 1
   fi
 
-  retitle_matching_open_project_terminals "$project_dir" "$pane1_title" "$pane2_title" "$pane3_title" "$pane4_title" "$watch_title"
+  retitle_matching_open_project_terminals "$project_dir" "$watch_title"
 }
 
 launch_ghostty_watch_window() {
@@ -1599,9 +1882,11 @@ launch_ghostty_watch_window() {
   local project_dir=$2
   local session_file=$3
   local watch_command=$4
+  local pane_count=${5:-$DEFAULT_PANE_COUNT}
   local session_target_file watch_title watch_shell_command
 
   session_target_file="$(shared_context_header_value "$session_file" "Target file" || true)"
+  prepare_session_titles "$project_name" "$project_dir" "$session_target_file" "$session_file" "$pane_count"
 
   watch_title="$(build_watch_title "$project_name" "$project_dir" "$session_file")"
   watch_shell_command="bash -lc $(shell_single_quote "$watch_command")"
@@ -1628,7 +1913,135 @@ EOF
     return 1
   fi
 
-  retitle_matching_open_project_terminals "$project_dir" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "BUILDER")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "DEBUGGER")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "BACKEND")" "$(build_session_title "$project_name" "$project_dir" "$session_target_file" "$session_file" "CRITIC")" "$watch_title"
+  retitle_matching_open_project_terminals "$project_dir" "$watch_title"
+}
+
+doctor_ok() {
+  printf 'OK   %s\n' "$1"
+}
+
+doctor_warn() {
+  printf 'WARN %s\n' "$1"
+}
+
+doctor_fail() {
+  printf 'FAIL %s\n' "$1"
+}
+
+doctor_check_command() {
+  local command_name=$1
+  local required=${2:-1}
+
+  if command -v "$command_name" >/dev/null 2>&1; then
+    doctor_ok "$command_name found"
+    return 0
+  fi
+
+  if [[ "$required" -eq 1 ]]; then
+    doctor_fail "$command_name missing"
+    return 1
+  fi
+
+  doctor_warn "$command_name missing"
+  return 0
+}
+
+doctor_check_ghostty() {
+  if ! command -v osascript >/dev/null 2>&1; then
+    doctor_fail "osascript missing, cannot check Ghostty"
+    return 1
+  fi
+
+  if osascript -e 'id of application "Ghostty"' >/dev/null 2>&1; then
+    doctor_ok "Ghostty application found"
+    return 0
+  fi
+
+  doctor_fail "Ghostty application not found"
+  return 1
+}
+
+doctor_check_script() {
+  local label=$1
+  shift
+
+  if "$@" >/tmp/ghostty-launchpad-doctor.$$ 2>&1; then
+    doctor_ok "$label"
+    rm -f /tmp/ghostty-launchpad-doctor.$$
+    return 0
+  fi
+
+  doctor_fail "$label"
+  sed 's/^/     /' /tmp/ghostty-launchpad-doctor.$$
+  rm -f /tmp/ghostty-launchpad-doctor.$$
+  return 1
+}
+
+validate_saved_launch_state() {
+  local state_file=$1
+  local remote_path queue_file knowledge_file shared_context project_dir pane_count agent_profile publish_mode
+
+  if [[ ! -f "$state_file" ]]; then
+    doctor_warn "no saved launch state yet"
+    return 0
+  fi
+
+  project_dir="$(launch_state_header_value "$state_file" "Project directory" || true)"
+  shared_context="$(launch_state_header_value "$state_file" "Shared context file" || true)"
+  remote_path="$(launch_state_header_value "$state_file" "Git remote path" || true)"
+  queue_file="$(launch_state_header_value "$state_file" "Queue file" || true)"
+  knowledge_file="$(launch_state_header_value "$state_file" "Knowledge file" || true)"
+  pane_count="$(launch_state_header_value "$state_file" "Pane count" || true)"
+  agent_profile="$(launch_state_header_value "$state_file" "Agent profile" || true)"
+  publish_mode="$(launch_state_header_value "$state_file" "Publish mode" || true)"
+
+  if [[ -z "$project_dir" || -z "$shared_context" ]]; then
+    doctor_fail "saved launch state is missing project or shared-context fields"
+    return 1
+  fi
+
+  if [[ -n "$remote_path" && ( "$remote_path" == "$queue_file" || "$remote_path" == "$knowledge_file" || "$remote_path" == *"/docs/queue.md" ) ]]; then
+    doctor_fail "saved launch state has a shifted Git remote path: $remote_path"
+    return 1
+  fi
+
+  if [[ -n "$pane_count" ]]; then
+    normalize_pane_count "$pane_count" >/dev/null || return 1
+  fi
+
+  if [[ -n "$agent_profile" ]]; then
+    validate_agent_profile "$agent_profile" || return 1
+  fi
+
+  if [[ -n "$publish_mode" ]]; then
+    validate_publish_mode "$publish_mode" || return 1
+  fi
+
+  doctor_ok "saved launch state fields are coherent"
+}
+
+run_doctor() {
+  local failed=0
+
+  doctor_check_command osascript || failed=1
+  doctor_check_ghostty || failed=1
+  doctor_check_command codex 0 || failed=1
+  doctor_check_command claude 0 || failed=1
+  doctor_check_command git || failed=1
+  doctor_check_command gh 0 || failed=1
+  doctor_check_command shellcheck 0 || true
+
+  doctor_check_script "prompt docs are current" bash "$LAUNCHPAD_ROOT/scripts/check-prompt-drift.sh" || failed=1
+  doctor_check_script "commit-helper doc map is valid" bash "$LAUNCHPAD_ROOT/scripts/check-commit-helper-doc-map.sh" || failed=1
+  validate_saved_launch_state "$LAUNCHPAD_LAST_SESSION_FILE" || failed=1
+
+  if [[ "$failed" -eq 0 ]]; then
+    doctor_ok "doctor completed"
+    return 0
+  fi
+
+  doctor_fail "doctor found issues"
+  return 1
 }
 
 main() {
@@ -1638,9 +2051,13 @@ main() {
   local launch_mode="launch"
   local watch_requested=0
   local watch_command=""
-  local last_project_name last_project_dir last_target_file last_session_file
-  local -a roles prompts
-  local role
+  local agent_profile="$DEFAULT_AGENT_PROFILE"
+  local agent_profile_set=0
+  local pane_count=""
+  local pane_count_set=0
+  local publish_mode="$DEFAULT_PUBLISH_MODE"
+  local publish_mode_set=0
+  local last_project_name last_project_dir last_target_file
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -1649,6 +2066,29 @@ main() {
         ;;
       --status-last|--what-was-i-doing|--last)
         launch_mode="status"
+        ;;
+      --doctor)
+        launch_mode="doctor"
+        ;;
+      --agent)
+        shift
+        [[ $# -gt 0 ]] || { echo "Missing agent profile." >&2; exit 1; }
+        validate_agent_profile "$1"
+        agent_profile="$1"
+        agent_profile_set=1
+        ;;
+      --panes)
+        shift
+        [[ $# -gt 0 ]] || { echo "Missing pane count." >&2; exit 1; }
+        pane_count="$(normalize_pane_count "$1")"
+        pane_count_set=1
+        ;;
+      --publish-mode)
+        shift
+        [[ $# -gt 0 ]] || { echo "Missing publish mode." >&2; exit 1; }
+        validate_publish_mode "$1"
+        publish_mode="$1"
+        publish_mode_set=1
         ;;
       --watch)
         watch_requested=1
@@ -1665,13 +2105,19 @@ Usage:
   bash git-ghostty-codex-launchpad.sh
   bash git-ghostty-codex-launchpad.sh --resume-last
   bash git-ghostty-codex-launchpad.sh --status-last
+  bash git-ghostty-codex-launchpad.sh --doctor
+  bash git-ghostty-codex-launchpad.sh --agent codex|claude|mixed --panes 5
   bash git-ghostty-codex-launchpad.sh --watch
   bash git-ghostty-codex-launchpad.sh --watch-command "npm test -- --watch"
 
 Modes:
-  - Default: launch the four-pane Ghostty Codex session.
+  - Default: launch a Ghostty agent session.
   - --resume-last: reopen the last saved project session state.
   - --status-last: print the last saved session summary and exit.
+  - --doctor: check local tools, generated docs, doc-map, and saved state.
+  - --agent: choose codex, claude, or mixed panes.
+  - --panes: choose 1-8 panes. Pane 5 is BACKEND-2.
+  - --publish-mode: choose auto or off for launched target projects.
   - --watch: open a live status watcher for the launched project.
   - --watch-command: open a live watcher window with the supplied shell command.
 EOF
@@ -1690,6 +2136,11 @@ EOF
     return 0
   fi
 
+  if [[ "$launch_mode" == "doctor" ]]; then
+    run_doctor
+    return $?
+  fi
+
   if [[ "$launch_mode" == "resume" ]]; then
     if [[ ! -f "$LAUNCHPAD_LAST_SESSION_FILE" ]]; then
       echo "No saved launch state has been recorded yet." >&2
@@ -1699,7 +2150,6 @@ EOF
     last_project_name="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project name")"
     last_project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
     last_target_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Target file")"
-    last_session_file="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Shared context file")"
 
     if [[ -z "$last_project_name" || -z "$last_project_dir" || -z "$last_target_file" ]]; then
       echo "Saved launch state is incomplete." >&2
@@ -1709,6 +2159,18 @@ EOF
     project_name="$last_project_name"
     project_dir="$last_project_dir"
     target_file="$last_target_file"
+    if [[ "$agent_profile_set" -eq 0 ]]; then
+      agent_profile="$(last_launch_header_value_or_default "Agent profile" "$DEFAULT_AGENT_PROFILE")"
+      validate_agent_profile "$agent_profile"
+    fi
+    if [[ "$pane_count_set" -eq 0 ]]; then
+      pane_count="$(last_launch_header_value_or_default "Pane count" "$DEFAULT_PANE_COUNT")"
+      pane_count="$(normalize_pane_count "$pane_count")"
+    fi
+    if [[ "$publish_mode_set" -eq 0 ]]; then
+      publish_mode="$(last_launch_header_value_or_default "Publish mode" "$DEFAULT_PUBLISH_MODE")"
+      validate_publish_mode "$publish_mode"
+    fi
 
     if [[ ! -d "$project_dir" ]]; then
       echo "Saved project directory no longer exists: $project_dir" >&2
@@ -1720,17 +2182,12 @@ EOF
     git_remote_path="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Git remote path")"
     github_repo_slug="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "GitHub repo")"
 
-    store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
+    store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")" "$agent_profile" "$pane_count" "$publish_mode"
 
-    roles=(BUILDER BACKEND DEBUGGER CRITIC)
-    for role in "${roles[@]}"; do
-      prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")")
-    done
-
-    launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
+    launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$agent_profile" "$pane_count" "$publish_mode"
 
   printf 'Resumed Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
-  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
+  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\nAgent profile: %s\nPane count: %s\nPublish mode: %s\n' \
       "$(shared_context_session_id "$session_file")" \
       "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
       "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
@@ -1741,13 +2198,16 @@ EOF
       "$(project_git_branch "$project_dir")" \
       "$(project_git_status "$project_dir")" \
       "$git_remote_path" \
-      "$github_repo_slug"
+      "$github_repo_slug" \
+      "$agent_profile" \
+      "$pane_count" \
+      "$publish_mode"
     if [[ $watch_requested -eq 1 ]]; then
       watch_command="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Watch command")"
       if [[ -z "$watch_command" ]]; then
         watch_command="$(build_default_watch_command "$project_dir")"
       fi
-      launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command"
+      launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command" "$pane_count"
       printf 'Started live watcher window for %s\n' "$project_name"
     fi
     return 0
@@ -1812,19 +2272,19 @@ EOF
   prompt_github_repo_slug "$GITHUB_REPO_SLUG_DEFAULT"
   github_repo_slug="$GITHUB_REPO_SLUG"
 
+  if [[ "$pane_count_set" -eq 0 ]]; then
+    prompt_pane_count "$(last_launch_header_value_or_default "Pane count" "$DEFAULT_PANE_COUNT")"
+    pane_count="$PANE_COUNT"
+  fi
+
   make_shared_context "$project_name" "$project_dir" "$target_file" "$git_remote_path" "$github_repo_slug"
   session_file="$SHARED_CONTEXT_FILE"
-  store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$watch_command"
+  store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$watch_command" "$agent_profile" "$pane_count" "$publish_mode"
 
-  roles=(BUILDER BACKEND DEBUGGER CRITIC)
-  for role in "${roles[@]}"; do
-    prompts+=("$(role_prompt "$role" "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug")")
-  done
-
-  launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "${prompts[0]}" "${prompts[1]}" "${prompts[2]}" "${prompts[3]}"
+  launch_ghostty_session "$project_name" "$project_dir" "$target_file" "$session_file" "$git_remote_path" "$github_repo_slug" "$agent_profile" "$pane_count" "$publish_mode"
 
   printf 'Prepared Ghostty Codex session for %s\nProject directory: %s\nTarget file: %s\nShared context: %s\n' "$project_name" "$project_dir" "$target_file" "$session_file"
-  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\n' \
+  printf 'Session ID: %s\nTask label: %s\nArtifact ID: %s\nPhase: %s\nContext budget: %s\nQueue file: %s\nKnowledge file: %s\nGit branch: %s\nGit status: %s\nGit remote path: %s\nGitHub repo: %s\nAgent profile: %s\nPane count: %s\nPublish mode: %s\n' \
     "$(shared_context_session_id "$session_file")" \
     "$(sanitize_title_text "$(queue_now_item "$project_dir/docs/queue.md")" 28)" \
     "$(shared_context_header_value "$session_file" "Active task artifact ID" || true)" \
@@ -1835,13 +2295,16 @@ EOF
     "$(project_git_branch "$project_dir")" \
     "$(project_git_status "$project_dir")" \
     "$git_remote_path" \
-    "$github_repo_slug"
+    "$github_repo_slug" \
+    "$agent_profile" \
+    "$pane_count" \
+    "$publish_mode"
 
   if [[ $watch_requested -eq 1 ]]; then
     if [[ -z "$watch_command" ]]; then
       watch_command="$(build_default_watch_command "$project_dir")"
     fi
-    launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command"
+    launch_ghostty_watch_window "$project_name" "$project_dir" "$session_file" "$watch_command" "$pane_count"
     printf 'Started live watcher window for %s\n' "$project_name"
   fi
 }
