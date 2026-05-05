@@ -8,20 +8,21 @@ read_when:
 # Queue
 
 ## Now
-- [ ] Tighten `README.md` so its workflow and publishing text matches the automatic per-file commit-and-push policy.
+- [ ] Run final launcher verification after the agent-neutral, pane-count, publish-mode, context-reset, and docs updates.
 
 ## Next
-- [ ] Compare the README workflow wording against `AGENTS.md` and `docs/knowledge.md` so the README does not drift from current repo policy.
-- [ ] Update the README sections that describe per-file publishing so each finished file clearly gets its own short commit message and push before the next file starts.
-- [ ] Read the final README wording once for overclaims about remotes, automation, or private-file publishing before publishing it.
+- [ ] Try one real `--agent mixed --panes 5` launch on macOS Ghostty and inspect pane titles.
+- [ ] Run `bash git-ghostty-codex-launchpad.sh --doctor` after installing `shellcheck`, if it is missing locally.
+- [ ] Watch for Claude settings schema changes before adding more default permissions or hooks.
 
 ## Later
-- [ ] Revisit the generated docs only if the README wording reveals a policy mismatch that is not actually README-only.
+- [ ] Consider a layout preset flag if 6-8 panes need a better split pattern than repeated right splits.
+- [ ] Consider a dry-run mode that prints the generated AppleScript without opening Ghostty.
 
 ## Blocked
 - [ ] No current blockers.
 
 ## Discovered While Working
-- [ ] Edge case: avoid README wording that implies private, personal, scratch, or local-only files are part of the default publish path.
-- [ ] Edge case: avoid README wording that still reads as if multiple changed files can be bundled into one commit or one push.
-- [ ] Cleanup: trim duplicated per-file publish wording if both the workflow and publishing sections end up saying the same thing twice.
+- [ ] Edge case: saved-state fields must be written directly or parsed with an empty-field-safe format; tab-delimited `read` shifts blank fields.
+- [ ] Edge case: generated prompt placeholders inside braces should not be truncated by title-length limits.
+- [ ] Decision: pane five is `BACKEND-2`; extra panes repeat base roles instead of adding a new role type.
