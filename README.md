@@ -1,6 +1,6 @@
 # git-ghostty-codex-launchpad
 
-A macOS Ghostty launcher that opens a ready-to-work Codex setup with multiple panes, role-based prompts, and a built-in Git push handoff.
+A macOS Ghostty launcher that opens a ready-to-work Codex, Claude, or mixed-agent setup with multiple panes, role-based prompts, and a built-in Git publish handoff.
 
 ## Why This Matters
 
@@ -11,36 +11,39 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 
 ## What It Does
 
-- Opens a fresh Ghostty window and splits it into four panes
+- Opens a fresh Ghostty window and splits it into a configurable 1-8 agent panes, defaulting to the last used count or four panes
 - Prompts for the project you want to work on and tries to find it locally, then asks you to confirm close matches before launching
 - Reuses an existing project and shared-context file when the typed project name is only a close match, instead of creating a near-duplicate session by name alone
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
-- Starts Codex in each pane without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
+- Starts Codex, Claude, or mixed panes without sending `/fast`, passing the role prompt at launch time instead of pasting it into a live shell later
 - Surfaces a compact session snapshot in the launcher title and prompt with the project, branch, dirty state, task artifact, phase, queue, and knowledge-path context so the panes can resume faster
 - Sets each pane title directly through Ghostty actions with the project, branch, dirty state, active role, active task artifact, phase, queue-now task, context budget, and session ID, and refreshes matching open launcher terminals for the same project when a session or watcher opens
 - Keeps the prompt source as the canonical control surface for the launcher wrapper, role prompts, and push-helper guidance, while the launcher injects only the minimum live context
-- Drops four different Codex roles into the panes in a fixed left-to-right order so the work starts with a clear split of responsibilities
+- Drops role-specific prompts into panes in a predictable order so the work starts with clear responsibility boundaries
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, and lets brand-new local projects continue with those fields blank until a remote exists
-- Seeds a bootstrap shared task artifact so all four panes start from usable context instead of `TBD` placeholders
+- Seeds a bootstrap shared task artifact so all active panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
-- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper, one file at a time when work moves across files
-- Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening
+- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper, one file at a time when work moves across files and publish mode is `auto`
+- Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening without shifting blank saved-state fields
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
+- Bootstraps `CLAUDE.md`, `docs/agent-workflow.md`, and Claude command/settings scaffolding for target projects without copying long policy text into every agent file
+- Offers `--doctor` to check Ghostty, `osascript`, Codex, Claude, git, GitHub CLI, shellcheck, prompt drift, doc-map integrity, and saved-state coherence
 
-The visible left-to-right pane order is:
+The default visible left-to-right pane order is:
 
 1. `BUILDER` - defines the first real task artifact, scope, constraints, success criteria, and invariants before implementation
 2. `BACKEND` - does most of the implementation work, mapped directly to the artifact criteria and constraints
 3. `DEBUGGER` - maps failures back to specific criteria or invariants and applies the minimum fix
 4. `CRITIC` - pressure-tests the artifact, adds risk and failure coverage, acts as the verification gate, and records targeted coaching guidance from recurring weak spots
 
-The documented role set is only `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
+Extra panes repeat the same role types with suffixes. The fifth pane is `BACKEND-2`, which is the best default extra role because parallel implementation capacity is usually the first useful expansion. The documented base role set remains `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
 
 ## Workflow
 
-All four panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`, and existing task state should survive relaunches.
+All active panes are expected to use the same shared task artifact in `~/.codex/...-shared-context.md`, and existing task state should survive relaunches.
 Durable repo policy belongs in `AGENTS.md`; the shared context should carry the current task artifact and status instead of duplicating the full workflow contract.
+Long-running panes should update the shared context and compact or reset around 80% context used. The final 20% of the context window is for finishing tiny active commands, not broad planning or multi-file work.
 
 Prompt source is no longer documented inline in `README.md`.
 Canonical prompt source lives in [prompts/prompt-source.sh](/Users/bensuo/ghostty-codex-launchpad/prompts/prompt-source.sh), with generated docs in [docs/generated-prompts.md](/Users/bensuo/ghostty-codex-launchpad/docs/generated-prompts.md).
@@ -54,9 +57,10 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar, the workflow automatically publishes the intended repo-visible files with the launcher-provided shared helper, which commits first and then pushes. Private, personal, scratch, and other local-only files stay out of that default path. If the work moves from one file to another, each completed repo-visible file gets its own short commit message and push before the next file starts.
+- Once a task meets that completion bar and publish mode is `auto`, the workflow automatically publishes the intended repo-visible files with the launcher-provided shared helper, which commits first and then pushes. Private, personal, scratch, and other local-only files stay out of that default path. If the work moves from one file to another, each completed repo-visible file gets its own short commit message and push before the next file starts.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
-- It refuses to push from a detached `HEAD` and fails fast if the selected project has no git remote context or cannot resolve a safe destination from existing remotes.
+- If no remote is configured, the helper can use launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` context, then falls back to documented repo mapping when available.
+- It refuses to push from a detached `HEAD` and fails fast if the selected project has no safe remote context.
 - If the selected project is missing `AGENTS.md`, the launcher seeds a starter `AGENTS.md` and `docs/queue.md` and targets `AGENTS.md` first so the Builder has concrete bootstrap work.
 - Durable reusable knowledge belongs in `docs/knowledge.md`, while the shared context file carries current-task state and active handoff notes.
 - `--resume-last` reopens the last saved project session even if remote metadata is still blank, `--status-last` prints the last saved launch summary, and `--watch` opens a live state watcher for the current project.
@@ -206,13 +210,18 @@ Use this when:
 
 ## Publishing Defaults
 
-This repo should auto-push coherent repo-visible file changes while keeping private, personal, scratch, and other local-only files out of the default publish path.
-When the work moves from one file to another, publish each completed file separately with its own short commit message and push before starting the next file.
-Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
+This launcher repo does not push unless the user explicitly asks. When the user does ask, publish each completed file separately when that is the requested workflow.
+
+Launched target projects use publish mode:
+
+- `--publish-mode auto` lets panes auto-commit and auto-push coherent repo-visible file changes while keeping private, personal, scratch, and other local-only files out of the default publish path.
+- `--publish-mode off` keeps commits and pushes manual unless the user explicitly asks.
+
+When target-project work moves from one file to another in publish mode `auto`, publish each completed file separately with its own short commit message and push before starting the next file. Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
 
 Completed work should be published in the same turn with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
-The helper commits first, then pushes, prefers an existing upstream when available, and fails clearly if the selected project has no safe existing remote context.
+The helper commits first, then pushes, prefers an existing upstream when available, and can add a launcher-provided remote when a target project has none.
 If the helper cannot resolve a safe push target or the branch is detached, it fails clearly; the launcher should stop there and fix the remote or branch setup before any further file work.
 
 When destination is unclear, the workflow should first check git remotes and existing upstreams. If no safe destination exists, it should fail clearly and fix the repository setup instead of inventing a local-only path.
@@ -229,6 +238,9 @@ Useful command-line modes:
 
 - `bash git-ghostty-codex-launchpad.sh --resume-last`
 - `bash git-ghostty-codex-launchpad.sh --status-last`
+- `bash git-ghostty-codex-launchpad.sh --doctor`
+- `bash git-ghostty-codex-launchpad.sh --agent claude --panes 5`
+- `bash git-ghostty-codex-launchpad.sh --agent mixed --panes 6 --publish-mode auto`
 - `bash git-ghostty-codex-launchpad.sh --watch-command "npm test -- --watch"`
 
 ## Notes
@@ -239,4 +251,5 @@ Useful command-line modes:
 
 ## Verify
 
-If you want a quick sanity check, run `bash scripts/check-shell.sh` and `bash scripts/check-prompt-drift.sh` to confirm prompt docs stay in sync.
+If you want a quick sanity check, run `bash scripts/test-launcher.sh`, `bash scripts/check-prompt-drift.sh`, and `bash git-ghostty-codex-launchpad.sh --doctor`.
+Run `bash scripts/check-shell.sh` when `shellcheck` is installed.
