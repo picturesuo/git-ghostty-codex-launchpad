@@ -16,7 +16,7 @@ Behavior:
   - With --no-push, commits locally without pushing.
   - Uses the current working directory as the project root unless --project-root is provided.
   - With --remote auto (default), prefers the repo's existing push remote and otherwise
-    fails if the selected project has no safe existing remote context.
+    uses launcher-provided GIT_REMOTE_PATH/GITHUB_REPO_SLUG context when available.
   - With --each-path, commits and pushes each staged path separately with a short message.
 EOF
 }
@@ -238,6 +238,82 @@ repo_slug_to_ssh_url() {
   printf 'git@github.com:%s.git\n' "$repo_slug"
 }
 
+remote_with_url() {
+  local remote_url=$1 remote current_url
+
+  while IFS= read -r remote; do
+    [ -n "$remote" ] || continue
+    current_url="$(git remote get-url "$remote" 2>/dev/null || true)"
+    if [ "$current_url" = "$remote_url" ]; then
+      printf '%s\n' "$remote"
+      return 0
+    fi
+  done < <(git remote)
+
+  return 1
+}
+
+next_available_remote_name() {
+  local base_name=${1:-launchpad}
+  local candidate=$base_name
+  local counter=2
+
+  while git remote get-url "$candidate" >/dev/null 2>&1; do
+    candidate="${base_name}-${counter}"
+    counter=$((counter + 1))
+  done
+
+  printf '%s\n' "$candidate"
+}
+
+add_or_reuse_remote_url() {
+  local remote_url=$1 preferred_remote=${2:-origin}
+  local existing candidate
+
+  [ -n "$remote_url" ] || return 1
+
+  if existing="$(remote_with_url "$remote_url")"; then
+    printf '%s\n' "$existing"
+    return 0
+  fi
+
+  if [ "$remote_name" != "auto" ]; then
+    preferred_remote="$remote_name"
+  fi
+
+  if ! git remote get-url "$preferred_remote" >/dev/null 2>&1; then
+    git remote add "$preferred_remote" "$remote_url"
+    printf '%s\n' "$preferred_remote"
+    return 0
+  fi
+
+  candidate="$(next_available_remote_name launchpad)"
+  git remote add "$candidate" "$remote_url"
+  printf '%s\n' "$candidate"
+}
+
+resolve_launcher_remote_context() {
+  local remote_url repo_slug matched_remote
+
+  if [ -n "${GIT_REMOTE_PATH:-}" ]; then
+    add_or_reuse_remote_url "$GIT_REMOTE_PATH" origin
+    return 0
+  fi
+
+  if [ -n "${GITHUB_REPO_SLUG:-}" ]; then
+    remote_url="$(repo_slug_to_ssh_url "$GITHUB_REPO_SLUG")" || return 1
+    add_or_reuse_remote_url "$remote_url" origin
+    return 0
+  fi
+
+  if matched_remote="$(find_matching_github_repo 2>/dev/null)"; then
+    add_or_reuse_remote_url "$matched_remote" origin
+    return 0
+  fi
+
+  return 1
+}
+
 resolve_existing_remote() {
   local upstream remote
   local -a remotes=()
@@ -312,15 +388,20 @@ find_matching_github_repo() {
 }
 
 resolve_push_remote() {
-  local existing
+  local existing launcher_remote
 
   if existing="$(resolve_existing_remote)"; then
     printf '%s\n' "$existing"
     return 0
   fi
 
+  if launcher_remote="$(resolve_launcher_remote_context)"; then
+    printf '%s\n' "$launcher_remote"
+    return 0
+  fi
+
   if [ -z "$(git remote)" ]; then
-    echo "No git remote is configured for this project. Add a remote or use --no-push." >&2
+    echo "No git remote is configured and no launcher remote context was provided. Add a remote or use --no-push." >&2
     exit 1
   fi
 
