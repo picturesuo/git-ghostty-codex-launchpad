@@ -8,7 +8,7 @@ read_when:
 # Queue
 
 ## Now
-- [ ] Run final launcher verification after the agent-neutral, pane-count, publish-mode, context-reset, and docs updates.
+- [x] Run final launcher verification after the agent-neutral, pane-count, publish-mode, context-reset, and docs updates.
 
 ## Next
 - [ ] Try one real `--agent mixed --panes 5` launch on macOS Ghostty and inspect pane titles.
