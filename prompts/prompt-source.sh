@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+: "${CONTEXT_RESET_THRESHOLD_PERCENT:=80}"
+
 shared_context_session_id() {
   local session_file=$1
   local basename
@@ -88,6 +90,11 @@ sanitize_title_text() {
 
   value="$(printf '%s' "$value" | tr '\r\n\t' '   ' | sed 's/[|]/ /g; s/[[:space:]]\+/ /g; s/^ //; s/ $//')"
 
+  if [[ "$value" == \{*\} ]]; then
+    printf '%s' "$value"
+    return
+  fi
+
   if [[ "$max_len" -gt 0 && "${#value}" -gt "$max_len" ]]; then
     value="${value:0:max_len}"
     value="${value%"${value##*[![:space:]]}"}"
@@ -142,6 +149,8 @@ context_budget_indicator() {
 
 session_phase_for_role() {
   local role=$1
+
+  role="${role%%-*}"
 
   case "$role" in
     BUILDER)
@@ -225,6 +234,9 @@ base_wrapper_prompt() {
   local project_dir=$3
   local target_file=$4
   local session_file=$5
+  local git_remote_path=${6:-"{GIT_REMOTE_PATH}"}
+  local github_repo_slug=${7:-"{GITHUB_REPO_SLUG}"}
+  local publish_mode=${8:-"auto"}
   local context_bar session_id queue_file knowledge_file active_artifact
 
   context_bar="$(launcher_context_bar "$role" "$project_name" "$project_dir" "$target_file" "$session_file")"
@@ -244,13 +256,18 @@ Shared project context:
 - Queue file: $queue_file
 - Knowledge file: $knowledge_file
 - Shared context file: $session_file
+- Git remote path: $git_remote_path
+- GitHub repo: $github_repo_slug
+- Publish mode: $publish_mode
+- Context reset: update the shared context file and compact/reset at about ${CONTEXT_RESET_THRESHOLD_PERCENT}% context used. Do not drift into the final 20% unless finishing a tiny active command.
 
 Read \`$project_dir/AGENTS.md\` first if it exists.
 Read the shared context file second and use it as the task artifact for the current task.
 Update the shared context file directly as part of your work, but only in the sections owned by your role.
 Work inside \`$project_dir\`.
 Use the queue and knowledge files as the first local context after the shared artifact.
-If the work moves from one file to another, automatically commit and push the finished file before starting the next one.
+If publish mode is \`auto\` and the work moves from one file to another, automatically commit and push the finished repo-visible file before starting the next one.
+If publish mode is \`off\`, commit locally only when the user asks and do not push without an explicit request.
 ROLE: $role
 EOF
 }
@@ -271,7 +288,7 @@ push_helper_instructions() {
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push before the next file starts.
 - Keep push messages short, human-readable, and descriptive.
-- Do not use `--no-push` in the normal launcher workflow.
+- Do not use `--no-push` when publish mode is `auto`.
 - If push cannot happen, treat that as a blocker and fix the remote/branch setup first.
 - Do not push partial, failing, or unverified work.
 EOF
@@ -300,10 +317,10 @@ Owns:
 Must:
 - Keep scope tight and executable.
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
-- If the work moves from one file to another, automatically commit and push the finished file before starting the next one.
+- If publish mode is `auto` and the work moves from one file to another, automatically commit and push the finished file before starting the next one.
 - Stop after artifact setup if implementation belongs to another role.
-- Auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `auto`, auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Invent unrelated product requirements.
@@ -329,13 +346,14 @@ Must:
 - Broad tasks must first produce a file list and rollback plan.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
-- If the work moves from one file to another, automatically finish and push the current file before moving on.
+- If publish mode is `auto` and the work moves from one file to another, automatically finish and push the current file before moving on.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
 - Finish coherent change sets with `scripts/codex-commit.sh --each-path` when moving across files so each file gets a short commit message and push.
-- Keep push messages short and human-readable; default to push when the selected project has a safe existing remote.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
-- Auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
+- Keep push messages short and human-readable; default to push only when publish mode is `auto` and the selected project has a safe existing remote.
+- In publish mode `auto`, do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `off`, do not push without an explicit request.
+- In publish mode `auto`, auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
 - Refine only the minimum artifact sections needed to implement.
 
 Push helper:
@@ -371,10 +389,10 @@ Must:
 - Record explicit `PASS`, `FAIL`, or `NOT VERIFIED` per relevant criterion.
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
-- If the work moves from one file to another, automatically commit and push the verified file before moving to the next one.
+- If publish mode is `auto` and the work moves from one file to another, automatically commit and push the verified file before moving to the next one.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
-- Auto-push coherent repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `auto`, auto-push coherent repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Invent broad new scope.
@@ -400,9 +418,9 @@ Must:
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
-- If the work moves from one file to another, automatically fix and push one file at a time instead of batching them.
-- Auto-push coherent repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- If publish mode is `auto` and the work moves from one file to another, automatically fix and push one file at a time instead of batching them.
+- In publish mode `auto`, auto-push coherent repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Broaden scope beyond the failing path without a blocker.
