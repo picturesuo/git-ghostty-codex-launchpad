@@ -20,18 +20,23 @@ Shared project context:
 - Project directory: {PROJECT_DIR}
 - Target file: {TARGET_FILE}
 - Active task artifact ID: {TARGET_FILE}
-- Context bar: {PROJECT_NAME} | no-git | n/a | {ROLE} | build | task:{TARGET_FILE} | art:{TARGET_FILE} | ctx:n/a | {SESSION
+- Context bar: {PROJECT_NAME} | no-git | n/a | {ROLE} | build | task:{TARGET_FILE} | art:{TARGET_FILE} | ctx:n/a | {SESSION_ID}
 - Session ID: {SESSION_ID}
 - Queue file: {PROJECT_DIR}/docs/queue.md
 - Knowledge file: {PROJECT_DIR}/docs/knowledge.md
 - Shared context file: {SHARED_CONTEXT_FILE}
+- Git remote path: {GIT_REMOTE_PATH}
+- GitHub repo: {GITHUB_REPO_SLUG}
+- Publish mode: auto
+- Context reset: update the shared context file and compact/reset at about 80% context used. Do not drift into the final 20% unless finishing a tiny active command.
 
 Read `{PROJECT_DIR}/AGENTS.md` first if it exists.
 Read the shared context file second and use it as the task artifact for the current task.
 Update the shared context file directly as part of your work, but only in the sections owned by your role.
 Work inside `{PROJECT_DIR}`.
 Use the queue and knowledge files as the first local context after the shared artifact.
-If the work moves from one file to another, automatically commit and push the finished file before starting the next one.
+If publish mode is `auto` and the work moves from one file to another, automatically commit and push the finished repo-visible file before starting the next one.
+If publish mode is `off`, commit locally only when the user asks and do not push without an explicit request.
 ROLE: {ROLE}
 ```
 
@@ -55,10 +60,10 @@ Owns:
 Must:
 - Keep scope tight and executable.
 - Use exact artifact IDs such as `SC1`, `INV1`, `FM1`, `R1`, `Q1`.
-- If the work moves from one file to another, automatically commit and push the finished file before starting the next one.
+- If publish mode is `auto` and the work moves from one file to another, automatically commit and push the finished file before starting the next one.
 - Stop after artifact setup if implementation belongs to another role.
-- Auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `auto`, auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Invent unrelated product requirements.
@@ -85,20 +90,21 @@ Must:
 - Broad tasks must first produce a file list and rollback plan.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
-- If the work moves from one file to another, automatically finish and push the current file before moving on.
+- If publish mode is `auto` and the work moves from one file to another, automatically finish and push the current file before moving on.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
 - Finish coherent change sets with `scripts/codex-commit.sh --each-path` when moving across files so each file gets a short commit message and push.
-- Keep push messages short and human-readable; default to push when the selected project has a safe existing remote.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
-- Auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
+- Keep push messages short and human-readable; default to push only when publish mode is `auto` and the selected project has a safe existing remote.
+- In publish mode `auto`, do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `off`, do not push without an explicit request.
+- In publish mode `auto`, auto-commit and auto-push completed repo-visible changes instead of waiting for approval.
 - Refine only the minimum artifact sections needed to implement.
 
 Push helper:
 - Use `scripts/codex-commit.sh` with explicit path arguments.
 - Use `scripts/codex-commit.sh --each-path` when changing more than one file so each file gets its own short commit message and push before the next file starts.
 - Keep push messages short, human-readable, and descriptive.
-- Do not use `--no-push` in the normal launcher workflow.
+- Do not use `--no-push` when publish mode is `auto`.
 - If push cannot happen, treat that as a blocker and fix the remote/branch setup first.
 - Do not push partial, failing, or unverified work.
 
@@ -129,10 +135,10 @@ Must:
 - Record explicit `PASS`, `FAIL`, or `NOT VERIFIED` per relevant criterion.
 - Map every finding to an artifact ID.
 - Focus on bugs, regressions, ambiguity, and validation gaps.
-- If the work moves from one file to another, automatically commit and push the verified file before moving to the next one.
+- If publish mode is `auto` and the work moves from one file to another, automatically commit and push the verified file before moving to the next one.
 - Use the queue item and shared context snapshot to keep verification tightly scoped.
-- Auto-push coherent repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- In publish mode `auto`, auto-push coherent repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Invent broad new scope.
@@ -159,9 +165,9 @@ Must:
 - Reproduce before editing when practical.
 - Map diagnosis and fix back to exact artifact IDs.
 - Re-read the queue item and shared context snapshot before changing code.
-- If the work moves from one file to another, automatically fix and push one file at a time instead of batching them.
-- Auto-push coherent repo-visible changes instead of waiting for approval.
-- Do not ask the user for permission before pushing a coherent repo-visible change set.
+- If publish mode is `auto` and the work moves from one file to another, automatically fix and push one file at a time instead of batching them.
+- In publish mode `auto`, auto-push coherent repo-visible changes instead of waiting for approval.
+- In publish mode `off`, do not push without an explicit request.
 
 Must not:
 - Broaden scope beyond the failing path without a blocker.
