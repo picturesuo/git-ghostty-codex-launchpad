@@ -28,12 +28,16 @@ Do not split work when:
 - Keep coordination explicit: state who owns which files, checks, or decisions.
 - Prefer fast models for repetitive, background, or exploratory work.
 - Use stronger models for integration, design choices, and ambiguous fixes.
+- Use 3-8 panes deliberately; do not add panes just to fill the screen.
+- Pane five is `BACKEND-2`, which should own a disjoint implementation slice rather than touching the same files as `BACKEND`.
+- Extra panes repeat base roles with suffixes instead of adding new role types.
 
 ## Long-Running Work
 
 - Put long-running agents in a persistent environment such as `tmux` or a dedicated terminal pane.
 - Keep interactive debugging, log tails, and watcher commands in persistent panes so they stay visible.
 - Do not rely on undocumented helper scripts; use standard shell, repo scripts, and explicit commands.
+- Update the shared context and compact/reset around 80% context used.
 
 ## Handoffs
 
@@ -46,7 +50,8 @@ Do not split work when:
 
 - Keep write scopes disjoint whenever possible.
 - Prefer one commit per finished file or one commit per logical change, whichever is cleaner.
-- Push only when the user clearly wants that chunk published.
+- In this launcher repo, push only when the user clearly wants that chunk published.
+- In launched target projects, publish mode `auto` means each completed repo-visible file should be committed and pushed before a pane moves to another file.
 - Check `git status` and `git diff` before integrating another agent's work.
 
 ## Repo Fit
