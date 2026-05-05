@@ -53,6 +53,7 @@ read_when:
 - `repo`: `scripts/test-launcher.sh` covers saved-state blank fields, role layout, agent command generation, launcher remote fallback, and prompt-doc rendering.
 - `repo`: Target bootstrap now creates `CLAUDE.md`, `docs/agent-workflow.md`, `.claude/commands/commit-push-pr.md`, and `.claude/settings.json`; formatter hooks are included only when a formatter script is detected.
 - `repo`: The commit helper now uses launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` if a target project has no configured remote.
+- `repo`: Shared Codex/Claude workflow guidance lives in `docs/agent-workflow.md`; repo-level `CLAUDE.md` points there instead of duplicating AGENTS policy.
 
 ## Retrieval Hints
 - Search this file, the shared context file, and nearby repo docs with `rg` before broader search.
