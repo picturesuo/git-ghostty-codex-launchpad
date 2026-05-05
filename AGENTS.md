@@ -16,7 +16,8 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 - Never run destructive commands without explicit approval.
 - Do not delete or rename unexpected files unless asked.
 - Do not change package manager, framework, runtime, or build tooling unless asked.
-- Do not push unless explicitly asked.
+- For this launcher repo, do not push unless explicitly asked.
+- For launched target projects, publish mode `auto` means agents may auto-commit and auto-push coherent repo-visible files through the launcher helper.
 
 ## Verification
 - Before handoff, run relevant checks when feasible:
@@ -47,13 +48,18 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 - Check `git status` and `git diff` before editing and before handoff.
 - Make local commits at meaningful subtask boundaries when the work is substantial enough to benefit from a checkpoint.
 - If a task spans multiple files, prefer one commit per finished file or one commit per logical change, whichever is cleaner.
-- Do not push unless explicitly asked.
-- Push after each completed chunk only when the user clearly wants that chunk published to GitHub.
-- Do not assume a local commit should be pushed; pushing is separate and requires explicit user intent.
+- In this launcher repo, do not push unless explicitly asked.
+- If the user explicitly asks for GitHub publishing, push after each completed file or chunk they asked to publish.
+- In launched target projects, publish mode `auto` is explicit launcher intent for per-file commit and push; publish mode `off` restores local-only behavior unless the user asks.
 - Do not change branches unless asked.
 - Do not amend commits unless asked.
 - Keep commits scoped and understandable.
 - Keep commit messages short, consistent, human, and understandable; use conventional-style messages when they fit naturally.
+
+## Context
+- Treat about 80% context used as the reset point for long-running agent panes.
+- Before compacting or starting a fresh pane, write current status, decisions, changed files, verification, and next action to the shared context file.
+- Do not rely on the final 20% of the context window for meaningful planning or broad edits.
 
 ## Runtime / Tooling
 - If `tools.md` exists, read the relevant sections before using repo-local commands or helper scripts.
@@ -71,3 +77,4 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 - If `scripts/docs-list.sh` exists, use it to index `docs/` before editing docs-heavy parts of the codebase.
 - Use the docs index output, including `summary` and `read_when`, to decide which docs to read before coding.
 - Do not assume custom local tools exist unless they are present in this repo or on this machine.
+- Use `scripts/test-launcher.sh` for pure shell behavior coverage when changing launcher state, panes, agent commands, remote fallback, or prompt rendering.
