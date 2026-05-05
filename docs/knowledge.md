@@ -10,9 +10,9 @@ read_when:
 ## User-Provided Knowledge
 - Capture durable user guidance, preferences, and constraints that should survive past a single task.
 - `user`: Keep agent prompts token-efficient and role-specific. Do not give every role shared context it does not need.
-- `user`: Use four roles only in this repo's prompt docs and launcher prompts: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
+- `user`: Keep the base role set to `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`; extra panes repeat those roles with suffixes like `BACKEND-2`.
 - `user`: Auto-push coherent repo-visible non-private changes by default.
-- `user`: Apply the automatic push rule to all four launcher panes, not just the implementation role.
+- `user`: Apply the automatic push rule to all active launcher panes, not just the implementation role, when publish mode is `auto`.
 - `user`: When a GitHub remote and upstream are configured, publish non-private repo-visible work in the same turn by default.
 - `user`: When the work moves from one file to another, commit and push each completed file separately with its own short message before starting the next file, automatically and without a manual approval step.
 - `user`: Before asking where to push, try to infer the GitHub destination automatically from remotes, repo docs, nearby canonical repos, and the authenticated GitHub account.
@@ -24,6 +24,9 @@ read_when:
 - `user`: Keep project, branch, dirty state, queue-now task, active role, task artifact ID, phase, context budget, and session ID visible in the launcher title or statusline.
 - `user`: Keep a fast restore path and last-launch summary available from the launcher itself.
 - `user`: Make live build/test feedback available through a watcher window or equivalent always-visible command.
+- `user`: Prefer many small commits; when explicitly asked to publish launcher work, commit and push every completed file.
+- `user`: Add Codex/Claude/mixed agent profiles and configurable pane counts, with the fifth pane as another backend (`BACKEND-2`).
+- `external`: Peter Steinberger's statusline notes use roughly 80% context used as the practical compaction point, leaving about 160k usable tokens out of a 200k window.
 
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
@@ -31,18 +34,25 @@ read_when:
 - `repo`: The generated role summary lives in `docs/role-selection.md` and is rendered from the same prompt source.
 - `repo`: Wrapper-level prompt text should stay minimal and should not duplicate response-format or fallback behavior already owned by `AGENTS.md` or the shared artifact.
 - `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the push-helper guidance in one place.
-- `repo`: When the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
+- `repo`: When launched target-project publish mode is `auto` and the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
 - `repo`: `scripts/codex-commit.sh --each-path` is the per-file publish mode for file-by-file commits and pushes.
 - `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the generated role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
 - `repo`: Docs under `docs/` should carry short `summary` and `read_when` front matter, and `scripts/docs-list.sh` is the read-first index for docs-heavy work.
 - `repo`: Pointer-style repo layering is the preferred pattern for cross-repo policy reuse: keep shared guardrails in one canonical source, keep each repo `AGENTS.md` tiny, and add only repo-local rules underneath.
-- `repo`: The documented role set is four roles only: `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`.
+- `repo`: The documented base role set is `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`; extra panes repeat base roles with suffixes.
 - `repo`: Canonical GitHub repo slug is `picturesuo/git-ghostty-codex-launchpad`.
 - `repo`: Launcher prompts and the launch summary now surface a compact session snapshot with the session ID, git branch/status, queue head, task artifact ID, phase, and a lightweight context-budget indicator.
 - `repo`: The launcher now records last-launch metadata so it can reopen the same project session or print the last saved state on demand.
 - `repo`: A single structured launch-snapshot helper now feeds the stored launch state, `--status-last`, and the launcher title bar.
 - `repo`: `scripts/check-shell.sh` is the standard shell sanity check and wraps `shellcheck` for the repo's shell entry points and helpers.
 - `repo`: The saved launch summary now uses the Builder/plan snapshot instead of hardcoding Backend/build.
+- `repo`: `--agent codex|claude|mixed` controls pane commands; mixed mode uses Claude for `CRITIC` and `DEBUGGER`, Codex for `BUILDER` and `BACKEND`.
+- `repo`: `--panes N` supports 1-8 panes and persists the last count; when omitted, the launcher asks and defaults to the last used count.
+- `repo`: `--publish-mode auto|off` makes the target-project push boundary explicit.
+- `repo`: `--doctor` checks Ghostty, `osascript`, Codex, Claude, git, `gh`, `shellcheck`, prompt drift, doc-map, and saved-state integrity.
+- `repo`: `scripts/test-launcher.sh` covers saved-state blank fields, role layout, agent command generation, launcher remote fallback, and prompt-doc rendering.
+- `repo`: Target bootstrap now creates `CLAUDE.md`, `docs/agent-workflow.md`, `.claude/commands/commit-push-pr.md`, and `.claude/settings.json`; formatter hooks are included only when a formatter script is detected.
+- `repo`: The commit helper now uses launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` if a target project has no configured remote.
 
 ## Retrieval Hints
 - Search this file, the shared context file, and nearby repo docs with `rg` before broader search.
