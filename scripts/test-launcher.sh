@@ -73,6 +73,31 @@ test_commit_helper_launcher_remote_fallback() {
   fi
 }
 
+test_claude_bootstrap_files() {
+  local project_dir="$tmp_root/bootstrap-project"
+  local formatter_project_dir="$tmp_root/formatter-project"
+
+  seed_project_workflow_files "Bootstrap" "$project_dir"
+
+  [[ -f "$project_dir/CLAUDE.md" ]] || { printf 'FAIL CLAUDE.md was not seeded\n' >&2; exit 1; }
+  [[ -f "$project_dir/docs/agent-workflow.md" ]] || { printf 'FAIL docs/agent-workflow.md was not seeded\n' >&2; exit 1; }
+  [[ -f "$project_dir/.claude/commands/commit-push-pr.md" ]] || { printf 'FAIL Claude command was not seeded\n' >&2; exit 1; }
+  [[ -f "$project_dir/.claude/settings.json" ]] || { printf 'FAIL Claude settings were not seeded\n' >&2; exit 1; }
+
+  if rg -q '"hooks"' "$project_dir/.claude/settings.json"; then
+    printf 'FAIL formatter hook was seeded without a formatter\n' >&2
+    exit 1
+  fi
+
+  mkdir -p "$formatter_project_dir"
+  printf '{"scripts":{"format":"prettier --write ."}}\n' > "$formatter_project_dir/package.json"
+  printf 'lockfileVersion: 9\n' > "$formatter_project_dir/pnpm-lock.yaml"
+  seed_project_workflow_files "Formatter" "$formatter_project_dir"
+
+  rg -q '"PostToolUse"' "$formatter_project_dir/.claude/settings.json" || { printf 'FAIL formatter hook was not seeded\n' >&2; exit 1; }
+  rg -q 'pnpm format' "$formatter_project_dir/.claude/settings.json" || { printf 'FAIL formatter hook did not use pnpm\n' >&2; exit 1; }
+}
+
 test_prompt_docs_rendering() {
   bash "$project_root/scripts/check-prompt-drift.sh" >/dev/null
 }
@@ -81,6 +106,7 @@ test_saved_state_round_trip_with_empty_fields
 test_role_layout_generation
 test_agent_command_generation
 test_commit_helper_launcher_remote_fallback
+test_claude_bootstrap_files
 test_prompt_docs_rendering
 
 printf 'Launcher tests passed.\n'
