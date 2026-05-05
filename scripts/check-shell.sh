@@ -17,6 +17,7 @@ shellcheck \
   "$project_root/scripts/docs-list.sh" \
   "$project_root/scripts/check-prompt-drift.sh" \
   "$project_root/scripts/codex-commit.sh" \
-  "$project_root/scripts/render-prompt-docs.sh"
+  "$project_root/scripts/render-prompt-docs.sh" \
+  "$project_root/scripts/test-launcher.sh"
 
 echo "Shell check passed."
