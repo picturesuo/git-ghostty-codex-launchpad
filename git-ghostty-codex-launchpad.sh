@@ -387,7 +387,65 @@ print_last_launch_state() {
     echo "No saved launch state has been recorded yet."
     return 1
   fi
+
+  repair_saved_launch_state_if_needed "$LAUNCHPAD_LAST_SESSION_FILE" >/dev/null
   cat "$LAUNCHPAD_LAST_SESSION_FILE"
+}
+
+saved_launch_state_needs_repair() {
+  local state_file=$1
+  local remote_path github_repo queue_file knowledge_file
+
+  [[ -f "$state_file" ]] || return 1
+
+  remote_path="$(launch_state_header_value "$state_file" "Git remote path" || true)"
+  github_repo="$(launch_state_header_value "$state_file" "GitHub repo" || true)"
+  queue_file="$(launch_state_header_value "$state_file" "Queue file" || true)"
+  knowledge_file="$(launch_state_header_value "$state_file" "Knowledge file" || true)"
+
+  [[ "$remote_path" == *"/docs/queue.md" ]] && return 0
+  [[ "$github_repo" == *"/docs/knowledge.md" ]] && return 0
+  [[ -n "$queue_file" && "$queue_file" != /*/docs/queue.md ]] && return 0
+  [[ -n "$knowledge_file" && "$knowledge_file" != /*/docs/knowledge.md ]] && return 0
+
+  return 1
+}
+
+repair_saved_launch_state_if_needed() {
+  local state_file=$1
+  local project_name project_dir target_file session_file watch_command agent_profile pane_count publish_mode
+  local remote_path github_repo_slug
+
+  saved_launch_state_needs_repair "$state_file" || return 0
+
+  project_name="$(launch_state_header_value "$state_file" "Project name" || true)"
+  project_dir="$(launch_state_header_value "$state_file" "Project directory" || true)"
+  target_file="$(launch_state_header_value "$state_file" "Target file" || true)"
+  session_file="$(launch_state_header_value "$state_file" "Shared context file" || true)"
+  watch_command="$(launch_state_header_value "$state_file" "Watch command" || true)"
+  agent_profile="$(launch_state_header_value "$state_file" "Agent profile" || true)"
+  pane_count="$(launch_state_header_value "$state_file" "Pane count" || true)"
+  publish_mode="$(launch_state_header_value "$state_file" "Publish mode" || true)"
+
+  [[ -n "$project_name" && -n "$project_dir" && -n "$target_file" && -n "$session_file" ]] || return 1
+
+  if [[ -z "$agent_profile" ]] || ! validate_agent_profile "$agent_profile" >/dev/null 2>&1; then
+    agent_profile="$DEFAULT_AGENT_PROFILE"
+  fi
+  if [[ -z "$pane_count" ]] || ! normalize_pane_count "$pane_count" >/dev/null 2>&1; then
+    pane_count="$DEFAULT_PANE_COUNT"
+  fi
+  if [[ -z "$publish_mode" ]] || ! validate_publish_mode "$publish_mode" >/dev/null 2>&1; then
+    publish_mode="$DEFAULT_PUBLISH_MODE"
+  fi
+
+  remote_path="$(project_git_remote_path "$project_dir" 2>/dev/null || true)"
+  github_repo_slug=""
+  if [[ -n "$remote_path" ]]; then
+    github_repo_slug="$(github_repo_slug_from_remote_url "$remote_path" 2>/dev/null || true)"
+  fi
+
+  store_last_launch_state "$project_name" "$project_dir" "$target_file" "$session_file" "$remote_path" "$github_repo_slug" "$watch_command" "$agent_profile" "$pane_count" "$publish_mode"
 }
 
 build_default_watch_command() {
@@ -2146,6 +2204,7 @@ EOF
       echo "No saved launch state has been recorded yet." >&2
       return 1
     fi
+    repair_saved_launch_state_if_needed "$LAUNCHPAD_LAST_SESSION_FILE" >/dev/null
 
     last_project_name="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project name")"
     last_project_dir="$(launch_state_header_value "$LAUNCHPAD_LAST_SESSION_FILE" "Project directory")"
