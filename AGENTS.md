@@ -4,6 +4,7 @@ Be concise and direct. Prefer small, safe, reviewable changes.
 
 ## Portable Defaults
 - Read relevant docs and nearby code before editing.
+- Read `docs/agent-workflow.md` when changing launcher workflow, target bootstrap behavior, or Claude/Codex shared policy.
 - Search exact error text when debugging external or unfamiliar failures.
 - Follow existing patterns before introducing new ones.
 - Prefer minimal diffs over broad rewrites.
