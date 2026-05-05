@@ -8,10 +8,12 @@ Use this file as the practical command reference for repo-local tools. Prefer co
 - Purpose: stage only the paths you pass, create a commit, and optionally push.
 - Location: `scripts/codex-commit.sh`
 - Notes: pushes by default; use `--no-push` for local-only commits. `--each-path` splits the work into one commit per path.
+- Notes: with `--remote auto`, the helper prefers an upstream or existing remote, then uses launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` when available.
 - Safe examples:
 ```bash
 bash scripts/codex-commit.sh --no-push AGENTS.md
 bash scripts/codex-commit.sh --each-path --no-push AGENTS.md tools.md
+GIT_REMOTE_PATH=/tmp/project.git bash scripts/codex-commit.sh --project-root /tmp/project README.md
 ```
 
 ### `gh`
@@ -47,7 +49,7 @@ bash scripts/check-prompt-drift.sh
 ### `scripts/docs-list.sh`
 - Purpose: scan `docs/` for markdown files, extract `summary` and `read_when` front matter, and show which docs to read first.
 - Location: `scripts/docs-list.sh`
-- Notes: use this before docs-heavy, policy-heavy, or workflow-heavy edits.
+- Notes: use this before docs-heavy, policy-heavy, or workflow-heavy edits. It is executable, but `bash scripts/docs-list.sh` is still portable.
 - Safe examples:
 ```bash
 bash scripts/docs-list.sh
@@ -73,6 +75,14 @@ bash scripts/check-shell.sh
 bash scripts/check-commit-helper-doc-map.sh
 ```
 
+### `scripts/test-launcher.sh`
+- Purpose: run pure shell behavior tests for saved state, role layout, agent command generation, launcher remote fallback, and prompt-doc rendering.
+- Location: `scripts/test-launcher.sh`
+- Safe examples:
+```bash
+bash scripts/test-launcher.sh
+```
+
 ## Launcher
 
 ### `git-ghostty-codex-launchpad.sh`
@@ -82,6 +92,9 @@ bash scripts/check-commit-helper-doc-map.sh
 ```bash
 bash git-ghostty-codex-launchpad.sh --status-last
 bash git-ghostty-codex-launchpad.sh --resume-last
+bash git-ghostty-codex-launchpad.sh --doctor
+bash git-ghostty-codex-launchpad.sh --agent claude --panes 5
+bash git-ghostty-codex-launchpad.sh --agent mixed --panes 6 --publish-mode auto
 ```
 
 ## Notes
