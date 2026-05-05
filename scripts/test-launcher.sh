@@ -40,6 +40,35 @@ test_saved_state_round_trip_with_empty_fields() {
   assert_eq "5" "$(launch_state_header_value "$state_file" "Pane count")" "pane count persisted"
 }
 
+test_saved_state_repair_for_shifted_fields() {
+  local project_dir="$tmp_root/repair-project"
+  local session_file="$tmp_root/repair-shared-context.md"
+  local state_file="$tmp_root/repair-last-session.md"
+
+  mkdir -p "$project_dir/docs"
+  printf '# Queue\n\n## Now\n- [ ] Repair queue\n' > "$project_dir/docs/queue.md"
+  printf '# Knowledge\n' > "$project_dir/docs/knowledge.md"
+  printf '# Shared\n- Project name: Repair\n- Project directory: %s\n- Target file: README.md\n- Active task artifact ID: README.md\n- Session ID: repair12\n' "$project_dir" > "$session_file"
+  {
+    printf '# Ghostty Codex Launchpad Last Session\n\n'
+    printf -- '- Project name: Repair\n'
+    printf -- '- Project directory: %s\n' "$project_dir"
+    printf -- '- Target file: README.md\n'
+    printf -- '- Shared context file: %s\n' "$session_file"
+    printf -- '- Git remote path: %s/docs/queue.md\n' "$project_dir"
+    printf -- '- GitHub repo: %s/docs/knowledge.md\n' "$project_dir"
+    printf -- '- Queue file: Repair queue\n'
+    printf -- '- Knowledge file: main\n'
+  } > "$state_file"
+
+  LAUNCHPAD_LAST_SESSION_FILE="$state_file"
+  repair_saved_launch_state_if_needed "$state_file"
+
+  assert_eq "" "$(launch_state_header_value "$state_file" "Git remote path")" "repaired git remote path"
+  assert_eq "$project_dir/docs/queue.md" "$(launch_state_header_value "$state_file" "Queue file")" "repaired queue file"
+  assert_eq "$project_dir/docs/knowledge.md" "$(launch_state_header_value "$state_file" "Knowledge file")" "repaired knowledge file"
+}
+
 test_role_layout_generation() {
   build_session_roles 8
 
@@ -103,6 +132,7 @@ test_prompt_docs_rendering() {
 }
 
 test_saved_state_round_trip_with_empty_fields
+test_saved_state_repair_for_shifted_fields
 test_role_layout_generation
 test_agent_command_generation
 test_commit_helper_launcher_remote_fallback
