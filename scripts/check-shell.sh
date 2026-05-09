@@ -18,6 +18,8 @@ shellcheck \
   "$project_root/scripts/check-prompt-drift.sh" \
   "$project_root/scripts/codex-commit.sh" \
   "$project_root/scripts/render-prompt-docs.sh" \
-  "$project_root/scripts/test-launcher.sh"
+  "$project_root/scripts/test-launcher.sh" \
+  "$project_root/scripts/validate-skills.sh" \
+  "$project_root/hooks/pre-commit"
 
 echo "Shell check passed."

@@ -75,6 +75,19 @@ test_role_layout_generation() {
   assert_eq "BUILDER BACKEND DEBUGGER CRITIC BACKEND-2 CRITIC-2 DEBUGGER-2 BUILDER-2" "${SESSION_ROLES[*]}" "eight-pane role layout"
 }
 
+test_split_layout_generation() {
+  local expected
+
+  expected="$(printf '%s\n%s\n%s\n%s' \
+    '  set pane2 to split pane1 direction right with configuration cfg' \
+    '  set pane3 to split pane2 direction right with configuration cfg' \
+    '  set pane4 to split pane3 direction right with configuration cfg' \
+    '  perform action "equalize_splits" on pane1')"
+
+  assert_eq "$expected" "$(build_session_split_applescript 4)" "four-pane split layout is equalized"
+  assert_eq "" "$(build_session_split_applescript 1)" "single-pane split layout has no equalization"
+}
+
 test_agent_command_generation() {
   assert_eq "codex 'build it'" "$(pane_command codex BACKEND "build it")" "codex command"
   assert_eq "claude 'check it'" "$(pane_command claude CRITIC "check it")" "claude command"
@@ -131,12 +144,18 @@ test_prompt_docs_rendering() {
   bash "$project_root/scripts/check-prompt-drift.sh" >/dev/null
 }
 
+test_skill_validation() {
+  bash "$project_root/scripts/validate-skills.sh" >/dev/null
+}
+
 test_saved_state_round_trip_with_empty_fields
 test_saved_state_repair_for_shifted_fields
 test_role_layout_generation
+test_split_layout_generation
 test_agent_command_generation
 test_commit_helper_launcher_remote_fallback
 test_claude_bootstrap_files
 test_prompt_docs_rendering
+test_skill_validation
 
 printf 'Launcher tests passed.\n'

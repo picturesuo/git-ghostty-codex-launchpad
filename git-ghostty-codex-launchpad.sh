@@ -1866,6 +1866,19 @@ $prompt_body
 EOF
 }
 
+build_session_split_applescript() {
+  local pane_count=$1 i split_source
+
+  for ((i = 2; i <= pane_count; i++)); do
+    split_source="pane$((i - 1))"
+    printf '  set pane%s to split %s direction right with configuration cfg\n' "$i" "$split_source"
+  done
+
+  if (( pane_count > 1 )); then
+    printf '  perform action %s on pane1\n' "$(applescript_string "equalize_splits")"
+  fi
+}
+
 launch_ghostty_session() {
   local project_name=$1
   local project_dir=$2
@@ -1876,7 +1889,7 @@ launch_ghostty_session() {
   local agent_profile=$7
   local pane_count=$8
   local publish_mode=$9
-  local watch_title applescript role prompt command i split_source
+  local watch_title applescript role prompt command i
   local -a pane_commands=()
 
   prepare_session_titles "$project_name" "$project_dir" "$target_file" "$session_file" "$pane_count"
@@ -1901,10 +1914,8 @@ tell application "Ghostty"
 EOF
 )"
 
-  for ((i = 2; i <= pane_count; i++)); do
-    split_source="pane$((i - 1))"
-    applescript+=$'\n'"  set pane$i to split $split_source direction right with configuration cfg"
-  done
+  applescript+=$'\n'
+  applescript+="$(build_session_split_applescript "$pane_count")"
 
   for ((i = 1; i <= pane_count; i++)); do
     applescript+=$'\n'"  perform action $(applescript_string "set_surface_title:${SESSION_TITLES[$((i - 1))]}") on pane$i"
@@ -2091,6 +2102,7 @@ run_doctor() {
 
   doctor_check_script "prompt docs are current" bash "$LAUNCHPAD_ROOT/scripts/check-prompt-drift.sh" || failed=1
   doctor_check_script "commit-helper doc map is valid" bash "$LAUNCHPAD_ROOT/scripts/check-commit-helper-doc-map.sh" || failed=1
+  doctor_check_script "skill metadata is valid" bash "$LAUNCHPAD_ROOT/scripts/validate-skills.sh" || failed=1
   validate_saved_launch_state "$LAUNCHPAD_LAST_SESSION_FILE" || failed=1
 
   if [[ "$failed" -eq 0 ]]; then

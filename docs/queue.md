@@ -8,7 +8,7 @@ read_when:
 # Queue
 
 ## Now
-- [x] Run final launcher verification after the agent-neutral, pane-count, publish-mode, context-reset, and docs updates.
+- [x] Finish Steinberger-style agent-script/context cleanup: trim prompt context, add useful guardrails, document commands, and run verification.
 
 ## Next
 - [ ] Try one real `--agent mixed --panes 5` launch on macOS Ghostty and inspect pane titles.
@@ -16,7 +16,7 @@ read_when:
 - [ ] Watch for Claude settings schema changes before adding more default permissions or hooks.
 
 ## Later
-- [ ] Consider a layout preset flag if 6-8 panes need a better split pattern than repeated right splits.
+- [ ] Consider a layout preset flag if 6-8 panes need something richer than equal-width horizontal splits.
 - [ ] Consider a dry-run mode that prints the generated AppleScript without opening Ghostty.
 
 ## Blocked
@@ -26,3 +26,5 @@ read_when:
 - [ ] Edge case: saved-state fields must be written directly or parsed with an empty-field-safe format; tab-delimited `read` shifts blank fields.
 - [ ] Edge case: generated prompt placeholders inside braces should not be truncated by title-length limits.
 - [ ] Decision: pane five is `BACKEND-2`; extra panes repeat base roles instead of adding a new role type.
+- [ ] Decision: adopt upstream-style skill validation, but keep it local and dependency-light instead of importing personal tools or broad skill packs.
+- [ ] Decision: keep `AGENTS.md` terse and policy-only; put commands in `tools.md`, repeated workflows in `skills/`, and mutable task state in the shared context.

@@ -1,81 +1,43 @@
 # AGENTS.md
 
-Be concise and direct. Prefer small, safe, reviewable changes.
+Style: concise, direct, small safe diffs. Prefer evidence over guesses.
 
-## Portable Defaults
+## Read First
 - Read relevant docs and nearby code before editing.
-- Read `docs/agent-workflow.md` when changing launcher workflow, target bootstrap behavior, or Claude/Codex shared policy.
-- Search exact error text when debugging external or unfamiliar failures.
-- Follow existing patterns before introducing new ones.
-- Prefer minimal diffs over broad rewrites.
-- Fix root causes when practical.
-- If behavior changes, update docs or comments where appropriate.
-- If blocked, say what is missing and propose the next step.
+- Read `docs/agent-workflow.md` for launcher workflow, target bootstrap, or shared Codex/Claude policy.
+- Run `bash scripts/docs-list.sh` before docs-heavy, policy-heavy, or workflow-heavy edits.
+- Read `tools.md` before using repo-local helpers; read matching `skills/*/SKILL.md` for repeated workflows.
+- Read `docs/multi-agent-workflow.md` before splitting work across agents or panes.
 
 ## Safety
-- Safe git by default: `status`, `diff`, and `log` are always okay.
-- Never run destructive commands without explicit approval.
-- Do not delete or rename unexpected files unless asked.
-- Do not change package manager, framework, runtime, or build tooling unless asked.
-- For this launcher repo, do not push unless explicitly asked.
-- For launched target projects, publish mode `auto` means agents may auto-commit and auto-push coherent repo-visible files through the launcher helper.
+- Safe git: `git status`, `git diff`, `git log`.
+- No destructive git, branch changes, deletes, renames, package/runtime/tooling swaps, or broad rewrites unless explicitly asked.
+- Never revert unrecognized changes; assume another user/agent made them and work around them.
+- Search exact external or unfamiliar error text before guessing.
+
+## Work
+- Follow existing patterns; keep diffs minimal and reviewable.
+- Fix root causes when practical; add focused regression coverage when changing behavior or fixing bugs.
+- Update docs/comments when behavior, commands, or workflows change.
+- Prefer readability over cleverness; avoid repo-wide search-and-replace scripts unless asked.
+- If blocked, state what is missing and the next concrete step.
 
 ## Verification
-- Before handoff, run relevant checks when feasible:
-  - `lint`
-  - `typecheck`
-  - `tests`
-  - `build`
-- Prefer the most end-to-end verification the repo already supports when practical.
-- If you cannot run something, say exactly why.
+- Before handoff, run relevant `lint`, `typecheck`, `tests`, and `build` checks when feasible.
+- Use `bash scripts/test-launcher.sh` for launcher state, panes, agent commands, remote fallback, or prompt rendering.
+- Run `bash scripts/validate-skills.sh` after editing skills.
+- Run `bash scripts/check-shell.sh` when `shellcheck` is installed.
+- Say exactly what was not run and why.
 
-## Code Quality
-- Keep edits small and reviewable.
-- Keep files reasonably maintainable; split large files when it clearly helps.
-- Add or update tests when fixing bugs or changing logic, when tests exist or fit naturally.
-- Prefer readability over cleverness.
-- Avoid repo-wide search-and-replace or bulk rewrite scripts unless explicitly asked.
-
-## Docs
-- If a `docs/` directory exists, inspect relevant docs before coding.
-- If `scripts/docs-list.sh` exists, run it before editing docs-heavy, policy-heavy, or workflow-heavy parts of the repo.
-- If docs link to other relevant docs, follow those links until the local workflow or domain is clear.
-- If `docs/pr-feedback.md` exists, use it when reviewing PR comments or preparing review replies.
-- If `docs/repo-layering.md` exists, use it when editing or bootstrapping `AGENTS.md` across multiple repos.
-- Update docs when behavior, commands, or workflows change.
-- Respect any project-specific "read this first" guidance.
-
-## Git
-- Check `git status` and `git diff` before editing and before handoff.
-- Make local commits at meaningful subtask boundaries when the work is substantial enough to benefit from a checkpoint.
-- If a task spans multiple files, prefer one commit per finished file or one commit per logical change, whichever is cleaner.
-- In this launcher repo, do not push unless explicitly asked.
-- If the user explicitly asks for GitHub publishing, push after each completed file or chunk they asked to publish.
-- In launched target projects, publish mode `auto` is explicit launcher intent for per-file commit and push; publish mode `off` restores local-only behavior unless the user asks.
-- Do not change branches unless asked.
-- Do not amend commits unless asked.
-- Keep commits scoped and understandable.
-- Keep commit messages short, consistent, human, and understandable; use conventional-style messages when they fit naturally.
+## Git / Publish
+- Check `git status` and `git diff` before edits and before handoff.
+- This launcher repo: do not push unless the user explicitly asks.
+- Launched target projects: publish mode `auto` means agents may auto-commit and auto-push coherent repo-visible non-private files through the launcher helper.
+- Publish mode `off`: local/manual only unless the user asks.
+- Prefer one commit per finished file or logical change; keep messages short and human.
+- Use `bash scripts/codex-commit.sh` with explicit paths. Use `--no-push` for local-only checkpoints and `--each-path` for per-file commits.
 
 ## Context
-- Treat about 80% context used as the reset point for long-running agent panes.
-- Before compacting or starting a fresh pane, write current status, decisions, changed files, verification, and next action to the shared context file.
-- Do not rely on the final 20% of the context window for meaningful planning or broad edits.
-
-## Runtime / Tooling
-- If `tools.md` exists, read the relevant sections before using repo-local commands or helper scripts.
-- If `skills/` exists, read the matching skill before doing specialized repeated workflows.
-- If multiple agents are working at once, read `docs/multi-agent-workflow.md` before splitting the work.
-- Use the repo's existing package manager and runtime.
-- Do not swap tools or introduce new dependencies without a clear reason.
-- If you must add a dependency, prefer maintained and established options, and note why it was needed.
-- If you edit reusable helper scripts, keep them portable and avoid unnecessary repo-specific coupling.
-
-## Optional Local Tools
-- If `scripts/committer` exists, prefer it for scoped commits.
-- It stages only explicitly listed files, refuses `.`, creates a local commit only, does not push, and should clear a stale git index lock only when run with `--force`.
-- If `scripts/codex-commit.sh` exists, use `--no-push` when you want the same scoped local-commit behavior without publishing.
-- If `scripts/docs-list.sh` exists, use it to index `docs/` before editing docs-heavy parts of the codebase.
-- Use the docs index output, including `summary` and `read_when`, to decide which docs to read before coding.
-- Do not assume custom local tools exist unless they are present in this repo or on this machine.
-- Use `scripts/test-launcher.sh` for pure shell behavior coverage when changing launcher state, panes, agent commands, remote fallback, or prompt rendering.
+- Treat about 80% context used as the reset point.
+- Before compacting or starting fresh, write status, decisions, changed files, verification, and next action to the shared context file.
+- Do not spend the final 20% on broad planning or multi-file edits.

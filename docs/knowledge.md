@@ -26,7 +26,9 @@ read_when:
 - `user`: Make live build/test feedback available through a watcher window or equivalent always-visible command.
 - `user`: Prefer many small commits; when explicitly asked to publish launcher work, commit and push every completed file.
 - `user`: Add Codex/Claude/mixed agent profiles and configurable pane counts, with the fifth pane as another backend (`BACKEND-2`).
+- `user`: Use Peter Steinberger's `agent-scripts` repo as a reference, but adopt only the useful portable guardrails and avoid unnecessary prompt/context token load.
 - `external`: Peter Steinberger's statusline notes use roughly 80% context used as the practical compaction point, leaving about 160k usable tokens out of a 200k window.
+- `external`: Steinberger's public `agent-scripts` repo centralizes terse shared `AGENTS.MD` rules, scoped commit helpers, docs listing, skill validation, optional hooks, and a large skill/tool catalog.
 
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
@@ -36,7 +38,7 @@ read_when:
 - `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the push-helper guidance in one place.
 - `repo`: When launched target-project publish mode is `auto` and the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
 - `repo`: `scripts/codex-commit.sh --each-path` is the per-file publish mode for file-by-file commits and pushes.
-- `repo`: `AGENTS.md` is now intentionally short and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, the generated role summary belongs in `docs/role-selection.md`, and current-task memory belongs in the shared context file.
+- `repo`: `AGENTS.md` is intentionally terse and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, command inventory belongs in `tools.md`, repeated workflows belong in `skills/`, and current-task memory belongs in the shared context file.
 - `repo`: Docs under `docs/` should carry short `summary` and `read_when` front matter, and `scripts/docs-list.sh` is the read-first index for docs-heavy work.
 - `repo`: Pointer-style repo layering is the preferred pattern for cross-repo policy reuse: keep shared guardrails in one canonical source, keep each repo `AGENTS.md` tiny, and add only repo-local rules underneath.
 - `repo`: The documented base role set is `BUILDER`, `BACKEND`, `CRITIC`, and `DEBUGGER`; extra panes repeat base roles with suffixes.
@@ -49,11 +51,12 @@ read_when:
 - `repo`: `--agent codex|claude|mixed` controls pane commands; mixed mode uses Claude for `CRITIC` and `DEBUGGER`, Codex for `BUILDER` and `BACKEND`.
 - `repo`: `--panes N` supports 1-8 panes and persists the last count; when omitted, the launcher asks and defaults to the last used count.
 - `repo`: `--publish-mode auto|off` makes the target-project push boundary explicit.
-- `repo`: `--doctor` checks Ghostty, `osascript`, Codex, Claude, git, `gh`, `shellcheck`, prompt drift, doc-map, and saved-state integrity.
+- `repo`: `--doctor` checks Ghostty, `osascript`, Codex, Claude, git, `gh`, `shellcheck`, prompt drift, doc-map, skill metadata, and saved-state integrity.
 - `repo`: `scripts/test-launcher.sh` covers saved-state blank fields, role layout, agent command generation, launcher remote fallback, and prompt-doc rendering.
 - `repo`: Target bootstrap now creates `CLAUDE.md`, `docs/agent-workflow.md`, `.claude/commands/commit-push-pr.md`, and `.claude/settings.json`; formatter hooks are included only when a formatter script is detected.
 - `repo`: The commit helper now uses launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` if a target project has no configured remote.
 - `repo`: Shared Codex/Claude workflow guidance lives in `docs/agent-workflow.md`; repo-level `CLAUDE.md` points there instead of duplicating AGENTS policy.
+- `repo`: `scripts/validate-skills.sh` validates local `skills/*/SKILL.md` front matter without importing Steinberger-specific tools or personal path assumptions; `hooks/pre-commit` can run it when tracked hooks are enabled.
 
 ## Retrieval Hints
 - Search this file, the shared context file, and nearby repo docs with `rg` before broader search.

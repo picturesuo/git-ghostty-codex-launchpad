@@ -11,7 +11,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 
 ## What It Does
 
-- Opens a fresh Ghostty window and splits it into a configurable 1-8 agent panes, defaulting to the last used count or four panes
+- Opens a fresh Ghostty window and splits it into a configurable 1-8 evenly sized agent panes, defaulting to the last used count or four panes
 - Prompts for the project you want to work on and tries to find it locally, then asks you to confirm close matches before launching
 - Reuses an existing project and shared-context file when the typed project name is only a close match, instead of creating a near-duplicate session by name alone
 - Writes a shared session note in `~/.codex/` and preserves it across relaunches
@@ -28,7 +28,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
 - Bootstraps `CLAUDE.md`, `docs/agent-workflow.md`, and Claude command/settings scaffolding for target projects without copying long policy text into every agent file
-- Offers `--doctor` to check Ghostty, `osascript`, Codex, Claude, git, GitHub CLI, shellcheck, prompt drift, doc-map integrity, and saved-state coherence
+- Offers `--doctor` to check Ghostty, `osascript`, Codex, Claude, git, GitHub CLI, shellcheck, prompt drift, doc-map integrity, skill metadata, and saved-state coherence
 
 The default visible left-to-right pane order is:
 
@@ -141,6 +141,14 @@ The repo now has small specialist guides under [skills/](/Users/bensuo/ghostty-c
 Use this when:
 - a task repeats often enough that the same read/check/edit flow would otherwise be reinvented each time
 
+Validate skill front matter with:
+
+```bash
+bash scripts/validate-skills.sh
+```
+
+Enable the optional tracked pre-commit hook with `git config core.hooksPath hooks` when skill edits should be checked before every commit.
+
 ### Sync Prompt Docs After Prompt Changes
 
 Run:
@@ -251,5 +259,5 @@ Useful command-line modes:
 
 ## Verify
 
-If you want a quick sanity check, run `bash scripts/test-launcher.sh`, `bash scripts/check-prompt-drift.sh`, and `bash git-ghostty-codex-launchpad.sh --doctor`.
+If you want a quick sanity check, run `bash scripts/test-launcher.sh`, `bash scripts/check-prompt-drift.sh`, `bash scripts/validate-skills.sh`, and `bash git-ghostty-codex-launchpad.sh --doctor`.
 Run `bash scripts/check-shell.sh` when `shellcheck` is installed.

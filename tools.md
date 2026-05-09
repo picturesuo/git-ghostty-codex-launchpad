@@ -75,6 +75,15 @@ bash scripts/check-shell.sh
 bash scripts/check-commit-helper-doc-map.sh
 ```
 
+### `scripts/validate-skills.sh`
+- Purpose: verify each `skills/*/SKILL.md` file has front matter with non-empty `name` and `description` fields and no duplicate skill names.
+- Location: `scripts/validate-skills.sh`
+- Notes: `hooks/pre-commit` runs this helper when the checkout opts into tracked hooks with `git config core.hooksPath hooks`.
+- Safe examples:
+```bash
+bash scripts/validate-skills.sh
+```
+
 ### `scripts/test-launcher.sh`
 - Purpose: run pure shell behavior tests for saved state, role layout, agent command generation, launcher remote fallback, and prompt-doc rendering.
 - Location: `scripts/test-launcher.sh`
