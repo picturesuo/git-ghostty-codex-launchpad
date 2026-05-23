@@ -25,6 +25,7 @@ read_when:
 - `user`: Keep a fast restore path and last-launch summary available from the launcher itself.
 - `user`: Make live build/test feedback available through a watcher window or equivalent always-visible command.
 - `user`: Prefer many small commits; when explicitly asked to publish launcher work, commit and push every completed file.
+- `user`: Prefer as many commits as possible in the Steinberger style: commit and push each finished repo-visible file immediately after verification; group files only when a per-file commit would leave a broken intermediate state.
 - `user`: Add Codex/Claude/mixed agent profiles and configurable pane counts, with the fifth pane as another backend (`BACKEND-2`).
 - `user`: Use Peter Steinberger's `agent-scripts` repo as a reference, but adopt only the useful portable guardrails and avoid unnecessary prompt/context token load.
 - `user`: Rewrite local skills comprehensively for agentic engineering that creates startup-sellable products, drawing from current local skills plus Steinberger and Karpathy skill guidance.
@@ -39,7 +40,7 @@ read_when:
 - `repo`: The generated role summary lives in `docs/role-selection.md` and is rendered from the same prompt source.
 - `repo`: Wrapper-level prompt text should stay minimal and should not duplicate response-format or fallback behavior already owned by `AGENTS.md` or the shared artifact.
 - `repo`: The prompt source now owns the launcher wrapper, the role prompt bodies, and the push-helper guidance in one place.
-- `repo`: When launched target-project publish mode is `auto` and the workflow moves from one file to another, it should publish each completed file separately before starting the next one, automatically.
+- `repo`: When launched target-project publish mode is `auto`, publish each completed repo-visible file separately immediately after verification, automatically.
 - `repo`: `scripts/codex-commit.sh --each-path` is the per-file publish mode for file-by-file commits and pushes.
 - `repo`: `AGENTS.md` is intentionally terse and durable; launch-time behavior belongs in `prompts/prompt-source.sh`, command inventory belongs in `tools.md`, repeated workflows belong in `skills/`, and current-task memory belongs in the shared context file.
 - `repo`: Docs under `docs/` should carry short `summary` and `read_when` front matter, and `scripts/docs-list.sh` is the read-first index for docs-heavy work.
