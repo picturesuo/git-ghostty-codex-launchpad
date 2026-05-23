@@ -189,7 +189,7 @@ If you want the finished chunk published to GitHub, drop `--no-push`.
 
 ### Handle GitHub PR Feedback
 
-Read [docs/pr-feedback.md](/Users/bensuo/ghostty-codex-launchpad/docs/pr-feedback.md) when review comments drive the task.
+Read [skills/pr-feedback/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/pr-feedback/SKILL.md) when review comments drive the task.
 
 Typical commands:
 
