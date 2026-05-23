@@ -35,9 +35,9 @@ Style: concise, direct, small safe diffs. Prefer evidence over guesses.
 ## Git / Publish
 - Check `git status` and `git diff` before edits and before handoff.
 - This launcher repo: do not push unless the user explicitly asks.
-- Launched target projects: publish mode `auto` means agents may auto-commit and auto-push coherent repo-visible non-private files through the launcher helper.
+- Launched target projects: publish mode `auto` means agents auto-commit and auto-push each finished repo-visible non-private file through the launcher helper immediately after verification.
 - Publish mode `off`: local/manual only unless the user asks.
-- Prefer one commit per finished file or logical change; keep messages short and human.
+- Prefer the most commits that stay coherent: one commit per finished file by default; group files only when they are inseparable, such as source plus generated output.
 - Use `bash scripts/codex-commit.sh` with explicit paths. Use `--no-push` for local-only checkpoints and `--each-path` for per-file commits.
 
 ## Context
