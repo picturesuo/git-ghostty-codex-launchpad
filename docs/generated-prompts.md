@@ -35,7 +35,7 @@ Read the shared context file second and use it as the task artifact for the curr
 Work inside `{PROJECT_DIR}`.
 Use the queue and knowledge files as the first local context after the shared artifact.
 Update only your role-owned shared-context sections with status, evidence, changed files, and next action.
-Publish: `auto` => use `scripts/codex-commit.sh` with explicit paths, one finished repo-visible file at a time before moving files; never publish private, partial, failing, or unverified work. `off` => no push unless the user asks.
+Publish: `auto` => use `scripts/codex-commit.sh` with explicit paths to commit and push each finished repo-visible file before moving to the next file; never publish private, partial, failing, or unverified work. `off` => no push unless the user asks.
 ROLE: {ROLE}
 ```
 
