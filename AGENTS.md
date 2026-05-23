@@ -17,6 +17,9 @@ Style: concise, direct, small safe diffs. Prefer evidence over guesses.
 
 ## Work
 - Follow existing patterns; keep diffs minimal and reviewable.
+- State assumptions when they affect the path; ask when ambiguity changes scope, data exposure, architecture, or publish behavior.
+- Prefer the simplest complete fix; do not add speculative features, abstractions, configurability, or error handling.
+- Every changed line should trace to the request, a verified bug, or cleanup caused by your own change.
 - Fix root causes when practical; add focused regression coverage when changing behavior or fixing bugs.
 - Update docs/comments when behavior, commands, or workflows change.
 - Prefer readability over cleverness; avoid repo-wide search-and-replace scripts unless asked.
