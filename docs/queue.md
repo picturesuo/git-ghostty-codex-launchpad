@@ -8,6 +8,7 @@ read_when:
 # Queue
 
 ## Now
+- [x] Rewrite local skill files for agentic startup-product engineering, using current local skills plus Steinberger and Karpathy references.
 - [x] Finish Steinberger-style agent-script/context cleanup: trim prompt context, add useful guardrails, document commands, and run verification.
 
 ## Next
@@ -28,3 +29,4 @@ read_when:
 - [ ] Decision: pane five is `BACKEND-2`; extra panes repeat base roles instead of adding a new role type.
 - [ ] Decision: adopt upstream-style skill validation, but keep it local and dependency-light instead of importing personal tools or broad skill packs.
 - [ ] Decision: keep `AGENTS.md` terse and policy-only; put commands in `tools.md`, repeated workflows in `skills/`, and mutable task state in the shared context.
+- [ ] Decision: product-engineering skills should stay focused on sellable slices, verified implementation, UI polish, and release readiness rather than importing a broad upstream skill catalog.
