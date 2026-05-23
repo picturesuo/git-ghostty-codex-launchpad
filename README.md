@@ -133,10 +133,14 @@ Use this when:
 
 The repo now has small specialist guides under [skills/](/Users/bensuo/ghostty-codex-launchpad/skills):
 
-- [skills/prompt-doc-sync/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/prompt-doc-sync/SKILL.md) for prompt-source edits and generated prompt docs
-- [skills/scoped-commit-flow/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/scoped-commit-flow/SKILL.md) for small scoped commits and optional pushes
+- [skills/product-slice-planning/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/product-slice-planning/SKILL.md) for turning startup product ideas into narrow sellable slices
+- [skills/product-implementation-loop/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/product-implementation-loop/SKILL.md) for read-first, surgical, verified product implementation
+- [skills/product-ui-polish/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/product-ui-polish/SKILL.md) for customer-facing UI quality and demo-ready interaction states
+- [skills/product-release-readiness/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/product-release-readiness/SKILL.md) for demo, publish, deploy, and sales-handoff checks
+- [skills/prompt-doc-sync/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/prompt-doc-sync/SKILL.md) for prompt-source edits, generated prompt docs, and context-budget alignment
+- [skills/scoped-commit-flow/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/scoped-commit-flow/SKILL.md) for small scoped commits, target publish mode, and launcher push boundaries
 - [skills/repo-doc-policy-edit/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/repo-doc-policy-edit/SKILL.md) for coordinated repo-policy edits
-- [skills/pr-feedback/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/pr-feedback/SKILL.md) for pull-request comment workflows
+- [skills/pr-feedback/SKILL.md](/Users/bensuo/ghostty-codex-launchpad/skills/pr-feedback/SKILL.md) for pull-request comment, CI, and review-thread workflows
 
 Use this when:
 - a task repeats often enough that the same read/check/edit flow would otherwise be reinvented each time
