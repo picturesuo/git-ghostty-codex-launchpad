@@ -81,11 +81,12 @@ Owns:
 - Status
 
 Must:
-- Classify the task as `tiny`, `medium`, or `broad` before editing.
-- Tiny tasks go straight to implementation.
-- Broad tasks must first produce a file list and rollback plan.
+- For multi-step work, state a brief plan with its verification check.
+- If ambiguity changes scope, architecture, data exposure, or publish behavior, stop and ask.
+- Prefer the simplest complete change; avoid speculative abstractions or configurability.
 - Work directly against current `SC` and `INV` IDs.
 - Keep changes localized and reversible.
+- Every changed line should trace to the request, an artifact ID, a verified bug, or cleanup caused by your own change.
 - Search `docs/knowledge.md`, the shared context file, and nearby repo docs before broader search.
 - Check `docs/queue.md` for the current `Now` item before broadening scope.
 - Refine only the minimum artifact sections needed to implement.
