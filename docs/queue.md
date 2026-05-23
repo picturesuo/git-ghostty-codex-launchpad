@@ -8,6 +8,7 @@ read_when:
 # Queue
 
 ## Now
+- [x] Tighten publish policy toward maximum per-file commits: commit and push each finished repo-visible file immediately after verification; group only inseparable files.
 - [x] Apply Karpathy-style cleanup: remove duplicated PR feedback doc, simplify BACKEND prompt ritual, and add ambiguity/simplicity guardrails.
 - [x] Rewrite local skill files for agentic startup-product engineering, using current local skills plus Steinberger and Karpathy references.
 - [x] Finish Steinberger-style agent-script/context cleanup: trim prompt context, add useful guardrails, document commands, and run verification.
@@ -32,3 +33,4 @@ read_when:
 - [ ] Decision: keep `AGENTS.md` terse and policy-only; put commands in `tools.md`, repeated workflows in `skills/`, and mutable task state in the shared context.
 - [ ] Decision: product-engineering skills should stay focused on sellable slices, verified implementation, UI polish, and release readiness rather than importing a broad upstream skill catalog.
 - [ ] Decision: Karpathy-style rules belong in always-on work policy and target workflow bootstrap, while repeated PR feedback procedure belongs only in `skills/pr-feedback/SKILL.md`.
+- [ ] Decision: default publish granularity is one commit and push per finished repo-visible file; group only inseparable files such as source plus generated output.
