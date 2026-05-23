@@ -20,8 +20,9 @@ This is the shared workflow source for agent sessions. Keep agent-specific files
 ## Publish Policy
 
 - This launcher repo does not push unless the user explicitly asks.
-- Launched target projects may auto-commit and auto-push only when publish mode is `auto`.
-- Publish mode `auto` means each completed repo-visible file should be committed and pushed before work moves to the next file.
+- Launched target projects auto-commit and auto-push only when publish mode is `auto`.
+- Publish mode `auto` means each completed repo-visible file should be committed and pushed immediately after its verification passes.
+- Default to one commit per file. Group files only when they are inseparable, such as source plus generated output.
 - Publish mode `off` means no push without an explicit user request.
 - Private, personal, scratch, partial, failing, and unverified work stays out of the default publish path.
 
