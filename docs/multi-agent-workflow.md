@@ -49,9 +49,10 @@ Do not split work when:
 ## Git Boundaries
 
 - Keep write scopes disjoint whenever possible.
-- Prefer one commit per finished file or one commit per logical change, whichever is cleaner.
+- Prefer the most commits that stay coherent: one commit per finished file by default.
+- Group files only when they are inseparable, such as source plus generated output.
 - In this launcher repo, push only when the user clearly wants that chunk published.
-- In launched target projects, publish mode `auto` means each completed repo-visible file should be committed and pushed before a pane moves to another file.
+- In launched target projects, publish mode `auto` means each completed repo-visible file should be committed and pushed immediately after verification passes.
 - Check `git status` and `git diff` before integrating another agent's work.
 
 ## Repo Fit
