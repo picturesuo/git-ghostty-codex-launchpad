@@ -1470,7 +1470,10 @@ This file is the shared workflow source for Codex and Claude sessions in "$proje
 
 ## Work Rules
 - Keep scope tight and reversible.
-- State assumptions when they affect implementation.
+- State assumptions when they affect the path.
+- Ask when ambiguity changes scope, data exposure, architecture, or publish behavior.
+- Prefer the simplest complete change; no speculative features, abstractions, or configurability.
+- Every changed line should trace to the request, a verified bug, or cleanup caused by your own change.
 - Read local instructions and nearby code before editing.
 - Verify with the most direct local command that fits the change.
 EOF

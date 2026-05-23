@@ -31,3 +31,11 @@ This is the shared workflow source for agent sessions. Keep agent-specific files
 - Extra panes repeat the base roles; the fifth pane is `BACKEND-2`.
 - Keep ownership narrow when multiple panes are active.
 - Use the shared context, `docs/queue.md`, and `docs/knowledge.md` before broader search.
+
+## Decision Discipline
+
+- State assumptions when they affect the path.
+- Ask when ambiguity changes scope, data exposure, architecture, or publish behavior.
+- Prefer the simplest complete change; no speculative features, abstractions, or configurability.
+- Every changed line should trace to the request, a verified bug, or cleanup caused by your own change.
+- Define success criteria for non-trivial work and loop until the matching checks pass or are explicitly blocked.
