@@ -1462,9 +1462,9 @@ This file is the shared workflow source for Codex and Claude sessions in "$proje
 - Do not continue deep into the final 20% of context unless the user explicitly asks you to finish a tiny active command first.
 
 ## Publish Policy
-- If publish mode is \`auto\`, auto-commit and auto-push coherent repo-visible changes with \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") <paths...>\`.
-- When work moves from one file to another, finish, verify, commit, and push the current file before starting the next file.
-- Use \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>\` when several finished files are ready.
+- If publish mode is \`auto\`, commit and push each finished repo-visible file immediately after verification with \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") <path>\`.
+- Default to one commit per file; use \`bash $(printf '%q' "$CODEX_COMMIT_HELPER") --each-path <paths...>\` if several independently finished files are ready.
+- Group files in one commit only when they are inseparable, such as source plus generated output.
 - Use \`--no-push\` only when a local-only commit is intentional.
 - Do not publish private, personal, scratch, partial, failing, or unverified work.
 
