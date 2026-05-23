@@ -23,7 +23,7 @@ GitHub repo: `picturesuo/git-ghostty-codex-launchpad`.
 - Prompts once for the git remote path and GitHub repo name, prefilled from the last launch or repo config when available, and lets brand-new local projects continue with those fields blank until a remote exists
 - Seeds a bootstrap shared task artifact so all active panes start from usable context instead of `TBD` placeholders
 - Seeds a lightweight `docs/knowledge.md` file so reusable user guidance and durable project facts have one searchable repo-local home
-- Prompts the roles to auto-push coherent repo-visible changes through one shared Git helper, one file at a time when work moves across files and publish mode is `auto`
+- Prompts the roles to auto-commit and auto-push each verified repo-visible file through one shared Git helper when publish mode is `auto`
 - Records the last launch state so `--resume-last` can reopen the same project and shared artifact, and `--status-last` can show what was happening without shifting blank saved-state fields
 - Can open a live watcher window with `--watch` or `--watch-command` so build and test output stays visible without manual reruns
 - Bootstraps missing project `AGENTS.md` and `docs/queue.md` files for both new and existing projects before the role prompts are sent
@@ -57,7 +57,7 @@ The workflow rules are:
 - Do not use `/fast` as part of launch or normal role behavior.
 - No implementation starts before initial success criteria exist.
 - No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
-- Once a task meets that completion bar and publish mode is `auto`, the workflow automatically publishes the intended repo-visible files with the launcher-provided shared helper, which commits first and then pushes. Private, personal, scratch, and other local-only files stay out of that default path. If the work moves from one file to another, each completed repo-visible file gets its own short commit message and push before the next file starts.
+- Once a file meets its completion bar and publish mode is `auto`, the workflow automatically publishes that repo-visible file with the launcher-provided shared helper, which commits first and then pushes. Private, personal, scratch, and other local-only files stay out of that default path. Default to one commit per finished file; group files only when they are inseparable, such as source plus generated output.
 - The helper prefers an existing upstream. When the selected project already has remote context to work from, it uses that remote and `git push -u` when it needs to establish the branch tracking setup.
 - If no remote is configured, the helper can use launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` context, then falls back to documented repo mapping when available.
 - It refuses to push from a detached `HEAD` and fails fast if the selected project has no safe remote context.
@@ -183,7 +183,7 @@ bash scripts/codex-commit.sh --each-path --no-push AGENTS.md tools.md
 Use this when:
 - you want one commit per meaningful subtask
 - you want one commit per finished file
-- you want one commit per logical change spanning a few files
+- you want the rare coupled-file commit when files are inseparable, such as source plus generated output
 
 If you want the finished chunk published to GitHub, drop `--no-push`.
 
@@ -226,10 +226,10 @@ This launcher repo does not push unless the user explicitly asks. When the user 
 
 Launched target projects use publish mode:
 
-- `--publish-mode auto` lets panes auto-commit and auto-push coherent repo-visible file changes while keeping private, personal, scratch, and other local-only files out of the default publish path.
+- `--publish-mode auto` lets panes auto-commit and auto-push each finished repo-visible file immediately after verification while keeping private, personal, scratch, and other local-only files out of the default publish path.
 - `--publish-mode off` keeps commits and pushes manual unless the user explicitly asks.
 
-When target-project work moves from one file to another in publish mode `auto`, publish each completed file separately with its own short commit message and push before starting the next file. Use `scripts/codex-commit.sh --each-path` for that file-by-file publish flow.
+Use `scripts/codex-commit.sh --each-path` when several independently finished files are ready. Group files in one commit only when a per-file commit would create a broken intermediate state, such as source plus generated output.
 
 Completed work should be published in the same turn with the shared helper in `scripts/codex-commit.sh`.
 The launcher collects the git remote path and GitHub repo name up front so every pane shares the same publish target.
