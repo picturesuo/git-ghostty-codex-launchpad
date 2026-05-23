@@ -27,8 +27,10 @@ read_when:
 - `user`: Prefer many small commits; when explicitly asked to publish launcher work, commit and push every completed file.
 - `user`: Add Codex/Claude/mixed agent profiles and configurable pane counts, with the fifth pane as another backend (`BACKEND-2`).
 - `user`: Use Peter Steinberger's `agent-scripts` repo as a reference, but adopt only the useful portable guardrails and avoid unnecessary prompt/context token load.
+- `user`: Rewrite local skills comprehensively for agentic engineering that creates startup-sellable products, drawing from current local skills plus Steinberger and Karpathy skill guidance.
 - `external`: Peter Steinberger's statusline notes use roughly 80% context used as the practical compaction point, leaving about 160k usable tokens out of a 200k window.
 - `external`: Steinberger's public `agent-scripts` repo centralizes terse shared `AGENTS.MD` rules, scoped commit helpers, docs listing, skill validation, optional hooks, and a large skill/tool catalog.
+- `external`: Karpathy-style skill guidance emphasizes explicit assumptions, simplicity before abstraction, surgical changes, and verifiable success criteria.
 
 ## Project Facts
 - Capture stable project facts, decisions, and summaries worth reusing across tasks.
@@ -57,6 +59,7 @@ read_when:
 - `repo`: The commit helper now uses launcher-provided `GIT_REMOTE_PATH` or `GITHUB_REPO_SLUG` if a target project has no configured remote.
 - `repo`: Shared Codex/Claude workflow guidance lives in `docs/agent-workflow.md`; repo-level `CLAUDE.md` points there instead of duplicating AGENTS policy.
 - `repo`: `scripts/validate-skills.sh` validates local `skills/*/SKILL.md` front matter without importing Steinberger-specific tools or personal path assumptions; `hooks/pre-commit` can run it when tracked hooks are enabled.
+- `repo`: Local skills now cover both launcher workflow hygiene and startup-product engineering loops: product slice planning, implementation, UI polish, release readiness, scoped commits, prompt sync, repo policy edits, and PR feedback.
 
 ## Retrieval Hints
 - Search this file, the shared context file, and nearby repo docs with `rg` before broader search.
