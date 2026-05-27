@@ -43,14 +43,12 @@ them.
   changes, amend, rebase, force-push, deletes, renames, or broad rewrites unless
   asked.
 - Never revert unknown changes; assume user/agent work and route around it.
-- Commit only verified, public-safe, repo-visible files. Keep secrets, private
-  data, scratch, partial, failing, and unverified work out.
+- Auto-commit and push each completed, verified, public-safe repo change. Keep
+  secrets, private data, scratch, partial, failing, and unverified work out.
 - Prefer focused conventional commits. Split unrelated finished changes; keep
   inseparable files together. Use repo commit helpers with explicit paths when
   present.
-- `ghostty-codex-launchpad`: push only when asked. Launched targets with publish
-  mode `auto`: commit and push each verified repo-visible change using focused
-  commits. Publish mode `off`: no push.
+- Respect explicit local-only or publish-off instructions.
 - Use `gh` for GitHub when available. Confirm repo/account if ambiguous. Use
   `--body-file` for public text. Never dump tokens/env/secrets; name env vars
   only.
