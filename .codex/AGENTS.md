@@ -1,206 +1,87 @@
-# Global Codex Instructions
+# Global AGENTS.md
 
-These instructions apply across Codex sessions and repos. Repo-local
-`AGENTS.md` files may add project-specific rules, paths, tools, and exceptions,
-but keep these global user preferences intact unless the user explicitly
-changes them.
+Global defaults for every Codex repo. Local `AGENTS.md` may add paths, tools,
+and exceptions; do not weaken these rules unless the user explicitly changes
+them.
 
-Style: concise, direct, small safe diffs. Prefer evidence over guesses.
+## Core Loop
 
-Source influences:
-- Karpathy-style `CLAUDE.md`: think before coding, simplicity first, surgical
-  changes, and goal-driven execution.
-- Steinberger-style agent scripts: terse durable rules, exact local commands,
-  safe git, scoped commits, tool catalogs, skill validation, and no secrets in
-  public surfaces.
+1. Read the smallest task-relevant set: local `AGENTS.md` first, then `README`,
+   docs/code, `tools.md`, and matching `skills/*/SKILL.md` only as needed. For
+   docs/policy edits run `scripts/docs-list.sh` if present. Before splitting
+   work, read `docs/multi-agent-workflow.md` if present.
+2. Clarify: if any task-relevant ambiguity remains, ask. Present options and
+   tradeoffs; never guess silently or hide confusion.
+3. Define done: for non-trivial work, write success criteria and the narrowest
+   proof that can fail.
+4. Edit: smallest complete change. Match local style. No speculative features,
+   abstractions, configurability, future-proofing, or impossible-case handling.
+   No adjacent cleanup/refactors unless required.
+5. Verify: run the narrow proof plus relevant lint/type/test/build checks when
+   feasible. For bugs, prefer a reproducer/regression test before the fix. Say
+   exactly what ran, passed, and was skipped.
+6. Finish: report changed files, proof, residual risk, and commit/push/PR or
+   local-only state.
 
-## Read First
+## Code Rules
 
-- Read relevant docs and nearby code before editing.
-- Read the repo-local `AGENTS.md` first when present.
-- Read `README.md`, `docs/agent-workflow.md`, `docs/queue.md`,
-  `docs/knowledge.md`, `tools.md`, and relevant `skills/*/SKILL.md` files when
-  they exist and fit the task.
-- Run `bash scripts/docs-list.sh` before docs-heavy, policy-heavy, or
-  workflow-heavy edits when that script exists.
-- Read `docs/multi-agent-workflow.md` before splitting work across agents,
-  panes, or persistent terminals when that doc exists.
-- Read `tools.md` before using repo-local helpers. Prefer exact commands from
-  repo docs over guessed commands.
-- Read matching skill files for repeated workflows. After editing skills, run
-  the repo skill validator when available.
+- Understand nearby code, patterns, docs, and tests before editing.
+- Every changed line must trace to the request, a verified bug, or cleanup from
+  this change.
+- Remove only orphans your change created. Mention unrelated dead code; do not
+  delete it.
+- Prefer root-cause fixes, readable code, existing dependencies, existing
+  runtime, and repo package manager. New deps need real need plus a health
+  check.
+- Use `rg`/`rg --files` when available. Search exact unfamiliar external errors
+  before guessing.
+- If the solution feels overbuilt, shrink it before handoff.
 
-## Think Before Coding
+## Git And Public Safety
 
-- Before making changes, understand the existing codebase, patterns, naming,
-  architecture, docs, and tests relevant to the request.
-- State assumptions when they affect the path.
-- If any task-relevant ambiguity remains, ask the user questions before acting.
-- If multiple interpretations are possible, present the options and tradeoffs
-  instead of choosing silently.
-- Do not hide confusion. Say what is uncertain, what evidence exists, and what
-  decision is needed.
-- If a simpler complete approach exists, say so. Push back on unnecessary
-  complexity, risky data exposure, brittle architecture, or extra scope.
-- Bias toward caution and correctness over speed, while using judgment for
-  truly trivial tasks.
+- Safe git by default: `status`, `diff`, `log`. No destructive ops, branch
+  changes, amend, rebase, force-push, deletes, renames, or broad rewrites unless
+  asked.
+- Never revert unknown changes; assume user/agent work and route around it.
+- Commit only verified, public-safe, repo-visible files. Keep secrets, private
+  data, scratch, partial, failing, and unverified work out.
+- Prefer focused conventional commits. Split unrelated finished changes; keep
+  inseparable files together. Use repo commit helpers with explicit paths when
+  present.
+- `ghostty-codex-launchpad`: push only when asked. Launched targets with publish
+  mode `auto`: commit and push each verified repo-visible change using focused
+  commits. Publish mode `off`: no push.
+- Use `gh` for GitHub when available. Confirm repo/account if ambiguous. Use
+  `--body-file` for public text. Never dump tokens/env/secrets; name env vars
+  only.
 
-## Simplicity First
+## Tools, Context, Agents
 
-- Write the minimum code that solves the problem.
-- Add no speculative features, abstractions, configurability, or error handling.
-- Do not future-proof for requirements the user did not name.
-- Prefer direct, readable code over cleverness.
-- Do not add a new abstraction unless it removes real duplication or matches an
-  existing local pattern.
-- If a solution feels overbuilt, make it smaller before handoff.
-- If code can be much shorter while staying clear, rewrite it shorter.
+- Prefer repo scripts and package-manager commands; verify non-obvious tools
+  exist. Keep logs focused.
+- If present, run `scripts/test-launcher.sh` for launcher behavior,
+  `scripts/validate-skills.sh` after skill edits, and `scripts/check-shell.sh`
+  when `shellcheck` is installed.
+- Use `docs/queue.md`, `docs/knowledge.md`, shared context, and nearby docs
+  before broad search.
+- Around 80% context, save status, decisions, files, proof, and next action to
+  shared context if one exists. Do not spend the final 20% on broad edits.
+- Split agents only when materially useful. Give goal, write scope, expected
+  output. Require files, proof, risks. Resolve conflicting assumptions before
+  merging. Use fresh review for high-risk, security, or completion claims.
 
-## Surgical Changes
+## UI Isolation
 
-- Touch only files required by the current request.
-- Follow existing patterns; keep diffs minimal and reviewable.
-- Match local style, names, formatting, and ownership boundaries.
-- Do not refactor adjacent code unless the change requires it.
-- Do not clean up unrelated code, comments, formatting, docs, or config. Mention
-  unrelated problems instead of fixing them.
-- Every changed line should trace to the request, a verified bug, or cleanup
-  caused by your own change.
-- Remove orphan imports, variables, functions, files, or comments introduced by
-  your own change.
-- Never revert unrecognized changes; assume another user or agent made them and
-  work around them.
-- Avoid repo-wide search-and-replace scripts unless asked.
-- If blocked, state what is missing and the next concrete step.
-
-## Goal-Driven Execution
-
-- Convert non-trivial requests into explicit success criteria before editing.
-- If the success criteria are weak, vague, or unverifiable, clarify before
-  making changes.
-- For new behavior, include a validation path for the intended behavior and the
-  important invalid or edge case when practical.
-- For bugs, prefer a reproducer or failing regression test before the fix.
-- For refactors, verify behavior before and after when feasible.
-- For multi-step work, maintain a visible checklist and verify each completed
-  step before marking it done.
-- Do not call the work complete until the stated success criteria pass, critical
-  invariants are preserved, and no unresolved high-severity risk remains.
-
-## Verification
-
-- Before handoff, run relevant `lint`, `typecheck`, `tests`, and `build` checks
-  when feasible.
-- Run the narrowest useful proof that can fail for the change.
-- Use `bash scripts/test-launcher.sh` for launcher state, panes, agent
-  commands, remote fallback, or prompt rendering when that script exists.
-- Run `bash scripts/validate-skills.sh` after editing skills when that script
-  exists.
-- Run `bash scripts/check-shell.sh` when that script exists and `shellcheck` is
-  installed.
-- Say exactly what was run, what passed, and what was not run and why.
-
-## Tools And Dependencies
-
-- Prefer repo scripts and package-manager commands before ad hoc shell.
-- Do not switch package managers, runtimes, formatters, linters, or major
-  tooling unless explicitly asked.
-- Verify tools exist before using them when the command is not obvious.
-- Use `rg`/`rg --files` for search when available.
-- Add new dependencies only when necessary. Prefer standard library or existing
-  project dependencies.
-- After adding a dependency, run the smallest health check that proves it
-  installs, imports, builds, or executes as intended.
-- Keep command output and logs focused. Do not paste secrets or large noisy logs
-  into docs, issues, PRs, or commits.
-
-## Git And Publish
-
-- Safe git: `git status`, `git diff`, `git log`.
-- Check `git status` and `git diff` before edits and before handoff.
-- No destructive git, branch changes, deletes, renames, package/runtime/tooling
-  swaps, or broad rewrites unless explicitly asked.
-- Preserve unrelated user and other-agent changes.
-- Commit only private-safe, verified, repo-visible files.
-- Keep private, scratch, partial, failing, and unverified work out of commits.
-- Prefer focused conventional commits when practical.
-- Prefer one commit per finished file by default; group files only when they
-  are inseparable, such as source plus generated output.
-- Do not amend commits, rebase, force-push, or create/switch branches unless the
-  user asks.
-- For the `ghostty-codex-launchpad` launcher repo itself, do not push unless the
-  user explicitly asks.
-- For launched target projects, publish mode `auto` means agents auto-commit
-  and auto-push each finished repo-visible non-private file immediately after
-  verification.
-- Publish mode `off` means local/manual only unless the user asks.
-- Use `bash scripts/codex-commit.sh` with explicit paths when that helper is
-  available. Use `--no-push` for local-only checkpoints and `--each-path` for
-  per-file commits.
-
-## GitHub And Public Text
-
-- Use `gh` for issues, PRs, CI runs, releases, comments, and repo identity when
-  available.
-- Confirm the active GitHub repo/account before commenting, opening PRs,
-  pushing, or releasing when ambiguity is possible.
-- Use `--body-file` for public issue, PR, release, or comment bodies when text
-  contains shell, environment variables, quotes, or user-provided content.
-- Never include tokens, passwords, API keys, private customer data, or raw
-  secret-bearing command output in docs, config, commits, issues, PRs, or logs.
-- When environment variables matter, name the variable but do not print its
-  value.
-
-## Context
-
-- Treat about 80% context used as the reset point.
-- Before compacting or starting fresh, write status, decisions, changed files,
-  verification, and next action to the shared context file when one exists.
-- Use `docs/queue.md`, `docs/knowledge.md`, the shared context, and nearby repo
-  docs before broader search.
-- Do not spend the final 20% of context on broad planning or multi-file edits.
-
-## Multi-Agent Work
-
-- Split work only when multiple agents materially help.
-- Keep ownership narrow when multiple panes or agents are active.
-- Use one agent per task or concern, with a clear goal, write scope, and
-  expected output.
-- Ask agents to report changed files, verification run, and open risks.
-- If two agents discover conflicting assumptions, stop and resolve the conflict
-  before merging their changes.
-- Use a fresh review context for important diffs, security-sensitive work, and
-  high-risk completion claims.
-
-## Non-Interrupting UI Work
-
-- Do not take over the user's active screen for click-through, browser testing,
-  UI verification, screenshots, or app inspection unless the user explicitly
-  approves foreground control for the current task.
-- Do not open tabs or windows in the user's active browser for automated
-  click-through work.
-- Do not switch macOS Spaces, move the visible cursor, focus apps, click
-  menu-bar items, click Dock items, or use System Events/`osascript` to operate
-  visible UI unless foreground control was explicitly approved for the current
-  task.
-- Prefer isolated automation surfaces: Codex in-app Browser, cmux browser or
-  workspace surfaces, offscreen renderers, logs, diagnostics, accessibility
-  metadata, screenshots from isolated browser surfaces, and app-generated
-  artifacts.
-- If a task truly requires the user's logged-in browser session, a native app,
-  a system dialog, or other foreground-only UI, stop and ask before proceeding.
-
-## Click-Through Default
-
-For `/click`, "click through", manual UI testing, or similar requests, use the
-`click-through` skill and keep the run isolated from the user's active desktop.
-Completion requires UI evidence from the isolated surface or a clear statement
-that non-interrupting verification was not possible.
-
-## Finish Packet
-
-End substantial work with:
-- changed files;
-- verification run and result;
-- residual risk or unverified area;
-- commit, push, PR, or local-only state.
+- Never take the user's active screen for click-through, browser testing,
+  screenshots, or app inspection without explicit current-task foreground
+  approval.
+- Do not open tabs/windows in the active browser, switch Spaces, move the
+  visible cursor, focus apps, click menu/Dock items, or use
+  `osascript`/System Events on visible UI without approval.
+- Prefer Codex in-app Browser, cmux browser/workspace, offscreen renderers,
+  logs, diagnostics, accessibility metadata, isolated screenshots, and
+  app-generated artifacts.
+- If only foreground UI works, such as a logged-in browser, native app, or
+  system dialog, stop and ask.
+- `/click` uses the `click-through` skill in an isolated surface. Done requires
+  isolated UI evidence or a clear reason it was impossible.
