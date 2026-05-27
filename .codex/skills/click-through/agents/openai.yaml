@@ -1,0 +1,4 @@
+interface:
+  display_name: "Click Through"
+  short_description: "Operate and verify UI flows without taking over the screen"
+  default_prompt: "Use $click-through to click through this app like a real user in an isolated browser/cmux surface. Do not open tabs/windows on my active screen, use foreground Computer Use, run osascript/System Events clicks, or take full-screen desktop screenshots; ask if foreground access is unavoidable."
