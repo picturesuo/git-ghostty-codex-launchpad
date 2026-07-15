@@ -2,8 +2,8 @@
 
 - Project name: EC50 St. Cloud Part 2
 - Project directory: /Users/bensuo/Desktop/new-project
-- Target file: BS_Ec50_Part2_StCloud_Data_Analysis.do
-- Active task artifact ID: BS_Ec50_Part2_StCloud_Data_Analysis.do
+- Target file: BS_Ec50_Part2_StCloud_Data_Analysis.Rmd
+- Active task artifact ID: BS_Ec50_Part2_StCloud_Data_Analysis.Rmd
 - Session ID: a5196b41
 - Session source of truth: this file
 
@@ -13,7 +13,7 @@ Wait for the user to give the next instruction before making changes.
 ## TASK ARTIFACT
 
 1. Goal
-- Define a reproducible, evidence-first EC 50 Part 2 data analysis workflow for St. Cloud, Minnesota in `BS_Ec50_Part2_StCloud_Data_Analysis.do`, with hypothesis selection driven by the actual Opportunity Atlas data before any memo drafting.
+- Define a reproducible, evidence-first EC 50 Part 2 data analysis workflow for St. Cloud, Minnesota in `BS_Ec50_Part2_StCloud_Data_Analysis.Rmd`, with hypothesis selection driven by the actual Opportunity Atlas data before any memo drafting.
 
 2. Scope
 - In scope: one well-annotated analysis script in an EC 50 lab style; atlas-based exploration first; transparent St. Cloud tract identification; a small set of descriptive tables/figures; evidence-based hypothesis selection; one lockbox replication; and a short findings summary for later memo use.
@@ -25,7 +25,7 @@ Wait for the user to give the next instruction before making changes.
 - Time or complexity constraints: prioritize a clean, interpretable workflow over exhaustiveness, with no more than 2-4 figures and 2-3 tables intended for later memo use.
 
 4. Success Criteria
-- SC1: `BS_Ec50_Part2_StCloud_Data_Analysis.do` is organized into the eight requested sections and uses clear EC 50-style headers plus short explanatory comments before each block.
+- SC1: `BS_Ec50_Part2_StCloud_Data_Analysis.Rmd` is organized into the eight requested sections and uses clear EC 50-style headers plus short explanatory comments before each block.
 - SC2: The script loads `atlas.dta`, inspects the available variables, filters Minnesota correctly, and creates a transparent St. Cloud geography workflow that distinguishes the broader Minnesota `St. Cloud` CZ from the narrower tract subset used for the main analysis.
 - SC3: The script outputs a tract inclusion table with county and tract names, documents any ambiguous inclusion choices, and ranks St. Cloud tracts by pooled upward mobility.
 - SC4: The script evaluates several plausible mechanisms using only available atlas covariates, reports simple descriptive comparisons and correlations, and handles thin race-specific cells carefully.
@@ -61,7 +61,7 @@ Wait for the user to give the next instruction before making changes.
 
 
 ### Reusable Knowledge
-- User-provided knowledge: none captured yet
+- User-provided knowledge: do not commit or push any of this project work to GitHub unless the user explicitly reverses that instruction.
 - Durable project facts: none captured yet
 - Retrieval path: search `docs/knowledge.md`, this shared context file, and nearby repo docs with `rg` before broader search.
 - Ingestible sources in v1: direct user instructions, pasted facts, stable repo docs, and short summaries of resolved task decisions.
@@ -72,6 +72,6 @@ Wait for the user to give the next instruction before making changes.
 - Learning loop: `CRITIC` should turn repeated or high-severity weak points into targeted coaching guidance that later roles can reuse.
 
 9. Status
-- State: ready for implementation
-- Outstanding issues: Q1 and Q2 remain open, but they do not block drafting a conservative St. Cloud analysis workflow if the implementer makes the geography rule explicit and keeps the tool choice simple.
-- Next action: implement `BS_Ec50_Part2_StCloud_Data_Analysis.do` to satisfy SC1-SC6, starting with data loading, Minnesota filtering, and the tract inclusion table.
+- State: implemented and ready for user review
+- Outstanding issues: Q1 and Q2 were handled conservatively in the analysis by using the broader Minnesota St. Cloud CZ for context and a narrower core St. Cloud sample for the main results. Do not commit or push project work unless the user later asks for that explicitly.
+- Next action: review `BS_Ec50_Part2_StCloud_Data_Analysis.Rmd`, the supporting `BS_Ec50_Part2_StCloud_Data_Analysis.R`, and the generated `outputs/` files, then decide whether to refine the geography rule, tighten the figures/tables, or move on to memo drafting in a later turn.

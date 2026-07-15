@@ -11,75 +11,67 @@ Wait for the user to give the next instruction before making changes.
 ## Workflow Contract
 
 - Use the shared context file as the durable TASK ARTIFACT and source of truth.
-- On the first pass in a newly opened tab, the artifact may still be empty or only contain placeholders. Do not treat that as a failure.
-- If you are the Builder and the artifact is still empty, initialize it before implementation.
-- If you are not the Builder and the artifact is still empty on the first pass, acknowledge that Builder must initialize it and do not block on the missing artifact yet.
-- Do not use `/fast` or enable fast mode as part of this workflow.
+- Read `/Users/bensuo/Desktop/ghostty-codex-launcher/AGENTS.md` first if it exists and follow repo policy there.
 - No implementation starts before initial success criteria exist.
-- No task is complete until all success criteria pass, critical invariants are preserved, and no unresolved high-severity risk remains.
 - Reference artifact IDs exactly: `SC1`, `INV1`, `FM1`, `R1`, `Q1`, `F1`.
 - Keep scope tight and avoid task expansion unless a true blocker is identified.
 - If assumptions are made, state them explicitly.
-- Distinguish clearly between goal, implementation, verification, and diagnosis.
-- Prefer structured, low-verbosity output that later roles can reuse directly.
 
 ## TASK ARTIFACT
 
 1. Goal
-- Inspect the `ghostty-codex-launcher` project for any existing AGENTS-equivalent repo-operating document, then create and commit a practical root-level `AGENTS.md` plus minimal supporting workflow files if no true equivalent exists.
+- Reuse the existing `/Users/bensuo/ghostty-codex-launchpad` repo as the canonical project instead of continuing to treat `Desktop/ghostty-codex-launcher` as a separate repo.
 
 2. Scope
-- In scope: inspect the project directory for existing artifact or workflow documents, evaluate whether any existing file is truly equivalent to `AGENTS.md`, create or update `/Users/bensuo/Desktop/ghostty-codex-launcher/AGENTS.md`, create `/Users/bensuo/Desktop/ghostty-codex-launcher/docs/queue.md` and `/Users/bensuo/Desktop/ghostty-codex-launcher/scripts/codex-commit.sh` if missing, run lightweight validation, and commit the intended repository files.
-- Out of scope: editing product code beyond the workflow files above, broad documentation rewrites outside the new operating docs, altering unrelated files in the parent git repository, or cleaning unrelated pre-existing worktree noise.
+- In scope: inspect `/Users/bensuo/ghostty-codex-launchpad`, confirm it already contains the real launcher code and shared-artifact workflow logic, add repo-operating files there, and update the duplicate workspace `README.md` to redirect future work to the canonical repo.
+- Out of scope: deleting repos, changing GitHub visibility, rewriting launcher runtime behavior, or rewiring the parent `/Users/bensuo` git repo remote.
 
 3. Constraints
-- Technical constraints: use this shared context file as the source of truth, keep changes localized to the project directory, use `apply_patch` for file edits, prefer CLI-first inspection and validation, and preserve any useful instructions already present in the external shared context file.
-- Product constraints: the resulting `AGENTS.md` must directly instruct Codex on navigation, commands, validation, coding constraints, workflow expectations, commit behavior, working memory, and the four-pane role model.
-- Time or complexity constraints: keep the solution minimal and immediately usable; if the git root being `/Users/bensuo` prevents a fully clean worktree due to unrelated existing files, do not modify unrelated files and report the limitation explicitly.
+- Technical constraints: keep changes limited to `/Users/bensuo/ghostty-codex-launchpad`, `/Users/bensuo/Desktop/ghostty-codex-launcher/README.md`, and this shared artifact; do not change the parent repo remote from a nested directory.
+- Product constraints: make the canonical repo obvious and attach future workflow docs to the repo that already contains the real launcher code.
+- Time or complexity constraints: prefer the smallest safe fix that prevents repeated use of the duplicate workspace.
 
 4. Success Criteria
-- SC1: The repository is inspected for existing AGENTS-equivalent documents, and the final result explicitly states what was found and whether it is truly equivalent to `AGENTS.md`.
-- SC2: A root-level `AGENTS.md` exists in `/Users/bensuo/Desktop/ghostty-codex-launcher` and includes the requested operating principles, four-pane role definitions (`builder`, `critic`, `debugger`, `queue-manager`), commit expectations, validation guidance, queue usage, and maintenance rules.
-- SC3: `/Users/bensuo/Desktop/ghostty-codex-launcher/docs/queue.md` exists with a practical task queue structure that the roles in `AGENTS.md` can use immediately.
-- SC4: `/Users/bensuo/Desktop/ghostty-codex-launcher/scripts/codex-commit.sh` exists, is executable, stages intended changes, creates concise human-sounding commit messages when needed, and can be invoked directly from `AGENTS.md`.
-- SC5: Lightweight validation is run and reported, including at minimum a shell syntax check for the commit helper and a direct inspection of created files for completeness.
-- SC6: The intended project files are committed with a concise accurate commit message, and there is no unresolved high-severity issue in the created workflow files.
+- SC1: `/Users/bensuo/ghostty-codex-launchpad` is inspected and confirmed to already contain the launcher implementation and shared-artifact workflow behavior, so repo reuse is justified.
+- SC2: `/Users/bensuo/ghostty-codex-launchpad` gains practical repo-operating files: `AGENTS.md`, `docs/queue.md`, and `scripts/codex-commit.sh`.
+- SC3: The commit helper works safely when the project root is also the git root, so the canonical repo does not inherit nested-repo assumptions.
+- SC4: `/Users/bensuo/Desktop/ghostty-codex-launcher/README.md` clearly redirects future work to `/Users/bensuo/ghostty-codex-launchpad`.
+- SC5: Lightweight validation is run and reported for the canonical repo files and the redirect note.
 
 5. Invariants
-- INV1: Preserve any genuinely useful existing instructions by incorporating or referencing them rather than replacing them blindly.
-- INV2: Do not touch unrelated files outside `/Users/bensuo/Desktop/ghostty-codex-launcher` except for this shared artifact and git metadata needed for the requested commit.
+- INV1: Preserve the existing launcher code and shared-artifact workflow behavior already present in `/Users/bensuo/ghostty-codex-launchpad`.
+- INV2: Do not invent runtime, setup, or validation commands that do not exist in the canonical repo.
 - INV3: Be explicit about what was verified versus not verified.
 
 6. Failure Modes
-- FM1: A partial artifact, such as the external shared context file, is incorrectly treated as a full `AGENTS.md` equivalent even though it lacks repo-operating instructions.
-- FM2: The new `AGENTS.md` omits one or more requested operating principles or role definitions, making it incomplete for the user's workflow.
-- FM3: The commit helper stages too broadly or generates unusably generic commit messages.
-- FM4: The overall git worktree cannot be made fully clean because the parent git repository already contains unrelated untracked files, and that limitation is not surfaced clearly.
+- FM1: The duplicate `ghostty-codex-launcher` workspace continues to be treated like a separate project even though the real launcher already lives in `/Users/bensuo/ghostty-codex-launchpad`.
+- FM2: Repo-operating files are added to the canonical repo but still assume a nested project root, causing incorrect helper behavior.
+- FM3: The duplicate workspace is left without a clear redirect and future work keeps landing in the wrong folder.
 
 7. Risks / Open Questions
-- R1: The project directory is nested inside a larger git repository rooted at `/Users/bensuo`, so repository cleanliness may be affected by unrelated existing files.
-- R2: The project currently contains almost no files, so the new `AGENTS.md` must avoid pretending there are existing project-specific test or build commands when none are present.
-- Q1: Assumption confirmed for this task: the "root-level" `AGENTS.md` lives at `/Users/bensuo/Desktop/ghostty-codex-launcher/AGENTS.md`, treating the project directory as the working repo root for Codex instructions.
-- Q2: Assumption confirmed for this task: the new project files are committed within the parent git repository while unrelated pre-existing untracked files outside the project remain untouched.
+- R1: `Desktop/ghostty-codex-launcher` is nested inside a larger git repo rooted at `/Users/bensuo`, so remote changes from that folder would be risky and misleading.
+- R2: The canonical GitHub repo state was inferred from the local checkout and remote config, not revalidated through the GitHub API in this turn.
+- Q1: Assumption: `/Users/bensuo/ghostty-codex-launchpad` is the existing repo the user referred to as “Get Go See Codex Launch Pad.”
+- Q2: Assumption: the safest fix in this turn is to redirect to and reuse the canonical repo rather than delete or rename any repo.
 
 8. Test Mapping
-- SC1 -> Search the project directory for repo-operating files and review the external shared context file to assess equivalence.
-- SC2 -> Inspect `AGENTS.md` and verify it contains the requested operating principles, role definitions, workflow expectations, commit behavior, and maintenance guidance.
-- SC3 -> Inspect `docs/queue.md` and verify it contains usable queue sections for immediate execution.
-- SC4 -> Run `bash -n scripts/codex-commit.sh`, inspect the script contents, and verify the file mode is executable.
-- SC5 -> Review the created files directly and report the validation commands that were run.
-- SC6 -> Stage and commit only the intended project files, then inspect the relevant git status for those files.
+- SC1 -> Inspect `/Users/bensuo/ghostty-codex-launchpad` files and launcher script contents for existing launcher and artifact-driven workflow behavior.
+- SC2 -> Inspect the new `AGENTS.md`, `docs/queue.md`, and `scripts/codex-commit.sh` in `/Users/bensuo/ghostty-codex-launchpad`.
+- SC3 -> Run `bash -n /Users/bensuo/ghostty-codex-launchpad/scripts/codex-commit.sh` and inspect the root-handling logic.
+- SC4 -> Inspect `/Users/bensuo/Desktop/ghostty-codex-launcher/README.md` for the canonical-repo redirect.
+- SC5 -> Inspect scoped `git status --short -- .` in `/Users/bensuo/ghostty-codex-launchpad` after the file additions.
 
 9. Status
-- State: complete with repo-level cleanliness limitation noted
-- Outstanding issues: the parent git repository rooted at `/Users/bensuo` already contains unrelated untracked files, so the overall worktree cannot be made globally clean without touching unrelated user files.
-- Next action: none for this task; future work should start from `docs/queue.md` and the new `AGENTS.md`.
+- State: local fix applied and validated; commit pending user approval
+- Outstanding issues:
+  - F2 Failure mapping: `SC1`, `SC2`, `SC4`, `INV1`, and `FM1` failed because a duplicate `ghostty-codex-launcher` workspace was being treated like a separate repo even though the real launcher code already exists in `/Users/bensuo/ghostty-codex-launchpad`.
+  - F2 Root cause: repository selection drifted away from the canonical repo, and the duplicate workspace lives inside a different parent git repo, making remote reuse from that folder unsafe.
+  - F2 Minimal fix plan: add the missing repo-operating files to `/Users/bensuo/ghostty-codex-launchpad`, make the commit helper safe at a repo root, and redirect the duplicate workspace through `README.md`.
+  - F2 Re-test targets: `SC1`, `SC2`, `SC3`, `SC4`, `SC5`, `FM1`, `FM2`, `FM3` validated locally.
+- Next action: commit the canonical repo changes in `/Users/bensuo/ghostty-codex-launchpad` if the user wants the fix recorded in git now.
 
 Use this end-of-turn format every time:
 1. Summary: one or two sentences describing what changed.
 2. Artifact updates: list only the artifact sections you created, changed, verified, or diagnosed this turn, using the artifact IDs directly.
 3. Changed files: list only the files you actually touched.
 4. Why: one short sentence explaining why these changes or artifact updates were made.
-5. Commit message: write the exact commit message you want to use, in a single line, in practical plain English. If no code changed, say `No code changes in this turn`.
-6. Commit request: explicitly ask whether to commit now. If there are no code changes, say there is nothing to commit yet.
-7. Status: say whether the task is waiting for Critic review, Tester verification, Debugger action, user approval, or is complete because all criteria pass and no unresolved high-severity issue remains.
