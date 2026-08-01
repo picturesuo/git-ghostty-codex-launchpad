@@ -4,6 +4,16 @@ Global defaults for every Codex repo. Local `AGENTS.md` may add paths, tools,
 and exceptions; do not weaken these rules unless the user explicitly changes
 them.
 
+## Durable Memory (all provider lanes)
+
+Read `/Users/bensuo/.codex/memories/memory_summary.md` at session start; it is
+the compacted durable memory of the user's profile, preferences, and operating
+rules and applies identically on every provider lane (Azure, OpenAI API, or
+ChatGPT auth — memory is local and does not depend on the signed-in account).
+For any Penny work, also read `/Users/bensuo/.codex/penny-context.md` — the
+compacted import of the Penny vision and relevant Codex history — and treat
+`/Users/bensuo/Desktop/penny/VISION.md` as the authoritative full source.
+
 ## Core Loop
 
 1. Read the smallest task-relevant set: local `AGENTS.md` first, then `README`,
@@ -73,12 +83,31 @@ them.
 
 - Prefer repo scripts and package-manager commands; verify non-obvious tools
   exist. Keep logs focused.
+- For non-trivial coding, product, architecture, or Penny work in the Codex app,
+  use Codex as the main surface but consult the Fable sidecar before broad
+  implementation or judgment calls. The default sidecar command is
+  `fable-orchestrator` (Company 1 account lane). Automatically fail over through
+  `fable-orchestrator` (Company 1), `fable-orchestrator --leg school`,
+  `fable-orchestrator-company-2`, and `fable-orchestrator-bedrock` on explicit
+  capacity or usage exhaustion, authentication/profile unavailability,
+  transport failure, or a bounded no-response/hung invocation. If the user
+  explicitly selected a non-Company 1 lane, try it first, then resume the
+  Company 1-first order while skipping lanes already attempted for that call.
+  Report each lane transition; do not rotate merely because a reviewer found
+  issues or a repo/runtime check failed. Use Codex/GPT-5.6 Luna with max
+  reasoning as the default implementation workhorse (`codex-workhorse`) on the
+  ChatGPT-authenticated OpenAI provider. Keep GPT-5.6 Sol available as an
+  explicit escalation for ambiguous, open-ended, or high-stakes implementation
+  (`codex-workhorse --sol` or the model picker); do not rotate automatically
+  merely because a repo/runtime check failed. Then use `claude-autoreview`
+  (Company 1) or an explicit Claude review lane for post-change review and
+  next-goal judgment.
 - In zsh, do not use `status` as a variable name, and use arrays for multi-item
   loops; scalar strings do not word-split like bash.
-- After non-trivial code edits, use the `$autoreview` skill with the default
-  Codex-only reviewer as the closeout review gate before final/commit/ship when
-  available. Do not use review panels or optional non-Codex engines unless the
-  user explicitly asks. Treat findings as advisory, verify them in the real code
+- After non-trivial code edits, use the `$autoreview` skill with Claude Fable at
+  low effort as the default closeout review gate before final/commit/ship when
+  available. Do not use review panels or additional engines unless the user
+  explicitly asks. Treat findings as advisory, verify them in the real code
   path, fix only in-scope blockers, rerun focused proof after review-triggered
   fixes, and rerun `$autoreview` until no accepted/actionable findings remain or
   scope must be escalated.
