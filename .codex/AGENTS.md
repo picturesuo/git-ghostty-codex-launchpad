@@ -84,8 +84,10 @@ compacted import of the Penny vision and relevant Codex history — and treat
 - Prefer repo scripts and package-manager commands; verify non-obvious tools
   exist. Keep logs focused.
 - For non-trivial coding, product, architecture, or Penny work in the Codex app,
-  use Codex as the main surface but consult the Fable sidecar before broad
-  implementation or judgment calls. The default sidecar command is
+  use Codex as the main surface only after the Fable sidecar returns a successful,
+  task-relevant response. A successful Fable response is a hard prerequisite for
+  implementation and judgment calls; never continue the task with Codex alone.
+  The default sidecar command is
   `fable-orchestrator` (Company 1 account lane). Automatically fail over through
   `fable-orchestrator` (Company 1), `fable-orchestrator --leg school`,
   `fable-orchestrator-company-2`, and `fable-orchestrator-bedrock` on explicit
@@ -93,8 +95,11 @@ compacted import of the Penny vision and relevant Codex history — and treat
   transport failure, or a bounded no-response/hung invocation. If the user
   explicitly selected a non-Company 1 lane, try it first, then resume the
   Company 1-first order while skipping lanes already attempted for that call.
-  Report each lane transition; do not rotate merely because a reviewer found
-  issues or a repo/runtime check failed. Use Codex/GPT-5.6 Luna with max
+  Report each lane transition. If every Fable lane fails, is unavailable, or
+  reaches the bounded no-response limit, stop before implementation, tell the
+  user that Fable is not working, and report each lane's blocker. Do not rotate
+  merely because a reviewer found issues or a repo/runtime check failed. Use
+  Codex/GPT-5.6 Luna with max
   reasoning as the default implementation workhorse (`codex-workhorse`) on the
   ChatGPT-authenticated OpenAI provider. Keep GPT-5.6 Sol available as an
   explicit escalation for ambiguous, open-ended, or high-stakes implementation
