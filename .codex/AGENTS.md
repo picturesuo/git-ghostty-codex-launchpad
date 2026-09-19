@@ -56,6 +56,14 @@ compacted import of the Penny vision and relevant Codex history — and treat
 - Avoid repo-wide scripted search/replace. Keep edits small, reviewed, and
   path-scoped.
 - If the solution feels overbuilt, shrink it before handoff.
+- When making technical decisions, do not give much weight to development cost.
+  Prefer quality, simplicity, robustness, and long-term maintainability.
+- For one-off or infrequent operational work, take the simplest direct
+  end-to-end path. No wrappers, control planes, or custom verifiers unless the
+  direct path exposes a concrete blocker or a repeated need.
+- For bug fixes, first reproduce the bug end to end, as close as possible to how
+  a real user hits it.
+- Never hand-edit CHANGELOG.md or any file marked as auto-generated.
 
 ## Git And Public Safety
 
