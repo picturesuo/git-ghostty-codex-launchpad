@@ -1,0 +1,163 @@
+{
+  "models": [
+    {
+      "slug": "gpt-6-astra",
+      "display_name": "GPT-6 Astra (Azure private)",
+      "description": "Premium intelligence: ambiguous or creative work, escalations. Deployment gpt-6-astra.",
+      "base_instructions": "",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Not allowed to think much"
+        },
+        {
+          "effort": "medium",
+          "description": "Default: task already well defined"
+        },
+        {
+          "effort": "high",
+          "description": "Allowed to think more when needed"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Planning and investigation: task not yet well defined"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 1,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "low",
+      "context_window": 272000,
+      "max_context_window": 272000,
+      "effective_context_window_percent": 95,
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": false,
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "tool_mode": "code_mode",
+      "use_responses_lite": false,
+      "web_search_tool_type": "text_and_image",
+      "apply_patch_tool_type": "freeform",
+      "experimental_supported_tools": [],
+      "include_skills_usage_instructions": false,
+      "multi_agent_version": "v2",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      }
+    },
+    {
+      "slug": "gpt-6-sol",
+      "display_name": "GPT-6 Sol (Azure private)",
+      "description": "Implementer and adversarial reviewer; cheaper first mate. Deployment gpt-6-sol.",
+      "base_instructions": "",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Not allowed to think much"
+        },
+        {
+          "effort": "medium",
+          "description": "Default: task already well defined"
+        },
+        {
+          "effort": "high",
+          "description": "Allowed to think more when needed"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Planning and investigation: task not yet well defined"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 2,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "low",
+      "context_window": 272000,
+      "max_context_window": 272000,
+      "effective_context_window_percent": 95,
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": false,
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "tool_mode": "code_mode",
+      "use_responses_lite": false,
+      "web_search_tool_type": "text_and_image",
+      "apply_patch_tool_type": "freeform",
+      "experimental_supported_tools": [],
+      "include_skills_usage_instructions": false,
+      "multi_agent_version": "v2",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      }
+    },
+    {
+      "slug": "gpt-6-luna",
+      "display_name": "GPT-6 Luna (Azure private)",
+      "description": "Trivial fixer, slow background workhorse; never an orchestrator. Deployment gpt-6-luna.",
+      "base_instructions": "",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Not allowed to think much"
+        },
+        {
+          "effort": "medium",
+          "description": "Default: task already well defined"
+        },
+        {
+          "effort": "high",
+          "description": "Allowed to think more when needed"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Planning and investigation: task not yet well defined"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 3,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "low",
+      "context_window": 272000,
+      "max_context_window": 272000,
+      "effective_context_window_percent": 95,
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": false,
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "tool_mode": "code_mode",
+      "use_responses_lite": false,
+      "web_search_tool_type": "text_and_image",
+      "apply_patch_tool_type": "freeform",
+      "experimental_supported_tools": [],
+      "include_skills_usage_instructions": false,
+      "multi_agent_version": "v2",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      }
+    }
+  ]
+}

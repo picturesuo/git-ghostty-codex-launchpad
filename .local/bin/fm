@@ -1,0 +1,128 @@
+#!/bin/sh
+# firstmate: Astra/Sol/Luna (Azure privatesuo, via Codex) as first mate; Claude crew
+# on the lane's subscription (yc: ~/.claude, school: ~/.claude-school).
+# firstmate passes this shell's CLAUDE_CONFIG_DIR through to every claude crewmate it spawns.
+# Called by the fm-yc / fm-school wrappers. See `fm --help`.
+
+fm_usage() {
+  cat <<'USAGE'
+usage: fm [--lane yc|school] [--astra|--sol|--luna|--model M] [--plan|--effort E] [--print] [codex args...]
+  lanes:   yc (default, ~/.claude) | school (~/.claude-school)
+  models:  gpt-6-astra (default) | gpt-6-sol | gpt-6-luna   (all on Azure azure_astra)
+  effort:  medium (default) — effort is a ceiling, not a floor: it caps how much the
+           model MAY think, it never forces thinking. Use medium for well-defined work,
+           --plan (xhigh) for planning/investigation where the task is not yet well defined.
+env:     FM_MODEL, FM_EFFORT set defaults; flags win.
+USAGE
+}
+
+fm_need_arg() {
+  [ "$2" -ge 2 ] || { echo "fm: $1 requires an argument" >&2; exit 2; }
+}
+
+lane=yc
+model=${FM_MODEL:-gpt-6-astra}
+effort=${FM_EFFORT:-medium}
+print=0
+
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --lane) fm_need_arg "$1" "$#"; lane=$2; shift 2 ;;
+    --model|-m) fm_need_arg "$1" "$#"; model=$2; shift 2 ;;
+    --astra) model=gpt-6-astra; shift ;;
+    --sol) model=gpt-6-sol; shift ;;
+    --luna) model=gpt-6-luna; shift ;;
+    --effort|-e) fm_need_arg "$1" "$#"; effort=$2; shift 2 ;;
+    --plan) effort=xhigh; shift ;;
+    --print) print=1; shift ;;
+    -h|--help) fm_usage; exit 0 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+
+case $model in
+  gpt-6-astra|gpt-6-sol|gpt-6-luna) ;;
+  *) echo "fm: unknown model '$model' (expected gpt-6-astra, gpt-6-sol, or gpt-6-luna)" >&2; exit 2 ;;
+esac
+case $effort in
+  low|medium|high|xhigh) ;;
+  max) echo "fm: max forces thinking on every turn; prefer xhigh (thinking allowed, not forced)" >&2 ;;
+  *) echo "fm: unknown effort '$effort' (expected low, medium, high, xhigh, or max)" >&2; exit 2 ;;
+esac
+case $model in
+  gpt-6-luna) echo "fm: warning: Luna is a slow background workhorse; as an orchestrator it cannot keep up with crew events (Kun, 2026-09-23). Prefer --astra or --sol for the first mate." >&2 ;;
+esac
+case $lane in
+  yc) unset CLAUDE_CONFIG_DIR ;;
+  school) export CLAUDE_CONFIG_DIR="$HOME/.claude-school" ;;
+  *) echo "fm: unknown lane '$lane' (expected yc or school)" >&2; exit 2 ;;
+esac
+
+# Quote one argument for a POSIX shell, including quotes and newlines.
+fm_quote() {
+  fm_quoted=$(printf '%sx' "$1" | sed "s/'/'\\\\''/g")
+  fm_quoted=${fm_quoted%x}
+  printf "'%s'" "$fm_quoted"
+}
+
+if [ "$print" = 1 ]; then
+  fm_line=codex
+  for fm_arg in --model "$model" -c 'approval_policy="never"' -c 'sandbox_mode="danger-full-access"' -c 'model_provider="azure_astra"' -c "model_catalog_json=\"$HOME/.codex/gpt6-azure-catalog.json\"" -c "model_reasoning_effort=\"$effort\"" "$@"; do
+    fm_line="$fm_line $(fm_quote "$fm_arg")"
+  done
+  printf '%s\n' "$fm_line"
+  exit 0
+fi
+
+# Outside Herdr, start or reattach the dedicated sidebar session. The launcher
+# replaces its pane shell, so exiting Firstmate removes the launcher's pane.
+if [ "${HERDR_ENV:-}" != 1 ]; then
+  command -v herdr >/dev/null 2>&1 || { echo "fm: herdr is not installed" >&2; exit 1; }
+  command -v jq >/dev/null 2>&1 || { echo "fm: jq is not installed" >&2; exit 1; }
+  [ -t 0 ] && [ -t 1 ] || { echo "fm: open an interactive terminal to launch Herdr" >&2; exit 1; }
+  export HERDR_SESSION="fm-$lane"
+  unset HERDR_SOCKET_PATH
+  cd "$HOME/firstmate" || exit 1
+  fm_status=$(herdr status --json) || exit 1
+  if ! printf '%s' "$fm_status" | jq -e '.server.running == true' >/dev/null; then
+    (unset FM_HOME CLAUDECODE CURSOR_AGENT CURSOR_INVOKED_AS PI_CODING_AGENT;
+      nohup herdr server </dev/null >/dev/null 2>&1 &)
+    fm_wait=0
+    until herdr status --json | jq -e '.server.running == true' >/dev/null; do
+      fm_wait=$((fm_wait + 1))
+      [ "$fm_wait" -lt 20 ] || { echo "fm: Herdr did not start within 10 seconds" >&2; exit 1; }
+      sleep 0.5
+    done
+  fi
+  fm_spaces=$(herdr workspace list) || exit 1
+  fm_space=$(printf '%s' "$fm_spaces" | jq -er --arg label "fm-$lane" '[.result.workspaces[] | select(.label == $label)] | if length == 0 then "" elif length == 1 then .[0].workspace_id else error("multiple \($label) workspaces") end') || exit 1
+  if [ -z "$fm_space" ]; then
+    fm_created=$(herdr workspace create --label "fm-$lane" --cwd "$HOME/firstmate" --no-focus) || exit 1
+    fm_space=$(printf '%s' "$fm_created" | jq -er '.result.workspace.workspace_id') || exit 1
+    fm_pane=$(printf '%s' "$fm_created" | jq -er '.result.root_pane.pane_id') || exit 1
+    # Re-exec with the resolved choices as flags: env does not survive into the pane.
+    fm_command=exec
+    for fm_arg in "$HOME/.local/bin/fm" --lane "$lane" --model "$model" --effort "$effort" "$@"; do
+      fm_command="$fm_command $(fm_quote "$fm_arg")"
+    done
+    if ! herdr pane run "$fm_pane" "$fm_command" >/dev/null; then
+      echo "fm: could not confirm startup. Run 'herdr --session fm-$lane', select fm-$lane, and run fm-$lane there if it shows a shell prompt." >&2
+      exit 1
+    fi
+  elif [ "$#" -gt 0 ]; then
+    echo "fm: reattaching existing Firstmate; new arguments are not applied" >&2
+  fi
+  herdr workspace focus "$fm_space" >/dev/null || exit 1
+  exec herdr
+fi
+
+if [ -z "${AZURE_ASTRA_API_KEY:-}" ]; then
+  AZURE_ASTRA_API_KEY=$(security find-generic-password -s codex-azure-astra -w 2>/dev/null) || {
+    echo "codex-azure-astra not found in Keychain" >&2; exit 1; }
+  export AZURE_ASTRA_API_KEY
+fi
+cd "$HOME/firstmate" || exit 1
+FM_MODEL=$model FM_EFFORT=$effort FM_LANE=$lane
+export FM_MODEL FM_EFFORT FM_LANE
+exec codex --model "$model" -c 'approval_policy="never"' -c 'sandbox_mode="danger-full-access"' -c 'model_provider="azure_astra"' -c "model_catalog_json=\"$HOME/.codex/gpt6-azure-catalog.json\"" -c "model_reasoning_effort=\"$effort\"" "$@"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# firstmate on the YC Claude subscription lane. See `fm --help`.
+exec "$HOME/.local/bin/fm" --lane yc "$@"

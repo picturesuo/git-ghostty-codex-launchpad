@@ -1,17 +1,68 @@
-# Global AGENTS.md
+<!-- >>> mirror of ~/.agents/AGENTS.md (shared with Claude Code). Edit that file, then re-copy this block; do not edit the block here. >>> -->
+# global agent instructions
 
-Global defaults for every Codex repo. Local `AGENTS.md` may add paths, tools,
-and exceptions; do not weaken these rules unless the user explicitly changes
-them.
+One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.codex/AGENTS.md mirrors it). Modeled on kunchenguid/dotfiles home/AGENTS.md.
+
+- Never use the em dash "—". Use a plain dash "-" instead.
+- Never ask for permission confirmations, never re-introduce yourself, skip onboarding talk, pick up where we left off, keep responses concise and direct.
+- Never manually modify CHANGELOG.md files or any files that are marked as auto-generated.
+- When making technical decisions, do not give much weight to development cost.
+  Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
+- For one-off or infrequent operational work, start with the simplest direct end-to-end path. Do not build wrappers, control planes, policy layers, custom verifiers, or automation unless the direct path exposes a concrete blocker or repeated need that justifies the added machinery.
+- When doing bug fixes, always start with reproducing the bug in an E2E setting as closely aligned with how an end user would experience it as possible.
+  This makes sure you find the real problem so your fix will actually solve it.
+- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection.
+  If something clearly looks off, even if it is not directly related to what you are doing, try to get it fixed along the way.
+- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
+  If you see one, even if it is not caused by what you are working on right now, still get it fixed.
+- Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.
+- Commit each completed, verified change; push only when the user says yes. Auto-commit work at session end.
+- If a repository has `AGENTS.md`, read it before editing and follow it as the repo-local operating manual. `CLAUDE.md` holds Claude-specific additions and must not weaken `AGENTS.md`.
+
+## Reasoning effort
+
+Effort is a ceiling, not a floor. It caps how much a model may think; it never forces thinking, so a high setting still answers "hi" instantly.
+
+- `medium` when the task is already well defined, for example implementing a spec a planner produced, and for interactive orchestrators (first mate, second mates) so they stay fast.
+- `xhigh` when the task is not yet well defined: planning, investigation, review, design.
+- Avoid `low` (latency rarely matters and intermediate context is often still ambiguous). Never `max` (forces thinking on every turn).
+- Bigger model = wisdom, higher effort = diligence. Raise the model for problems that need a genius, raise the effort for problems that need a pen and lots of paper, both only when it needs a genius with a pen.
+- Do not switch effort mid-session; it usually breaks prompt caching.
+
+## Model line-up (Sept 2026)
+
+Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC 5x via `fm-yc`, School 20x via `fm-school`). Use `claude-opus-5` until Claude Code lists `claude-opus-5-5`, then swap.
+
+| Bucket | Model | Effort | Where |
+|---|---|---|---|
+| Interactive orchestrator (first mate) | gpt-6-astra (`fm-yc --sol` is cheaper) | medium | Azure private credit |
+| Interactive orchestrator (second mates) | claude-opus-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
+| Planner (specs, hard bug investigation, scouts) | claude-opus-5 | xhigh | Claude subscription |
+| Implementer (well-defined spec, default crew) | claude-opus-5 | medium | Claude subscription |
+| Adversarial reviewer | claude-opus-5 (captain may name gpt-6-sol) | xhigh | Claude subscription |
+| Premium intelligence, escalations | claude-fable-5-1, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
+| Trivial fixer (one-liners, config) | claude-haiku-4-5 (or gpt-6-luna on request) | medium | Claude subscription |
+
+Routing for crew lives in `~/firstmate/config/crew-dispatch.json`; the first mate reads it, scripts never do. `codex-sol` / `codex-luna` remain for ad-hoc GPT-6 runs in any tab.
+
+## Maintaining this file
+
+Keep this file for knowledge useful to almost every future agent session.
+Do not repeat what the codebase already shows; point to the authoritative file or command instead.
+Prefer rewriting or pruning existing entries over appending new ones.
+Let skills absorb narrow, triggered guidance so this always-loaded file stays compact.
+<!-- <<< end mirror <<< -->
+
+# Codex-specific additions
 
 ## Durable Memory (all provider lanes)
 
 Read `/Users/bensuo/.codex/memories/memory_summary.md` at session start; it is
 the compacted durable memory of the user's profile, preferences, and operating
 rules and applies identically on every provider lane (Azure, OpenAI API, or
-ChatGPT auth — memory is local and does not depend on the signed-in account).
-For any Penny work, also read `/Users/bensuo/.codex/penny-context.md` — the
-compacted import of the Penny vision and relevant Codex history — and treat
+ChatGPT auth - memory is local and does not depend on the signed-in account).
+For any Penny work, also read `/Users/bensuo/.codex/penny-context.md` - the
+compacted import of the Penny vision and relevant Codex history - and treat
 `/Users/bensuo/Desktop/penny/VISION.md` as the authoritative full source.
 
 ## Core Loop
@@ -56,14 +107,6 @@ compacted import of the Penny vision and relevant Codex history — and treat
 - Avoid repo-wide scripted search/replace. Keep edits small, reviewed, and
   path-scoped.
 - If the solution feels overbuilt, shrink it before handoff.
-- When making technical decisions, do not give much weight to development cost.
-  Prefer quality, simplicity, robustness, and long-term maintainability.
-- For one-off or infrequent operational work, take the simplest direct
-  end-to-end path. No wrappers, control planes, or custom verifiers unless the
-  direct path exposes a concrete blocker or a repeated need.
-- For bug fixes, first reproduce the bug end to end, as close as possible to how
-  a real user hits it.
-- Never hand-edit CHANGELOG.md or any file marked as auto-generated.
 
 ## Git And Public Safety
 
@@ -107,14 +150,14 @@ compacted import of the Penny vision and relevant Codex history — and treat
   reaches the bounded no-response limit, stop before implementation, tell the
   user that Fable is not working, and report each lane's blocker. Do not rotate
   merely because a reviewer found issues or a repo/runtime check failed. Use
-  Codex/GPT-5.6 Luna with max
-  reasoning as the default implementation workhorse (`codex-workhorse`) on the
-  ChatGPT-authenticated OpenAI provider. Keep GPT-5.6 Sol available as an
-  explicit escalation for ambiguous, open-ended, or high-stakes implementation
-  (`codex-workhorse --sol` or the model picker); do not rotate automatically
-  merely because a repo/runtime check failed. Then use `claude-autoreview`
-  (Company 1) or an explicit Claude review lane for post-change review and
-  next-goal judgment.
+  Codex/GPT-6 Sol at medium reasoning as the default implementation workhorse
+  (`codex-workhorse`, launcher `codex-sol` on Azure provider azure_astra);
+  raise to xhigh only for investigation or review, never max. Use GPT-6 Luna
+  (`codex-luna`) for trivial, already-defined edits; it is slow per task but
+  extremely cheap. GPT-6 Astra is the premium escalation for ambiguous,
+  open-ended, or high-stakes work; do not rotate automatically merely because
+  a repo/runtime check failed. Then use `claude-autoreview` (Company 1) or an
+  explicit Claude review lane for post-change review and next-goal judgment.
 - In zsh, do not use `status` as a variable name, and use arrays for multi-item
   loops; scalar strings do not word-split like bash.
 - After non-trivial code edits, use the `$autoreview` skill with Claude Fable at
