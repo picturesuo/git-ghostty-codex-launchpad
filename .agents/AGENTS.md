@@ -30,15 +30,15 @@ Effort is a ceiling, not a floor. It caps how much a model may think; it never f
 
 ## Model line-up (Sept 2026)
 
-Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC 5x via `fm-yc`, School 20x via `fm-school`). Use `claude-opus-5` until Claude Code lists `claude-opus-5-5`, then swap.
+Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC Max via `fm-yc`, School Enterprise via `fm-school`).
 
 | Bucket | Model | Effort | Where |
 |---|---|---|---|
 | Interactive orchestrator (first mate) | gpt-6-astra (`fm-yc --sol` is cheaper) | medium | Azure private credit |
-| Interactive orchestrator (second mates) | claude-opus-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
-| Planner (specs, hard bug investigation, scouts) | claude-opus-5 | xhigh | Claude subscription |
-| Implementer (well-defined spec, default crew) | claude-opus-5 | medium | Claude subscription |
-| Adversarial reviewer | claude-opus-5 (captain may name gpt-6-sol) | xhigh | Claude subscription |
+| Interactive orchestrator (second mates) | claude-opus-5-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
+| Planner (specs, hard bug investigation, scouts) | claude-opus-5-5 | xhigh | Claude subscription |
+| Implementer (well-defined spec, default crew) | claude-opus-5-5 | medium | Claude subscription |
+| Adversarial reviewer | claude-opus-5-5 (captain may name gpt-6-sol) | xhigh | Claude subscription |
 | Premium intelligence, escalations | claude-fable-5-1, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
 | Trivial fixer (one-liners, config) | claude-haiku-4-5 (or gpt-6-luna on request) | medium | Claude subscription |
 
