@@ -2,6 +2,9 @@ local wezterm = require("wezterm")
 
 local config = wezterm.config_builder()
 
+config.default_prog = { "/opt/homebrew/bin/herdr" }
+config.native_macos_fullscreen_mode = true
+
 config.color_scheme = "rose-pine-moon"
 config.font = wezterm.font("Hack Nerd Font")
 config.font_size = 15.0
@@ -9,6 +12,11 @@ config.window_background_opacity = 0.8
 config.macos_window_background_blur = 50
 config.hide_tab_bar_if_only_one_tab = true
 config.window_decorations = "RESIZE"
+
+wezterm.on("gui-startup", function(cmd)
+	local _, _, window = wezterm.mux.spawn_window(cmd or {})
+	window:gui_window():toggle_fullscreen()
+end)
 
 -- Dim unfocused windows so the focused one is obvious at a glance.
 local UNFOCUSED_FOREGROUND_TEXT_HSB = { hue = 1.0, saturation = 0.25, brightness = 0.45 }
