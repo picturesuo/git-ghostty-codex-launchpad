@@ -19,6 +19,13 @@ One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.
 - Commit each completed, verified change; push only when the user says yes. Auto-commit work at session end.
 - If a repository has `AGENTS.md`, read it before editing and follow it as the repo-local operating manual. `CLAUDE.md` holds Claude-specific additions and must not weaken `AGENTS.md`.
 
+## Computer use - all projects
+
+- Run computer use in the background by default across every project and harness. Use headless browsers, hidden or isolated browser surfaces, offscreen rendering, or app APIs/CLIs that do not disturb the active desktop.
+- Never take over the user's active screen, browser, keyboard, or visible cursor: do not focus apps, switch Spaces, open or navigate visible tabs/windows, or operate visible menus or dialogs unless the user explicitly requests foreground interaction for the current task. A request to browse, click through, test, or use a computer is not foreground approval.
+- A separate browser profile, window, workspace, or session is not sufficient isolation if it becomes visible, steals focus, or affects the user's input. Verify the chosen surface is actually non-interfering before operating it.
+- If the task requires foreground-only UI, report that limitation and ask one concise question rather than silently taking over. Background execution does not expand permission to send messages, publish, purchase, or perform destructive actions.
+
 ## Reasoning effort
 
 Effort is a ceiling, not a floor. It caps how much a model may think; it never forces thinking, so a high setting still answers "hi" instantly.
@@ -182,16 +189,6 @@ compacted import of the Penny vision and relevant Codex history - and treat
 
 ## UI Isolation
 
-- Never take the user's active screen for click-through, browser testing,
-  screenshots, or app inspection without explicit current-task foreground
-  approval.
-- Do not open tabs/windows in the active browser, switch Spaces, move the
-  visible cursor, focus apps, click menu/Dock items, or use
-  `osascript`/System Events on visible UI without approval.
-- Prefer Codex in-app Browser, cmux browser/workspace, offscreen renderers,
-  logs, diagnostics, accessibility metadata, isolated screenshots, and
-  app-generated artifacts.
-- If only foreground UI works, such as a logged-in browser, native app, or
-  system dialog, stop and ask.
+- The shared "Computer use - all projects" section above owns background-only computer use and current-task foreground exceptions for every harness.
 - `/click` uses the `click-through` skill in an isolated surface. Done requires
   isolated UI evidence or a clear reason it was impossible.

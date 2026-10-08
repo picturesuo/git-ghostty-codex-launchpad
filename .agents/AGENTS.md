@@ -18,6 +18,13 @@ One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.
 - Commit each completed, verified change; push only when the user says yes. Auto-commit work at session end.
 - If a repository has `AGENTS.md`, read it before editing and follow it as the repo-local operating manual. `CLAUDE.md` holds Claude-specific additions and must not weaken `AGENTS.md`.
 
+## Computer use - all projects
+
+- Run computer use in the background by default across every project and harness. Use headless browsers, hidden or isolated browser surfaces, offscreen rendering, or app APIs/CLIs that do not disturb the active desktop.
+- Never take over the user's active screen, browser, keyboard, or visible cursor: do not focus apps, switch Spaces, open or navigate visible tabs/windows, or operate visible menus or dialogs unless the user explicitly requests foreground interaction for the current task. A request to browse, click through, test, or use a computer is not foreground approval.
+- A separate browser profile, window, workspace, or session is not sufficient isolation if it becomes visible, steals focus, or affects the user's input. Verify the chosen surface is actually non-interfering before operating it.
+- If the task requires foreground-only UI, report that limitation and ask one concise question rather than silently taking over. Background execution does not expand permission to send messages, publish, purchase, or perform destructive actions.
+
 ## Reasoning effort
 
 Effort is a ceiling, not a floor. It caps how much a model may think; it never forces thinking, so a high setting still answers "hi" instantly.
