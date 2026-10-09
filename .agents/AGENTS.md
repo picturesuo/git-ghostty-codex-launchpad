@@ -15,8 +15,9 @@ One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.
 - Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
   If you see one, even if it is not caused by what you are working on right now, still get it fixed.
 - Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.
-- Commit each completed, verified change; push only when the user says yes. Auto-commit work at session end.
+- Across every project and harness, default to validating, committing, and pushing each completed, verified, public-safe change directly to the intended delivery branch without creating a PR or waiting for a separate push request. This is the user-selected delivery default; retain applicable tests, review, and CI checks. Respect protected branches and explicit repository-required PR gates, local-only or publish-off instructions. If direct delivery is unsupported or refused, report the blocker rather than silently creating a PR or bypassing a gate. Never publish secrets, private data, scratch, partial, failing, or unverified work; never force-push or discard work. This does not authorize speculative changes or relax destructive-action or security-sensitive approval boundaries.
 - If a repository has `AGENTS.md`, read it before editing and follow it as the repo-local operating manual. `CLAUDE.md` holds Claude-specific additions and must not weaken `AGENTS.md`.
+- At task completion, automatically retire only the agent-created worker sessions, terminal panes/tabs, temporary workspaces/worktrees, browser test surfaces, and processes owned by that task after proving work is safely delivered and no live validation, unresolved decision, or unlanded change still depends on them. Use the owning tool's guarded teardown, preserve deliverables and durable handoff evidence, and never force cleanup or close the user's primary session, unrelated work, or another installation. Report a refused cleanup once and keep it pending; do not leave finished worker surfaces cluttering the workspace.
 
 ## Computer use - all projects
 
@@ -35,21 +36,22 @@ Effort is a ceiling, not a floor. It caps how much a model may think; it never f
 - Bigger model = wisdom, higher effort = diligence. Raise the model for problems that need a genius, raise the effort for problems that need a pen and lots of paper, both only when it needs a genius with a pen.
 - Do not switch effort mid-session; it usually breaks prompt caching.
 
-## Model line-up (Sept 2026)
+## Model line-up (Oct 2026)
 
 Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC Max via `fm-yc`, School Enterprise via `fm-school`).
 
 | Bucket | Model | Effort | Where |
 |---|---|---|---|
-| Interactive orchestrator (first mate) | gpt-6-astra (`fm-yc --sol` is cheaper) | medium | Azure private credit |
+| Interactive orchestrator (first mate) | gpt-6.1-sol (`fm-yc --astra` for GPT-6 Astra at about 5x the price) | medium | Azure private credit |
 | Interactive orchestrator (second mates) | claude-opus-5-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
 | Planner (specs, hard bug investigation, scouts) | claude-opus-5-5 | xhigh | Claude subscription |
 | Implementer (well-defined spec, default crew) | claude-opus-5-5 | medium | Claude subscription |
-| Adversarial reviewer | claude-opus-5-5 (captain may name gpt-6-sol) | xhigh | Claude subscription |
+| Small well-specified change (stated-root-cause fix, contained feature, tests, docs) | claude-sonnet-5-5 | medium | Claude subscription |
+| Adversarial reviewer | claude-opus-5-5 (captain may name gpt-6.1-sol for a different family) | xhigh | Claude subscription |
 | Premium intelligence, escalations | claude-fable-5-1, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
 | Trivial fixer (one-liners, config) | claude-haiku-4-5 (or gpt-6-luna on request) | medium | Claude subscription |
 
-Routing for crew lives in `~/firstmate/config/crew-dispatch.json`; the first mate reads it, scripts never do. `codex-sol` / `codex-luna` remain for ad-hoc GPT-6 runs in any tab.
+Routing for crew lives in each installation's `config/crew-dispatch.json` (identical copies in `~/firstmate` and every `~/firstmate-<project>`); the first mate reads it, scripts never do, and `data/captain.md` must never override it. Crewmates are ephemeral: retire each one when its task ends. `codex-sol` / `codex-luna` remain for ad-hoc GPT-6 runs in any tab.
 
 ## Maintaining this file
 
