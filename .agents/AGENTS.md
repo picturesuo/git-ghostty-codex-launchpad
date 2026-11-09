@@ -48,7 +48,7 @@ Rule: the first mate runs on Codex against the limited Azure API credit; every c
 | Implementer (well-defined spec, default crew) | claude-opus-5-5 | medium | Claude subscription |
 | Small well-specified change (stated-root-cause fix, contained feature, tests, docs) | claude-sonnet-5-5 | medium | Claude subscription |
 | Adversarial reviewer | claude-opus-5-5 (captain may name gpt-6.1-sol for a different family) | xhigh | Claude subscription |
-| Premium intelligence, escalations | claude-fable-5-1, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
+| Premium intelligence, escalations | claude-fable-5-2, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
 | Trivial fixer (one-liners, config) | claude-haiku-4-5 (or gpt-6-luna on request) | medium | Claude subscription |
 
 Routing for crew lives in each installation's `config/crew-dispatch.json` (identical copies in `~/firstmate` and every `~/firstmate-<project>`); the first mate reads it, scripts never do, and `data/captain.md` must never override it. Crewmates are ephemeral: retire each one when its task ends. `codex-sol` / `codex-luna` remain for ad-hoc GPT-6 runs in any tab.
