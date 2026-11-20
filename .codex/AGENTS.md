@@ -39,12 +39,12 @@ Effort is a ceiling, not a floor. It caps how much a model may think; it never f
 
 ## Model line-up (Nov 2026)
 
-Rule: Claude Fable 5.2 is the first mate and main driver; before every dispatch GPT-6.2 Astra (Azure credit) acts as its consultant and tries to disprove the brief (`fm-convene`), and Fable makes the call. Every crewmate runs on `claude` so it bills a Claude subscription (School by default, YC via `fm-yc`).
+Rule: GPT-6.2 Astra (Azure credit) is the first mate and main driver; before every dispatch Claude Fable 5.2 acts as its consultant and tries to disprove the brief (`fm-convene`), and Astra makes the call. Every crewmate runs on `claude` so it bills a Claude subscription (School by default, YC via `fm-yc`).
 
 | Bucket | Model | Effort | Where |
 |---|---|---|---|
-| Interactive orchestrator (first mate) | claude-fable-5-2 (fm default; `fm --astra` for a GPT-6.2 Astra first mate on Azure) | high | the lane's Claude subscription |
-| Brief challenger (consultant / skeptic, every dispatch) | gpt-6.2-astra via `fm-convene` | xhigh | Azure private credit |
+| Interactive orchestrator (first mate) | gpt-6.2-astra (fm default; `fm --fable` for a Fable 5.2 first mate in Claude Code) | medium | Azure private credit |
+| Brief challenger (consultant / skeptic, every dispatch) | claude-fable-5-2 via `fm-convene` | xhigh | the lane's Claude subscription |
 | Interactive orchestrator (second mates) | claude-opus-5-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
 | Planner (specs, hard bug investigation, scouts) | claude-opus-5-5 | xhigh | Claude subscription |
 | Implementer (well-defined spec, default crew) | claude-opus-5-5 | high | Claude subscription |
