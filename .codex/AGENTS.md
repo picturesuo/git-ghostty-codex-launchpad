@@ -31,7 +31,7 @@ One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.
 
 Effort is a ceiling, not a floor. It caps how much a model may think; it never forces thinking, so a high setting still answers "hi" instantly.
 
-- `medium` when the task is already well defined, and for interactive orchestrators (first mate, second mates) so they stay fast. Exception (captain's rule, Nov 2026): Opus 5.5 implementing a frozen brief runs at `high`.
+- `medium` when the task is already well defined, and for second mates so they stay fast. Exceptions (captain's rule, Nov 2026): the Fable 5.2 first mate and Opus 5.5 implementing a frozen brief run at `high`.
 - `xhigh` when the task is not yet well defined: planning, investigation, review, design.
 - Avoid `low` (latency rarely matters and intermediate context is often still ambiguous). Never `max` (forces thinking on every turn).
 - Bigger model = wisdom, higher effort = diligence. Raise the model for problems that need a genius, raise the effort for problems that need a pen and lots of paper, both only when it needs a genius with a pen.
@@ -39,11 +39,12 @@ Effort is a ceiling, not a floor. It caps how much a model may think; it never f
 
 ## Model line-up (Nov 2026)
 
-Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC Max via `fm-yc`, School Enterprise via `fm-school`).
+Rule: Claude Fable 5.2 is the first mate and main driver; before every dispatch GPT-6.2 Astra (Azure credit) acts as its consultant and tries to disprove the brief (`fm-convene`), and Fable makes the call. Every crewmate runs on `claude` so it bills a Claude subscription (School by default, YC via `fm-yc`).
 
 | Bucket | Model | Effort | Where |
 |---|---|---|---|
-| Interactive orchestrator (first mate) | gpt-6.2-astra (fm default; `--sol62` for GPT-6.2 Sol, `--sol61` for GPT-6.1 Sol on YC Azure) or claude-fable-5-2 via `fm --fable` | medium (high for `--fable`) | Azure private credit (`--fable`: the lane's Claude subscription) |
+| Interactive orchestrator (first mate) | claude-fable-5-2 (fm default; `fm --astra` for a GPT-6.2 Astra first mate on Azure) | high | the lane's Claude subscription |
+| Brief challenger (consultant / skeptic, every dispatch) | gpt-6.2-astra via `fm-convene` | xhigh | Azure private credit |
 | Interactive orchestrator (second mates) | claude-opus-5-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
 | Planner (specs, hard bug investigation, scouts) | claude-opus-5-5 | xhigh | Claude subscription |
 | Implementer (well-defined spec, default crew) | claude-opus-5-5 | high | Claude subscription |
