@@ -31,25 +31,25 @@ One file for every harness (Claude Code imports it from ~/.claude/CLAUDE.md; ~/.
 
 Effort is a ceiling, not a floor. It caps how much a model may think; it never forces thinking, so a high setting still answers "hi" instantly.
 
-- `medium` when the task is already well defined, for example implementing a spec a planner produced, and for interactive orchestrators (first mate, second mates) so they stay fast.
+- `medium` when the task is already well defined, and for interactive orchestrators (first mate, second mates) so they stay fast. Exception (captain's rule, Nov 2026): Opus 5.5 implementing a frozen brief runs at `high`.
 - `xhigh` when the task is not yet well defined: planning, investigation, review, design.
 - Avoid `low` (latency rarely matters and intermediate context is often still ambiguous). Never `max` (forces thinking on every turn).
 - Bigger model = wisdom, higher effort = diligence. Raise the model for problems that need a genius, raise the effort for problems that need a pen and lots of paper, both only when it needs a genius with a pen.
 - Do not switch effort mid-session; it usually breaks prompt caching.
 
-## Model line-up (Oct 2026)
+## Model line-up (Nov 2026)
 
 Rule: the first mate runs on Codex against the limited Azure API credit; every crewmate runs on `claude` so it bills a Claude Max subscription (YC Max via `fm-yc`, School Enterprise via `fm-school`).
 
 | Bucket | Model | Effort | Where |
 |---|---|---|---|
-| Interactive orchestrator (first mate) | gpt-6.1-sol (`fm-yc --astra` for GPT-6 Astra at about 5x the price) | medium | Azure private credit |
+| Interactive orchestrator (first mate) | gpt-6.2-astra (fm default; `--sol62` for GPT-6.2 Sol, `--sol61` for GPT-6.1 Sol on YC Azure) or claude-fable-5-2 via `fm --fable` | medium (high for `--fable`) | Azure private credit (`--fable`: the lane's Claude subscription) |
 | Interactive orchestrator (second mates) | claude-opus-5-5 | medium | Claude subscription, `~/firstmate/config/secondmate-harness` |
 | Planner (specs, hard bug investigation, scouts) | claude-opus-5-5 | xhigh | Claude subscription |
-| Implementer (well-defined spec, default crew) | claude-opus-5-5 | medium | Claude subscription |
+| Implementer (well-defined spec, default crew) | claude-opus-5-5 | high | Claude subscription |
 | Small well-specified change (stated-root-cause fix, contained feature, tests, docs) | claude-sonnet-5-5 | medium | Claude subscription |
 | Adversarial reviewer | claude-opus-5-5 (captain may name gpt-6.1-sol for a different family) | xhigh | Claude subscription |
-| Premium intelligence, escalations | claude-fable-5-2, or gpt-6-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
+| Premium intelligence, escalations | claude-fable-5-2 (served on both lanes again as of 2026-11-19), or gpt-6.2-astra | xhigh | reserved for truly ambiguous or creative work and untangling messes |
 | Trivial fixer (one-liners, config) | claude-haiku-4-5 (or gpt-6-luna on request) | medium | Claude subscription |
 
 Routing for crew lives in each installation's `config/crew-dispatch.json` (identical copies in `~/firstmate` and every `~/firstmate-<project>`); the first mate reads it, scripts never do, and `data/captain.md` must never override it. Crewmates are ephemeral: retire each one when its task ends. `codex-sol` / `codex-luna` remain for ad-hoc GPT-6 runs in any tab.

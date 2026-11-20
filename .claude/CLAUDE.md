@@ -10,7 +10,7 @@
 
 Fable (this session, high effort) owns the thinking: planning, architecture, design and judgment calls, sequencing, UX taste, secrets, destructive operations, commits, pushes, releases, public GitHub mutations, and final review. Fable does not do the token-heavy implementation itself. Once the brief is frozen it hands concrete work to a workhorse, automatically, without special routing words:
 
-- **Opus workhorse (default)**: the in-Claude Opus subagent, driven directly by Fable for implementation from a frozen brief and for heavy exploration. It bills the Claude Max subscription, so prefer it; `medium` for well-defined implementation, `xhigh` for investigation.
+- **Opus workhorse (default)**: the in-Claude Opus subagent, driven directly by Fable for implementation from a frozen brief and for heavy exploration. It bills the Claude Max subscription, so prefer it; `high` for well-defined implementation, `xhigh` for investigation.
 - **Codex workhorse** (`$codex-workhorse`): only when the user asks for Codex or AWS, because it spends limited API credit. GPT-5.6 Sol on the YC Azure resource at `medium` (`CODEX_WORKHORSE_EFFORT=xhigh` per run for investigation, never max); `codex-sol` / `codex-luna` for ad-hoc GPT-6 runs on the private Azure credit.
 - Parallelize independent work across workhorses; each gets a frozen brief with goal, files, constraints, non-goals, and a proof command.
 
